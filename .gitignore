@@ -1,3 +1,10 @@
+# AI / IDE tool folders
+.claude/
+.gemini/
+.agent/
+.vs/
+CLAUDE.md
+
 # Build Artifacts
 Build/
 Bin/
