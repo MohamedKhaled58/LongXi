@@ -17,6 +17,7 @@ This document defines the core data entities and their relationships for the Win
 **Location**: `LXEngine/Src/Application/Application.h` (in LXEngine module per dependency structure)
 
 **Public Interface**:
+
 ```cpp
 class Application
 {
@@ -48,11 +49,11 @@ private:
 
 **Member Variables**:
 
-| Name | Type | Purpose | Naming Convention |
-|------|------|---------|-------------------|
-| m_WindowHandle | HWND | Win32 window handle | m_PascalCase (CLAUDE.md) |
-| m_ShouldShutdown | bool | Flag indicating shutdown request | m_PascalCase |
-| m_Initialized | bool | Track whether Initialize() succeeded | m_PascalCase |
+| Name             | Type | Purpose                              | Naming Convention        |
+| ---------------- | ---- | ------------------------------------ | ------------------------ |
+| m_WindowHandle   | HWND | Win32 window handle                  | m_PascalCase (CLAUDE.md) |
+| m_ShouldShutdown | bool | Flag indicating shutdown request     | m_PascalCase             |
+| m_Initialized    | bool | Track whether Initialize() succeeded | m_PascalCase             |
 
 **Lifecycle State Machine**:
 
@@ -69,6 +70,7 @@ private:
 ```
 
 **Error Handling**:
+
 - **Initialize()**: Returns false on failure, logs error, must not call Run() or Shutdown()
 - **Run()**: Returns exit code (0 for success, non-zero for errors)
 - **Shutdown()**: Void return, best-effort cleanup (no failure mode in Phase 1)
@@ -80,6 +82,7 @@ private:
 **Location**: `LXEngine/Src/Window/Win32Window.h` (in LXEngine module)
 
 **Public Interface**:
+
 ```cpp
 class Win32Window
 {
@@ -109,22 +112,24 @@ private:
 
 **Member Variables**:
 
-| Name | Type | Purpose | Naming Convention |
-|------|------|---------|-------------------|
-| m_Title | std::wstring | Window title ("Long Xi") | m_PascalCase |
-| m_Width | int | Window width (1024) | m_PascalCase |
-| m_Height | int | Window height (768) | m_PascalCase |
-| m_WindowHandle | HWND | Win32 window handle | m_PascalCase |
-| m_WindowClass | WNDCLASSEX | Window class registration | m_PascalCase |
+| Name           | Type         | Purpose                   | Naming Convention |
+| -------------- | ------------ | ------------------------- | ----------------- |
+| m_Title        | std::wstring | Window title ("LongXi")   | m_PascalCase      |
+| m_Width        | int          | Window width (1024)       | m_PascalCase      |
+| m_Height       | int          | Window height (768)       | m_PascalCase      |
+| m_WindowHandle | HWND         | Win32 window handle       | m_PascalCase      |
+| m_WindowClass  | WNDCLASSEX   | Window class registration | m_PascalCase      |
 
 **Window Properties** (per spec clarification Session 2026-03-10):
-- **Title**: "Long Xi"
+
+- **Title**: "LongXi"
 - **Style**: WS_OVERLAPPEDWINDOW (includes resize, system menu, etc.)
 - **Size**: 1024x768 pixels
 - **Show Mode**: Normal windowed (not fullscreen, not maximized, not minimized)
 - **Resize Support**: Yes (as part of WS_OVERLAPPEDWINDOW)
 
 **Lifecycle**:
+
 ```
 [Constructed] → [Create() called] → [Window registered and created]
                                         ↓
@@ -152,29 +157,35 @@ Spdlog (Vendor Dependency)
 ### Ownership Model
 
 **LXShell owns**:
+
 - Application object (unique ownership via std::unique_ptr or direct instantiation)
 
 **Application owns**:
+
 - Win32Window object (unique ownership)
 - Logging system setup (Spdlog integration)
 
 **Win32Window owns**:
+
 - Window handle (HWND) - wraps OS resource
 - Window class registration (WNDCLASSEX)
 
 ### Cross-Module Dependencies
 
 **LXShell → LXEngine**:
+
 - Includes `LXEngine.h` (public entry point)
 - Instantiates `Application` class
 - Uses LXShell logging macros (LX_INFO) (fixes I2 - corrected macro reference)
 
 **LXEngine → LXCore**:
+
 - Includes `LXCore.h` (public entry point)
 - Uses LXCore logging macros (LX_CORE_INFO)
 - May use LXCore utilities (if needed)
 
 **All Modules → Spdlog**:
+
 - All modules include Spdlog headers via `Vendor/Spdlog/include`
 - All modules use custom logging macros
 - Spdlog linked as static library
@@ -184,16 +195,19 @@ Spdlog (Vendor Dependency)
 ### Application Class
 
 **Preconditions**:
+
 - `Initialize()`: Application object constructed, no prior initialization
 - `Run()`: Initialize() returned true (m_Initialized == true)
 - `Shutdown()`: Run() has completed (message pump exited)
 
 **Postconditions**:
+
 - `Initialize()`: Window created and visible, logging active, m_Initialized == true
 - `Run()`: Message pump exited cleanly, window still valid (not yet destroyed)
 - `Shutdown()`: All resources released, window destroyed, process ready to exit
 
 **Invariants**:
+
 - m_WindowHandle is valid only when m_Initialized is true
 - Shutdown() can only be called once after Run() completes
 - Initialize() can only be called once
@@ -201,16 +215,19 @@ Spdlog (Vendor Dependency)
 ### Win32Window Class
 
 **Preconditions**:
+
 - `Create()`: Object constructed, window not yet created
 - `Show()`: Window created and valid (m_WindowHandle != NULL)
 - `Destroy()`: Window currently valid (m_WindowHandle != NULL)
 
 **Postconditions**:
+
 - `Create()`: m_WindowHandle valid, window class registered
 - `Show()`: Window visible on screen
 - `Destroy()`: m_WindowHandle invalidated (set to NULL), window destroyed
 
 **Invariants**:
+
 - m_WindowHandle is NULL before Create() succeeds
 - m_WindowHandle is non-NULL between Create() success and Destroy() call
 - Window class registration valid for process lifetime
@@ -222,7 +239,7 @@ Spdlog (Vendor Dependency)
 **std::wstring**: Used for window titles and text strings (Windows Unicode support)
 **bool**: Used for success/failure returns and state flags
 **int**: Used for window dimensions and exit codes
-**HWND**: Win32 window handle type (typedef void*)
+**HWND**: Win32 window handle type (typedef void\*)
 
 ### Win32 Types
 
@@ -290,6 +307,7 @@ Spdlog (Vendor Dependency)
     ↓
 [WinMain exits, process terminates]
 ```
+
 (fixes I3 - clarified that WM_CLOSE handler destroys window, Shutdown() only cleans up console/logging)
 
 ## Constraints and Validation
@@ -297,18 +315,21 @@ Spdlog (Vendor Dependency)
 ### Constitutional Compliance
 
 **Article III (Non-Negotiable Technical Baseline)**:
+
 - ✅ Windows-only platform
 - ✅ Raw Win32 API
 - ✅ Static library architecture (LXShell → LXEngine → LXCore)
 - ✅ C++23 standard
 
 **Article IV (Architectural Laws)**:
+
 - ✅ Thin entrypoint (WinMain <20 lines)
 - ✅ Centralized lifecycle (Application class)
 - ✅ Module boundaries respected
 - ✅ No god objects (Application has focused 3-method interface)
 
 **Article IX (Threading and Runtime Discipline)**:
+
 - ✅ Single-threaded execution (Phase 1)
 - ✅ Message pump stability (no re-entry)
 - ✅ MT-aware architecture (no design choices preventing future multithreading)
@@ -316,13 +337,15 @@ Spdlog (Vendor Dependency)
 ### Specification Compliance
 
 **Clarified Requirements (Session 2026-03-10)**:
+
 - ✅ Application interface: Initialize/Run/Shutdown
-- ✅ Window properties: 1024x768, WS_OVERLAPPEDWINDOW, "Long Xi"
+- ✅ Window properties: 1024x768, WS_OVERLAPPEDWINDOW, "LongXi"
 - ✅ Console approach: AllocConsole
 - ✅ Logging: Spdlog with custom macros
 - ✅ Shutdown signaling: WM_CLOSE → WM_DESTROY → PostQuitMessage
 
 **Functional Requirements Coverage**:
+
 - FR-001 to FR-021: All functional requirements mapped to class design
 - SC-001 to SC-010: All success criteria supported by data model
 - AC-001 to AC-010: All acceptance criteria can be validated against this design
@@ -330,6 +353,7 @@ Spdlog (Vendor Dependency)
 ## Summary
 
 The data model provides:
+
 - Clear entity definitions with member variables following m_PascalCase convention
 - Explicit lifecycle state machines for both Application and Win32Window
 - Well-defined ownership model respecting constitutional dependency direction

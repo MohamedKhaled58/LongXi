@@ -6,15 +6,67 @@ IndentWidth: 4
 TabWidth: 4
 UseTab: Never
 ColumnLimit: 200
+
+# Brace placement
 BreakBeforeBraces: Allman
+
+# Short statement formatting
 AllowShortIfStatementsOnASingleLine: Never
 AllowShortLoopsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: Empty
 AllowShortBlocksOnASingleLine: Never
+AllowShortEnumsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+
+# Function and parameter formatting
 BinPackArguments: false
 BinPackParameters: false
+AlignAfterOpenBracket: Align
+AllowAllArgumentsOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
+
+# Include handling
 SortIncludes: false
 IncludeBlocks: Preserve
+IncludeIsMainRegex: '(Test)?$'
+
+# Pointer and reference alignment
 PointerAlignment: Left
+ReferenceAlignment: Left
+
+# Spacing
 SpaceBeforeParens: ControlStatements
-...
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyParentheses: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+SpaceAfterCStyleCast: false
+SpaceInEmptyBlockParentheses: false
+
+# Alignment
+AlignConsecutiveMacros: false
+AlignConsecutiveAssignments: false
+AlignConsecutiveBitFields: false
+AlignConsecutiveDeclarations: false
+AlignEscapedNewlines: Left
+AlignOperands: true
+AlignTrailingComments: true
+
+# Comment formatting
+ReflowComments: true
+# Note: clang-format cannot force // vs /* */ style, but it will format existing comments consistently
+
+# Line breaks
+MaxEmptyLinesToKeep: 2
+KeepEmptyLinesAtTheStartOfBlocks: false
+
+# Modern C++ features
+NamespaceIndentation: None
+FixNamespaceComments: true
+
+# Other
+PenaltyBreakAssignment: 2
+PenaltyBreakBeforeFirstCallParameter: 19
+PenaltyBreakComment: 300
+PenaltyBreakFirstLessLess: 120
+PenaltyBreakString: 1000

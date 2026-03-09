@@ -7,15 +7,15 @@ workspace "LongXi"
     platforms      { "x64" }
     systemversion  "latest"
     cppdialect     "C++23"
-	startproject "LongXi/LXShell"
-	
-		configurations
+	startproject "LXShell"
+
+	configurations
 	{
 		"Debug",
 		"Release",
 		"Dist"
 	}
-	
+
     buildoptions   { "/utf-8", "/Gm-" }
 
     includedirs { "Vendor/Spdlog/include" }
@@ -24,23 +24,25 @@ workspace "LongXi"
     objdir    "Build/Obj/%{cfg.buildcfg}/%{prj.group}/%{prj.name}"
 
 	filter "configurations:Debug"
-		defines "CH_DEBUG"
+		defines "LX_DEBUG"
 		runtime "Debug"
 		symbols "on"
         multiprocessorcompile "On"
 
 	filter "configurations:Release"
-		defines "CH_RELEASE"
+		defines "LX_RELEASE"
 		runtime "Release"
 		optimize "on"
         multiprocessorcompile "On"
 
 	filter "configurations:Dist"
-		defines "CH_DIST"
+		defines "LX_DIST"
 		runtime "Release"
 		optimize "on"
         multiprocessorcompile "On"
 
+    filter { "system:Windows" }
+        defines "LX_PLATFORM_WINDOWS"
 
     filter {}
 
@@ -57,8 +59,8 @@ workspace "LongXi"
     group "Core"
         include "LongXi/LXCore"
         include "LongXi/LXEngine"
-        group ""
+    group ""
 
     group "Executables"
         include "LongXi/LXShell"
-        group ""
+    group ""

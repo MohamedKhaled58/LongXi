@@ -22,7 +22,7 @@ if not defined CLANG_FORMAT (
 )
 
 set "FILE_COUNT=0"
-for /f %%N in ('powershell -NoProfile -ExecutionPolicy Bypass -Command "$files = Get-ChildItem -Recurse -File Modules,Executables,Tests,ArchVerify -Include *.h,*.hpp,*.cpp,*.cc,*.cxx; foreach ($f in $files) { & $env:CLANG_FORMAT -i --style=file $f.FullName }; $files.Count"') do set "FILE_COUNT=%%N"
+for /f %%N in ('powershell -NoProfile -ExecutionPolicy Bypass -Command "$files = Get-ChildItem -Recurse -File LongXi -Include *.h,*.hpp,*.cpp,*.cc,*.cxx; foreach ($f in $files) { & $env:CLANG_FORMAT -i --style=file $f.FullName }; $files.Count"') do set "FILE_COUNT=%%N"
 
 echo Formatted %FILE_COUNT% C++ files using "%CLANG_FORMAT%".
 pause

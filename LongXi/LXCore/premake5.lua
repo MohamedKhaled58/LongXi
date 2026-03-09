@@ -11,5 +11,6 @@ project "LXCore"
 	
 	includedirs
 	{
+		".",
 		"Src",
 	}

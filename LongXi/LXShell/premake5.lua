@@ -1,21 +1,33 @@
 project "LXShell"
-    kind         "ConsoleApp"
+    kind         "WindowedApp"
     language     "C++"
     location     "."
-	
+
 	files
 	{
 		"Src/**.h",
 		"Src/**.cpp",
 	}
-	
+
 	includedirs
 	{
 		"Src",
-		"../LXCore/Src"
+		"../LXCore",
+		"../LXCore/Src",
+		"../LXEngine",
+		"../LXEngine/Src"
 	}
 
-		links
+	links
 	{
+		"LXEngine",
 		"LXCore"
 	}
+
+	filter { "system:Windows" }
+		links
+		{
+			"user32",
+			"gdi32"
+		}
+	filter {}

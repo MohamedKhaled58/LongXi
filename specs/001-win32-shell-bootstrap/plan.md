@@ -21,11 +21,12 @@ Establish a bootable Windows-native client shell for the Long Xi Modernized Clon
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 ### Initial Gate Assessment
 
 **Article III: Non-Negotiable Technical Baseline** - ✅ COMPLIANT
+
 - Platform: Windows-only ✅
 - Windowing: Raw Win32 API ✅
 - Build System: Premake5 generating Visual Studio 2026 projects ✅
@@ -35,6 +36,7 @@ Establish a bootable Windows-native client shell for the Long Xi Modernized Clon
 - Static libraries only ✅
 
 **Article IV: Architectural Laws** - ✅ COMPLIANT
+
 - Entrypoints remain thin ✅ (FR-001, FR-010, AC-007)
 - Module boundaries respected ✅ (LXShell executable, LXEngine/LXCore static libraries)
 - No god modules ✅ (Application class has focused 3-method interface)
@@ -43,10 +45,12 @@ Establish a bootable Windows-native client shell for the Long Xi Modernized Clon
 - Convenience doesn't override architecture ✅ (simple Win32 approach)
 
 **Article IX: Threading and Runtime Discipline** - ✅ COMPLIANT
+
 - Phase 1 runtime is single-threaded ✅ (explicitly specified)
 - Architecture remains MT-aware ✅ (no design choices that would prevent future multithreading)
 
 **Article XII: Phase 1 Constitutional Guardrails** - ✅ COMPLIANT
+
 - Native client foundation ✅ (within scope)
 - Shell/bootstrap ✅ (within scope)
 - Logging/debugging ✅ (Spdlog integration)
@@ -90,8 +94,7 @@ LongXi/
 │       └── Logging/      # Logging macros (LX_ENGINE_INFO, etc.)
 └── LXShell/
     └── Src/              # Executable entry point
-        ├── main.cpp     # WinMain entrypoint (<20 lines)
-        └── Shell/       # Shell-specific code (minimal)
+        └── main.cpp     # WinMain entrypoint (<20 lines, only file in LXShell for this spec)
 ```
 
 **Structure Decision**: This feature uses the existing LongXi modular structure defined by the constitution. LXCore provides foundation utilities and logging infrastructure, LXEngine contains the Application class and window management, LXShell serves as the thin executable entry point. The dependency direction LXShell → LXEngine → LXCore is maintained.
@@ -101,6 +104,7 @@ LongXi/
 > **No constitutional violations to track - specification is compliant and narrow.**
 
 This specification intentionally minimizes complexity by:
+
 - Focusing on bootstrap foundation only (no rendering, gameplay, networking)
 - Using raw Win32 API directly (no abstraction framework overhead)
 - Simple 3-method Application interface (Initialize/Run/Shutdown)
@@ -112,6 +116,7 @@ This specification intentionally minimizes complexity by:
 ### Research Tasks
 
 **Task 1: Win32 Application Foundation Patterns**
+
 - Research: Standard Win32 application lifecycle patterns
 - Research: Window class registration and creation best practices
 - Research: Message pump implementation patterns (GetMessage/DispatchMessage)
@@ -119,18 +124,21 @@ This specification intentionally minimizes complexity by:
 - Decision: Use standard Win32 patterns - window class registration, CreateWindowEx, message loop with GetMessage/DispatchMessage, proper window procedure handling
 
 **Task 2: Spdlog Integration for Native Applications**
+
 - Research: Spdlog integration patterns for native Win32 applications
 - Research: Console sink configuration for colored output
 - Research: Custom macro creation (LX_INFO, LX_CORE_INFO, LX_ENGINE_INFO)
 - Decision: Use Spdlog's stdout_color_sink or custom console sink, create module-specific macros following established C++ logging practices
 
 **Task 3: Application Class Design Patterns**
+
 - Research: RAII patterns for resource management in Application class
 - Research: Clean separation between initialization, runtime, and shutdown phases
 - Research: Error handling strategies for window creation failure
 - Decision: Constructor doesn't create window, Initialize() handles all setup, Run() owns message pump, Shutdown() handles teardown
 
 **Task 4: Build System Integration**
+
 - Research: Premake5 configuration for Win32 applications
 - Research: Proper linking with Windows SDK libraries
 - Research: Spdlog include path configuration
@@ -140,14 +148,14 @@ This specification intentionally minimizes complexity by:
 
 All NEEDS CLARIFICATION items from technical context have been resolved through research:
 
-| Topic | Decision | Rationale |
-|-------|----------|-----------|
-| Win32 API Usage | Raw Win32 API (no frameworks) | Constitutional requirement, provides direct control, minimal overhead |
-| Message Pump | Standard GetMessage/DispatchMessage loop | Idiomatic Win32 approach, well-documented, handles shutdown cleanly |
-| Console Allocation | AllocConsole (always allocate) | Simpler than AttachConsole, guarantees console availability, deterministic behavior |
-| Application Design | 3-method interface (Initialize/Run/Shutdown) | Clean separation of lifecycle phases, supports constitutional requirements |
-| Logging Integration | Spdlog with custom macros | Provides structured logging, validates vendor dependency, supports colored console output |
-| Error Handling | Controlled failure with logging | Meets requirement (FR-009), prevents undefined behavior, aids debugging |
+| Topic               | Decision                                     | Rationale                                                                                 |
+| ------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Win32 API Usage     | Raw Win32 API (no frameworks)                | Constitutional requirement, provides direct control, minimal overhead                     |
+| Message Pump        | Standard GetMessage/DispatchMessage loop     | Idiomatic Win32 approach, well-documented, handles shutdown cleanly                       |
+| Console Allocation  | AllocConsole (always allocate)               | Simpler than AttachConsole, guarantees console availability, deterministic behavior       |
+| Application Design  | 3-method interface (Initialize/Run/Shutdown) | Clean separation of lifecycle phases, supports constitutional requirements                |
+| Logging Integration | Spdlog with custom macros                    | Provides structured logging, validates vendor dependency, supports colored console output |
+| Error Handling      | Controlled failure with logging              | Meets requirement (FR-009), prevents undefined behavior, aids debugging                   |
 
 ## Phase 1: Design & Contracts
 
@@ -156,18 +164,20 @@ All NEEDS CLARIFICATION items from technical context have been resolved through 
 **Application Class Entity**
 
 See `data-model.md` for authoritative Application class design including:
+
 - Three lifecycle methods: Initialize(), Run(), Shutdown()
 - Private members: m_WindowHandle, m_ShouldShutdown, m_Initialized
 - Static WindowProc for Win32 message handling
 - Helper methods: CreateConsoleWindow(), InitializeLogging(), CreateMainWindow(), DestroyMainWindow()
-(fixes I1 - removed duplicate inline definition, canonicalized data-model.md as authoritative source)
+  (fixes I1 - removed duplicate inline definition, canonicalized data-model.md as authoritative source)
 
 **Window Entity**
 
 See `data-model.md` for authoritative Win32Window class design including:
+
 - RAII wrapper around Win32 window handle
 - Create(), Show(), Destroy() methods
-- Window properties: title ("Long Xi"), size (1024x768), style (WS_OVERLAPPEDWINDOW)
+- Window properties: title ("LongXi"), size (1024x768), style (WS_OVERLAPPEDWINDOW)
 
 **Logging Macros (Custom per Spec Clarification)**
 
@@ -239,11 +249,13 @@ The `Application` class provides a three-phase lifecycle contract:
    - Premake5 in PATH (or use Vendor/Bin/premake5.exe)
 
 2. **Generate Project Files**:
+
    ```batch
    Win-Generate Project.bat
    ```
 
 3. **Build Solution**:
+
    ```batch
    Win-Build Project.bat Debug x64
    ```
@@ -258,7 +270,7 @@ The `Application` class provides a three-phase lifecycle contract:
 1. **Startup**:
    - Debug console appears
    - "Application starting..." logged via LX_INFO
-   - Window titled "Long Xi" appears (1024x768)
+   - Window titled "LongXi" appears (1024x768)
    - "Application initialized successfully" logged
 
 2. **Runtime**:
@@ -286,6 +298,7 @@ The `Application` class provides a three-phase lifecycle contract:
 **Re-evaluation after Phase 1 design** - ✅ STILL COMPLIANT
 
 All design decisions maintain constitutional compliance:
+
 - Application class design maintains thin entrypoint discipline ✅
 - Three-method interface preserves clear lifecycle ownership ✅
 - Static library structure (LXShell → LXEngine → LXCore) maintained ✅
@@ -295,6 +308,7 @@ All design decisions maintain constitutional compliance:
 ### Complexity Assessment
 
 No additional complexity introduced. The design remains intentionally simple:
+
 - **Application class**: 3 public methods, focused responsibility
 - **Window class**: RAII wrapper around Win32 HWND
 - **Logging**: Spdlog integration (vendor dependency, not new complexity)
@@ -341,6 +355,7 @@ After this plan is completed, the next phase is:
 **Phase 2: Task Generation** - Execute `/speckit.tasks` to generate actionable task breakdown for implementation.
 
 This plan provides:
+
 - ✅ Clear technical context with all NEEDS CLARIFICATION resolved
 - ✅ Constitutional compliance verified (both initial and post-design)
 - ✅ Concrete data model for Application and Window classes

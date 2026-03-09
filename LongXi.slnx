@@ -12,7 +12,7 @@
     </Project>
   </Folder>
   <Folder Name="/Executables/">
-    <Project Path="LongXi\LXShell\LXShell.vcxproj" Id="415368B1-AD32-E74C-B64A-722322A94DAE">
+    <Project Path="LongXi\LXShell\LXShell.vcxproj" Id="415368B1-AD32-E74C-B64A-722322A94DAE" DefaultStartup="true">
     </Project>
   </Folder>
 </Solution>
