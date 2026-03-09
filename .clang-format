@@ -1,0 +1,20 @@
+---
+Language: Cpp
+BasedOnStyle: Microsoft
+Standard: Latest
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 200
+BreakBeforeBraces: Allman
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortBlocksOnASingleLine: Never
+BinPackArguments: false
+BinPackParameters: false
+SortIncludes: false
+IncludeBlocks: Preserve
+PointerAlignment: Left
+SpaceBeforeParens: ControlStatements
+...
