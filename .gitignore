@@ -1,0 +1,67 @@
+# Build Artifacts
+Build/
+Bin/
+Obj/
+Intermediate/
+*.obj
+*.o
+*.lib
+*.dll
+*.so
+*.dylib
+*.a
+*.exe
+*.iobj
+*.ipdb
+*.pdb
+*.pgc
+*.pgd
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.sln.docstates
+*.vcxproj
+*.vcxproj.filters
+*.slnx
+*.VC.db
+*.VC.opendb
+Browse.VC.opendb
+Solution.VC.db
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Claude Code
+.claude/settings.local.json
+
+# Premake5
+premake5.exe
+premake5/
+*.make
+
+# C++ Compiler Files
+*.log
+*.tlog
+*.lastbuildstate
+*.idb
+*.pch
+
+# Windows
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.stackdump
+
+# Package Manager
+node_modules/
+
+# Temporary Files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.DS_Store
