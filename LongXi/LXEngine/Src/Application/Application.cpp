@@ -2,6 +2,7 @@
 #include "Window/Win32Window.h"
 #include "Renderer/DX11Renderer.h"
 #include "Input/InputSystem.h"
+#include "Core/FileSystem/ResourceSystem.h"
 #include "Core/Logging/LogMacros.h"
 
 #include <windows.h>
@@ -89,6 +90,27 @@ const InputSystem& Application::GetInput() const
     return *m_InputSystem;
 }
 
+bool Application::CreateResourceSystem()
+{
+    std::string exeDir = ResourceSystem::GetExecutableDirectory();
+
+    std::vector<std::string> roots;
+    if (!exeDir.empty())
+    {
+        roots.push_back(exeDir + "/Data");
+        roots.push_back(exeDir);
+    }
+
+    m_ResourceSystem = std::make_unique<ResourceSystem>();
+    m_ResourceSystem->Initialize(roots);
+    return true;
+}
+
+const ResourceSystem& Application::GetResourceSystem() const
+{
+    return *m_ResourceSystem;
+}
+
 void Application::OnResize(int width, int height)
 {
     // Guard against zero-area (minimized window)
@@ -128,6 +150,17 @@ bool Application::Initialize()
     if (!CreateInputSystem())
     {
         LX_ENGINE_ERROR("Input system creation failed — aborting initialization");
+        m_Renderer->Shutdown();
+        m_Renderer.reset();
+        DestroyMainWindow();
+        return false;
+    }
+
+    if (!CreateResourceSystem())
+    {
+        LX_ENGINE_ERROR("Resource system creation failed — aborting initialization");
+        m_InputSystem->Shutdown();
+        m_InputSystem.reset();
         m_Renderer->Shutdown();
         m_Renderer.reset();
         DestroyMainWindow();
@@ -333,6 +366,13 @@ void Application::Shutdown()
     }
 
     LX_ENGINE_INFO("Application shutting down...");
+
+    // Shutdown resource system first
+    if (m_ResourceSystem)
+    {
+        m_ResourceSystem->Shutdown();
+        m_ResourceSystem.reset();
+    }
 
     // Shutdown input before renderer
     if (m_InputSystem)
