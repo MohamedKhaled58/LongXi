@@ -6,6 +6,7 @@
 // =============================================================================
 
 #include "Application/Application.h"
+#include "Engine/Engine.h"
 #include "Window/Win32Window.h"
 #include "Texture/TextureManager.h"
 #include "Core/Logging/LogMacros.h"
