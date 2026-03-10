@@ -14,15 +14,24 @@ namespace LongXi
 
 class Log
 {
-public:
+  public:
     static void Initialize();
     static void Shutdown();
 
-    static std::shared_ptr<spdlog::logger>& GetCoreLogger()   { return s_CoreLogger; }
-    static std::shared_ptr<spdlog::logger>& GetEngineLogger() { return s_EngineLogger; }
-    static std::shared_ptr<spdlog::logger>& GetShellLogger()  { return s_ShellLogger; }
+    static std::shared_ptr<spdlog::logger>& GetCoreLogger()
+    {
+        return s_CoreLogger;
+    }
+    static std::shared_ptr<spdlog::logger>& GetEngineLogger()
+    {
+        return s_EngineLogger;
+    }
+    static std::shared_ptr<spdlog::logger>& GetShellLogger()
+    {
+        return s_ShellLogger;
+    }
 
-private:
+  private:
     static std::shared_ptr<spdlog::logger> s_CoreLogger;
     static std::shared_ptr<spdlog::logger> s_EngineLogger;
     static std::shared_ptr<spdlog::logger> s_ShellLogger;

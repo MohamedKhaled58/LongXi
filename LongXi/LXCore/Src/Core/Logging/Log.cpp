@@ -20,9 +20,9 @@ void Log::Initialize()
     // %-8n pads logger name to 8 chars
     const std::string pattern = "%^[%H:%M:%S.%e] [%-8n] [%l] %v%$";
 
-    s_CoreLogger   = std::make_shared<spdlog::logger>("LXCore",   console_sink);
+    s_CoreLogger = std::make_shared<spdlog::logger>("LXCore", console_sink);
     s_EngineLogger = std::make_shared<spdlog::logger>("LXEngine", console_sink);
-    s_ShellLogger  = std::make_shared<spdlog::logger>("LXShell",  console_sink);
+    s_ShellLogger = std::make_shared<spdlog::logger>("LXShell", console_sink);
 
     s_CoreLogger->set_pattern(pattern);
     s_EngineLogger->set_pattern(pattern);

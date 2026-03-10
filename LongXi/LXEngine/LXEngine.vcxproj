@@ -90,6 +90,9 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <Lib>
+      <AdditionalDependencies>d3d11.lib;dxgi.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
     <ProjectReference>
     </ProjectReference>
   </ItemDefinitionGroup>
@@ -115,6 +118,9 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <Lib>
+      <AdditionalDependencies>d3d11.lib;dxgi.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
     <ProjectReference>
     </ProjectReference>
   </ItemDefinitionGroup>
@@ -140,16 +146,21 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <Lib>
+      <AdditionalDependencies>d3d11.lib;dxgi.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
     <ProjectReference>
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Src\Application\Application.h" />
     <ClInclude Include="Src\Application\EntryPoint.h" />
+    <ClInclude Include="Src\Renderer\DX11Renderer.h" />
     <ClInclude Include="Src\Window\Win32Window.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Src\Application\Application.cpp" />
+    <ClCompile Include="Src\Renderer\DX11Renderer.cpp" />
     <ClCompile Include="Src\Window\Win32Window.cpp" />
   </ItemGroup>
   <ItemGroup>

@@ -19,5 +19,8 @@ project "LXEngine"
 
 	links
 	{
-		"LXCore"
+		"LXCore",
+		"d3d11",
+		"dxgi",
+		"dxguid"
 	}
