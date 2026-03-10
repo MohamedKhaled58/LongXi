@@ -20,8 +20,7 @@ static const float CLEAR_COLOR[4] = {0.392f, 0.584f, 0.929f, 1.0f};
 // Constructor / Destructor
 // ============================================================================
 
-DX11Renderer::DX11Renderer()
-    : m_IsInitialized(false) {}
+DX11Renderer::DX11Renderer() : m_IsInitialized(false) {}
 
 DX11Renderer::~DX11Renderer()
 {

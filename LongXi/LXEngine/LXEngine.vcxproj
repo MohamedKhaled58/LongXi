@@ -155,11 +155,13 @@
   <ItemGroup>
     <ClInclude Include="Src\Application\Application.h" />
     <ClInclude Include="Src\Application\EntryPoint.h" />
+    <ClInclude Include="Src\Input\InputSystem.h" />
     <ClInclude Include="Src\Renderer\DX11Renderer.h" />
     <ClInclude Include="Src\Window\Win32Window.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Src\Application\Application.cpp" />
+    <ClCompile Include="Src\Input\InputSystem.cpp" />
     <ClCompile Include="Src\Renderer\DX11Renderer.cpp" />
     <ClCompile Include="Src\Window\Win32Window.cpp" />
   </ItemGroup>
