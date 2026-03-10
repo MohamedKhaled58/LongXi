@@ -15,6 +15,7 @@ namespace LongXi
 class CVirtualFileSystem;
 class DX11Renderer;
 class InputSystem;
+class TextureManager;
 class Win32Window;
 
 class Application
@@ -24,22 +25,24 @@ class Application
     virtual ~Application();
 
     // Core lifecycle methods
-    bool Initialize(); // Setup Win32 window, renderer, input, and resources
-    int Run();         // Own message pump until shutdown
-    void Shutdown();   // Teardown resources, exit cleanly
+    virtual bool Initialize(); // Setup Win32 window, renderer, input, and resources
+    int Run();                 // Own message pump until shutdown
+    void Shutdown();           // Teardown resources, exit cleanly
 
     // Subsystem accessors for engine systems
     const InputSystem& GetInput() const;
     const CVirtualFileSystem& GetVirtualFileSystem() const;
+    TextureManager& GetTextureManager();
 
   private:
     HWND m_WindowHandle;
     bool m_ShouldShutdown;
     bool m_Initialized;
-    std::unique_ptr<Win32Window>        m_Window;
-    std::unique_ptr<DX11Renderer>       m_Renderer;
-    std::unique_ptr<InputSystem>        m_InputSystem;
+    std::unique_ptr<Win32Window> m_Window;
+    std::unique_ptr<DX11Renderer> m_Renderer;
+    std::unique_ptr<InputSystem> m_InputSystem;
     std::unique_ptr<CVirtualFileSystem> m_VirtualFileSystem;
+    std::unique_ptr<TextureManager> m_TextureManager;
 
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -48,6 +51,7 @@ class Application
     bool CreateRenderer();
     bool CreateInputSystem();
     bool CreateVirtualFileSystem();
+    bool CreateTextureManager();
     void OnResize(int width, int height);
 };
 
