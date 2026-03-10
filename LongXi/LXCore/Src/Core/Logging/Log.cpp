@@ -45,11 +45,12 @@ void Log::Initialize()
 void Log::Shutdown()
 {
     LX_CORE_INFO("Logging shutting down");
-    spdlog::shutdown();
 
     s_CoreLogger.reset();
     s_EngineLogger.reset();
     s_ShellLogger.reset();
+
+    spdlog::shutdown();
 }
 
 } // namespace LongXi

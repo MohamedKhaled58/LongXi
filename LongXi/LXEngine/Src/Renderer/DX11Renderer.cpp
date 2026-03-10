@@ -154,6 +154,13 @@ bool DX11Renderer::CreateRenderTarget()
 
 void DX11Renderer::ReleaseRenderTarget()
 {
+    // Unbind from pipeline before releasing — DXGI requires all references
+    // to back buffer resources be released before ResizeBuffers
+    if (m_Context)
+    {
+        ID3D11RenderTargetView* nullRTV = nullptr;
+        m_Context->OMSetRenderTargets(1, &nullRTV, nullptr);
+    }
     m_RenderTargetView.Reset();
 }
 
