@@ -1,9 +1,11 @@
 #include "Application/Application.h"
 #include "Window/Win32Window.h"
 #include "Renderer/DX11Renderer.h"
+#include "Input/InputSystem.h"
 #include "Core/Logging/LogMacros.h"
 
 #include <windows.h>
+#include <windowsx.h>
 #include <memory>
 
 namespace LongXi
@@ -75,6 +77,18 @@ bool Application::CreateRenderer()
     return true;
 }
 
+bool Application::CreateInputSystem()
+{
+    m_InputSystem = std::make_unique<InputSystem>();
+    m_InputSystem->Initialize();
+    return true;
+}
+
+const InputSystem& Application::GetInput() const
+{
+    return *m_InputSystem;
+}
+
 void Application::OnResize(int width, int height)
 {
     // Guard against zero-area (minimized window)
@@ -111,6 +125,15 @@ bool Application::Initialize()
         return false;
     }
 
+    if (!CreateInputSystem())
+    {
+        LX_ENGINE_ERROR("Input system creation failed — aborting initialization");
+        m_Renderer->Shutdown();
+        m_Renderer.reset();
+        DestroyMainWindow();
+        return false;
+    }
+
     m_Initialized = true;
     LX_ENGINE_INFO("Application initialized successfully");
     return true;
@@ -122,6 +145,8 @@ bool Application::Initialize()
 
 LRESULT CALLBACK Application::WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+    Application* app = reinterpret_cast<Application*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+
     switch (msg)
     {
     case WM_CLOSE:
@@ -135,16 +160,114 @@ LRESULT CALLBACK Application::WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
         return 0;
 
     case WM_SIZE:
-    {
-        // Retrieve Application instance from window user data
-        Application* app = reinterpret_cast<Application*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
         if (app)
         {
             int width = static_cast<int>(LOWORD(lParam));
             int height = static_cast<int>(HIWORD(lParam));
             app->OnResize(width, height);
         }
-    }
+        return 0;
+
+        // ---- Keyboard ----
+
+    case WM_KEYDOWN:
+    case WM_SYSKEYDOWN:
+        if (app && app->m_InputSystem)
+        {
+            UINT vk = static_cast<UINT>(wParam);
+            bool isRepeat = (lParam & 0x40000000) != 0;
+            app->m_InputSystem->OnKeyDown(vk, isRepeat);
+        }
+        return 0;
+
+    case WM_KEYUP:
+    case WM_SYSKEYUP:
+        if (app && app->m_InputSystem)
+        {
+            app->m_InputSystem->OnKeyUp(static_cast<UINT>(wParam));
+        }
+        return 0;
+
+    case WM_KILLFOCUS:
+        if (app && app->m_InputSystem)
+        {
+            app->m_InputSystem->OnFocusLost();
+        }
+        return 0;
+
+    case WM_ACTIVATEAPP:
+        if (app && app->m_InputSystem && wParam == FALSE)
+        {
+            app->m_InputSystem->OnFocusLost();
+        }
+        return 0;
+
+        // ---- Mouse movement ----
+
+    case WM_MOUSEMOVE:
+        if (app && app->m_InputSystem)
+        {
+            app->m_InputSystem->OnMouseMove(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+        }
+        return 0;
+
+        // ---- Mouse buttons ----
+
+    case WM_LBUTTONDOWN:
+        if (app && app->m_InputSystem)
+        {
+            SetCapture(hwnd);
+            app->m_InputSystem->OnMouseButtonDown(MouseButton::Left);
+        }
+        return 0;
+
+    case WM_LBUTTONUP:
+        if (app && app->m_InputSystem)
+        {
+            app->m_InputSystem->OnMouseButtonUp(MouseButton::Left);
+            ReleaseCapture();
+        }
+        return 0;
+
+    case WM_RBUTTONDOWN:
+        if (app && app->m_InputSystem)
+        {
+            SetCapture(hwnd);
+            app->m_InputSystem->OnMouseButtonDown(MouseButton::Right);
+        }
+        return 0;
+
+    case WM_RBUTTONUP:
+        if (app && app->m_InputSystem)
+        {
+            app->m_InputSystem->OnMouseButtonUp(MouseButton::Right);
+            ReleaseCapture();
+        }
+        return 0;
+
+    case WM_MBUTTONDOWN:
+        if (app && app->m_InputSystem)
+        {
+            SetCapture(hwnd);
+            app->m_InputSystem->OnMouseButtonDown(MouseButton::Middle);
+        }
+        return 0;
+
+    case WM_MBUTTONUP:
+        if (app && app->m_InputSystem)
+        {
+            app->m_InputSystem->OnMouseButtonUp(MouseButton::Middle);
+            ReleaseCapture();
+        }
+        return 0;
+
+        // ---- Mouse wheel ----
+
+    case WM_MOUSEWHEEL:
+        if (app && app->m_InputSystem)
+        {
+            app->m_InputSystem->OnMouseWheel(GET_WHEEL_DELTA_WPARAM(wParam));
+        }
         return 0;
 
     default:
@@ -153,7 +276,7 @@ LRESULT CALLBACK Application::WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
 }
 
 // ============================================================================
-// Lifecycle: Run (message pump)
+// Lifecycle: Run (main loop)
 // ============================================================================
 
 int Application::Run()
@@ -188,6 +311,13 @@ int Application::Run()
             m_Renderer->BeginFrame();
             m_Renderer->EndFrame();
         }
+
+        // Advance input frame boundary at END of frame so Pressed/Released
+        // transitions are valid for the full frame before being cleared.
+        if (m_InputSystem)
+        {
+            m_InputSystem->Update();
+        }
     }
 }
 
@@ -203,6 +333,13 @@ void Application::Shutdown()
     }
 
     LX_ENGINE_INFO("Application shutting down...");
+
+    // Shutdown input before renderer
+    if (m_InputSystem)
+    {
+        m_InputSystem->Shutdown();
+        m_InputSystem.reset();
+    }
 
     // Shutdown renderer before destroying window
     if (m_Renderer)
