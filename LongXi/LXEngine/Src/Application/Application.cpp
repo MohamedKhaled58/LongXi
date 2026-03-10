@@ -2,7 +2,8 @@
 #include "Window/Win32Window.h"
 #include "Renderer/DX11Renderer.h"
 #include "Input/InputSystem.h"
-#include "Core/FileSystem/ResourceSystem.h"
+#include "Core/FileSystem/VirtualFileSystem.h"
+#include "Core/FileSystem/ResourceSystem.h" // for ResourceSystem::GetExecutableDirectory()
 #include "Core/Logging/LogMacros.h"
 
 #include <windows.h>
@@ -11,9 +12,6 @@
 
 namespace LongXi
 {
-
-// Global Win32Window pointer for WindowProc access
-static std::unique_ptr<Win32Window> g_Window;
 
 // ============================================================================
 // Constructor / Destructor
@@ -35,20 +33,20 @@ Application::~Application()
 
 bool Application::CreateMainWindow()
 {
-    g_Window = std::make_unique<Win32Window>(L"LongXi", 1024, 768);
+    m_Window = std::make_unique<Win32Window>(L"LongXi", 1024, 768);
 
-    if (!g_Window->Create(Application::WindowProc))
+    if (!m_Window->Create(Application::WindowProc))
     {
         LX_ENGINE_ERROR("Failed to create main window");
         return false;
     }
 
-    m_WindowHandle = g_Window->GetHandle();
+    m_WindowHandle = m_Window->GetHandle();
 
     // Store Application pointer in window user data for WindowProc access
     SetWindowLongPtr(m_WindowHandle, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
-    g_Window->Show(SW_SHOW);
+    m_Window->Show(SW_SHOW);
 
     LX_ENGINE_INFO("Main window created and shown (1024x768)");
     return true;
@@ -56,10 +54,10 @@ bool Application::CreateMainWindow()
 
 void Application::DestroyMainWindow()
 {
-    if (g_Window)
+    if (m_Window)
     {
-        g_Window->Destroy();
-        g_Window.reset();
+        m_Window->Destroy();
+        m_Window.reset();
         m_WindowHandle = nullptr;
     }
 }
@@ -68,7 +66,7 @@ bool Application::CreateRenderer()
 {
     m_Renderer = std::make_unique<DX11Renderer>();
 
-    if (!m_Renderer->Initialize(m_WindowHandle, g_Window->GetWidth(), g_Window->GetHeight()))
+    if (!m_Renderer->Initialize(m_WindowHandle, m_Window->GetWidth(), m_Window->GetHeight()))
     {
         LX_ENGINE_ERROR("Failed to initialize DX11 renderer");
         m_Renderer.reset();
@@ -90,29 +88,34 @@ const InputSystem& Application::GetInput() const
     return *m_InputSystem;
 }
 
-bool Application::CreateResourceSystem()
+bool Application::CreateVirtualFileSystem()
 {
     std::string exeDir = ResourceSystem::GetExecutableDirectory();
 
-    std::vector<std::string> roots;
+    m_VirtualFileSystem = std::make_unique<CVirtualFileSystem>();
+
+    // Mount directories first (highest priority) — patch overrides before loose files.
+    // MountDirectory returns false silently for missing dirs; non-fatal at startup.
     if (!exeDir.empty())
     {
-        roots.push_back(exeDir + "/Data");
-        roots.push_back(exeDir);
+        m_VirtualFileSystem->MountDirectory(exeDir + "/Data/Patch");
+        m_VirtualFileSystem->MountDirectory(exeDir + "/Data");
+        m_VirtualFileSystem->MountDirectory(exeDir);
     }
 
-    m_ResourceSystem = std::make_unique<ResourceSystem>();
-    m_ResourceSystem->Initialize(roots);
-
-    m_ResourceSystem->AddArchive("C3.wdf");
-    m_ResourceSystem->AddArchive("data.wdf");
+    // Mount WDF archives after directories (lower priority — archives are baseline).
+    if (!exeDir.empty())
+    {
+        m_VirtualFileSystem->MountWdf(exeDir + "/Data/C3.wdf");
+        m_VirtualFileSystem->MountWdf(exeDir + "/Data/data.wdf");
+    }
 
     return true;
 }
 
-const ResourceSystem& Application::GetResourceSystem() const
+const CVirtualFileSystem& Application::GetVirtualFileSystem() const
 {
-    return *m_ResourceSystem;
+    return *m_VirtualFileSystem;
 }
 
 void Application::OnResize(int width, int height)
@@ -160,9 +163,9 @@ bool Application::Initialize()
         return false;
     }
 
-    if (!CreateResourceSystem())
+    if (!CreateVirtualFileSystem())
     {
-        LX_ENGINE_ERROR("Resource system creation failed — aborting initialization");
+        LX_ENGINE_ERROR("Virtual file system creation failed — aborting initialization");
         m_InputSystem->Shutdown();
         m_InputSystem.reset();
         m_Renderer->Shutdown();
@@ -201,9 +204,9 @@ LRESULT CALLBACK Application::WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
         {
             int width = static_cast<int>(LOWORD(lParam));
             int height = static_cast<int>(HIWORD(lParam));
-            if (g_Window)
+            if (app->m_Window)
             {
-                g_Window->SetSize(width, height);
+                app->m_Window->SetSize(width, height);
             }
             app->OnResize(width, height);
         }
@@ -375,11 +378,10 @@ void Application::Shutdown()
 
     LX_ENGINE_INFO("Application shutting down...");
 
-    // Shutdown resource system first
-    if (m_ResourceSystem)
+    // Destroy VFS first (releases archive file handles)
+    if (m_VirtualFileSystem)
     {
-        m_ResourceSystem->Shutdown();
-        m_ResourceSystem.reset();
+        m_VirtualFileSystem.reset();
     }
 
     // Shutdown input before renderer
@@ -398,9 +400,9 @@ void Application::Shutdown()
 
     // Window already destroyed by WM_CLOSE→DestroyWindow in WindowProc.
     // Clean up the wrapper only.
-    if (g_Window)
+    if (m_Window)
     {
-        g_Window.reset();
+        m_Window.reset();
         m_WindowHandle = nullptr;
     }
 

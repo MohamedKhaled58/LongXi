@@ -12,9 +12,10 @@
 namespace LongXi
 {
 
+class CVirtualFileSystem;
 class DX11Renderer;
 class InputSystem;
-class ResourceSystem;
+class Win32Window;
 
 class Application
 {
@@ -29,15 +30,16 @@ class Application
 
     // Subsystem accessors for engine systems
     const InputSystem& GetInput() const;
-    const ResourceSystem& GetResourceSystem() const;
+    const CVirtualFileSystem& GetVirtualFileSystem() const;
 
   private:
     HWND m_WindowHandle;
     bool m_ShouldShutdown;
     bool m_Initialized;
-    std::unique_ptr<DX11Renderer> m_Renderer;
-    std::unique_ptr<InputSystem> m_InputSystem;
-    std::unique_ptr<ResourceSystem> m_ResourceSystem;
+    std::unique_ptr<Win32Window>        m_Window;
+    std::unique_ptr<DX11Renderer>       m_Renderer;
+    std::unique_ptr<InputSystem>        m_InputSystem;
+    std::unique_ptr<CVirtualFileSystem> m_VirtualFileSystem;
 
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -45,7 +47,7 @@ class Application
     void DestroyMainWindow();
     bool CreateRenderer();
     bool CreateInputSystem();
-    bool CreateResourceSystem();
+    bool CreateVirtualFileSystem();
     void OnResize(int width, int height);
 };
 

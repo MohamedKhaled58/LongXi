@@ -144,13 +144,19 @@
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Core\FileSystem\FileStream.h" />
+    <ClInclude Include="Src\Core\FileSystem\MountPoint.h" />
     <ClInclude Include="Src\Core\FileSystem\ResourceSystem.h" />
+    <ClInclude Include="Src\Core\FileSystem\VirtualFileSystem.h" />
     <ClInclude Include="Src\Core\FileSystem\WdfArchive.h" />
     <ClInclude Include="Src\Core\Logging\Log.h" />
     <ClInclude Include="Src\Core\Logging\LogMacros.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Core\FileSystem\FileStream.cpp" />
+    <ClCompile Include="Src\Core\FileSystem\MountPoint.cpp" />
     <ClCompile Include="Src\Core\FileSystem\ResourceSystem.cpp" />
+    <ClCompile Include="Src\Core\FileSystem\VirtualFileSystem.cpp" />
     <ClCompile Include="Src\Core\FileSystem\WdfArchive.cpp" />
     <ClCompile Include="Src\Core\Logging\Log.cpp" />
   </ItemGroup>

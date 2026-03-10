@@ -54,7 +54,7 @@ class ResourceSystem
     std::string Resolve(const std::string& normalizedPath) const;
 
   private:
-    std::vector<std::string>                 m_Roots;
+    std::vector<std::string> m_Roots;
     std::vector<std::unique_ptr<WdfArchive>> m_Archives;
 };
 
