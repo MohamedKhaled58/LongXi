@@ -1,4 +1,5 @@
 #include "Core/FileSystem/ResourceSystem.h"
+#include "Core/FileSystem/WdfArchive.h"
 #include "Core/Logging/LogMacros.h"
 
 #include <Windows.h>
@@ -7,6 +8,11 @@
 
 namespace LongXi
 {
+
+// Constructor and destructor defined here so WdfArchive (full type) is visible
+// for unique_ptr<WdfArchive> construction/cleanup in m_Archives.
+ResourceSystem::ResourceSystem() = default;
+ResourceSystem::~ResourceSystem() = default;
 
 // ============================================================================
 // File-scope helpers — not exposed in the public header
@@ -208,8 +214,34 @@ void ResourceSystem::Initialize(const std::vector<std::string>& roots)
 
 void ResourceSystem::Shutdown()
 {
+    m_Archives.clear(); // WdfArchive destructors close file handles
     m_Roots.clear();
     LX_CORE_INFO("Resource system shutdown");
+}
+
+bool ResourceSystem::AddArchive(const std::string& relPath)
+{
+    std::string normalized = Normalize(relPath);
+    if (normalized.empty())
+    {
+        LX_CORE_WARN("ResourceSystem: invalid archive path: '{}'", relPath);
+        return false;
+    }
+
+    std::string absolutePath = Resolve(normalized);
+    if (absolutePath.empty())
+    {
+        LX_CORE_WARN("ResourceSystem: archive '{}' not found in resource roots", relPath);
+        return false;
+    }
+
+    auto archive = std::make_unique<WdfArchive>();
+    if (!archive->Open(absolutePath))
+        return false;
+
+    LX_CORE_INFO("ResourceSystem: registered archive '{}' ({} entries)", relPath, archive->GetEntryCount());
+    m_Archives.push_back(std::move(archive));
+    return true;
 }
 
 // ============================================================================
@@ -241,10 +273,18 @@ std::optional<std::vector<uint8_t>> ResourceSystem::ReadFile(const std::string& 
         return std::nullopt;
     }
 
-    // Resolve to absolute path
+    // Resolve to absolute path (loose file)
     std::string resolved = Resolve(normalized);
     if (resolved.empty())
     {
+        // Try registered WDF archives
+        for (const auto& archive : m_Archives)
+        {
+            auto result = archive->ReadEntry(normalized);
+            if (result.has_value())
+                return result;
+        }
+
         LX_CORE_ERROR("ResourceSystem: file not found: '{}'", relativePath);
         return std::nullopt;
     }

@@ -103,6 +103,10 @@ bool Application::CreateResourceSystem()
 
     m_ResourceSystem = std::make_unique<ResourceSystem>();
     m_ResourceSystem->Initialize(roots);
+
+    m_ResourceSystem->AddArchive("C3.wdf");
+    m_ResourceSystem->AddArchive("data.wdf");
+
     return true;
 }
 
