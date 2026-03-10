@@ -57,24 +57,24 @@ static uint32_t stringtoid(const char* str)
 
         // First multiply
         uint32_t mult1 = ((w + y) | 0x02040801u) & 0xBFEF7FDFu;
-        uint64_t p1    = static_cast<uint64_t>(x) * mult1;
-        uint32_t lo1   = static_cast<uint32_t>(p1);
-        uint32_t hi1   = static_cast<uint32_t>(p1 >> 32);
-        uint32_t cf1   = (hi1 != 0) ? 1u : 0u;
-        uint64_t adc1  = static_cast<uint64_t>(lo1) + hi1 + cf1;
-        uint32_t cf2   = (adc1 > 0xFFFFFFFFull) ? 1u : 0u;
+        uint64_t p1 = static_cast<uint64_t>(x) * mult1;
+        uint32_t lo1 = static_cast<uint32_t>(p1);
+        uint32_t hi1 = static_cast<uint32_t>(p1 >> 32);
+        uint32_t cf1 = (hi1 != 0) ? 1u : 0u;
+        uint64_t adc1 = static_cast<uint64_t>(lo1) + hi1 + cf1;
+        uint32_t cf2 = (adc1 > 0xFFFFFFFFull) ? 1u : 0u;
         uint32_t new_x = static_cast<uint32_t>(adc1) + cf2;
 
         // Second multiply (uses ORIGINAL y)
         uint32_t mult2 = ((w + y) | 0x00804021u) & 0x7DFEFBFFu;
-        uint64_t p2    = static_cast<uint64_t>(y) * mult2;
-        uint32_t lo2   = static_cast<uint32_t>(p2);
-        uint32_t hi2   = static_cast<uint32_t>(p2 >> 32);
+        uint64_t p2 = static_cast<uint64_t>(y) * mult2;
+        uint32_t lo2 = static_cast<uint32_t>(p2);
+        uint32_t hi2 = static_cast<uint32_t>(p2 >> 32);
         uint64_t hi2x2 = static_cast<uint64_t>(hi2) * 2;
-        uint32_t hi2d  = static_cast<uint32_t>(hi2x2);
-        uint32_t cf_d  = (hi2x2 > 0xFFFFFFFFull) ? 1u : 0u;
-        uint64_t adc2  = static_cast<uint64_t>(lo2) + hi2d + cf_d;
-        uint32_t cf3   = (adc2 > 0xFFFFFFFFull) ? 1u : 0u;
+        uint32_t hi2d = static_cast<uint32_t>(hi2x2);
+        uint32_t cf_d = (hi2x2 > 0xFFFFFFFFull) ? 1u : 0u;
+        uint64_t adc2 = static_cast<uint64_t>(lo2) + hi2d + cf_d;
+        uint32_t cf3 = (adc2 > 0xFFFFFFFFull) ? 1u : 0u;
         uint32_t new_y = static_cast<uint32_t>(adc2);
         if (cf3)
             new_y += 2;
@@ -161,8 +161,7 @@ bool WdfArchive::Open(const std::string& absolutePath)
     }
 
     m_Index.resize(static_cast<size_t>(header.Count));
-    if (!m_File.read(reinterpret_cast<char*>(m_Index.data()),
-                     static_cast<std::streamsize>(sizeof(WdfIndexEntry) * m_Index.size())))
+    if (!m_File.read(reinterpret_cast<char*>(m_Index.data()), static_cast<std::streamsize>(sizeof(WdfIndexEntry) * m_Index.size())))
     {
         LX_CORE_ERROR("WdfArchive: failed to read index from '{}'", absolutePath);
         m_Index.clear();
@@ -171,14 +170,11 @@ bool WdfArchive::Open(const std::string& absolutePath)
     }
 
     // [Adopted — verify] Sort defensively; warn if not pre-sorted.
-    bool wasSorted = std::is_sorted(m_Index.begin(), m_Index.end(),
-                                    [](const WdfIndexEntry& a, const WdfIndexEntry& b)
-                                    { return a.Uid < b.Uid; });
+    bool wasSorted = std::is_sorted(m_Index.begin(), m_Index.end(), [](const WdfIndexEntry& a, const WdfIndexEntry& b) { return a.Uid < b.Uid; });
     if (!wasSorted)
     {
         LX_CORE_WARN("WdfArchive: index not pre-sorted in '{}' — sorting in memory", absolutePath);
-        std::sort(m_Index.begin(), m_Index.end(),
-                  [](const WdfIndexEntry& a, const WdfIndexEntry& b) { return a.Uid < b.Uid; });
+        std::sort(m_Index.begin(), m_Index.end(), [](const WdfIndexEntry& a, const WdfIndexEntry& b) { return a.Uid < b.Uid; });
     }
 
     m_IsOpen = true;
@@ -194,9 +190,18 @@ void WdfArchive::Close()
     m_IsOpen = false;
 }
 
-bool WdfArchive::IsOpen() const { return m_IsOpen; }
-const std::string& WdfArchive::GetPath() const { return m_Path; }
-int WdfArchive::GetEntryCount() const { return static_cast<int>(m_Index.size()); }
+bool WdfArchive::IsOpen() const
+{
+    return m_IsOpen;
+}
+const std::string& WdfArchive::GetPath() const
+{
+    return m_Path;
+}
+int WdfArchive::GetEntryCount() const
+{
+    return static_cast<int>(m_Index.size());
+}
 
 uint32_t WdfArchive::ComputeUid(const std::string& path) const
 {
@@ -208,8 +213,7 @@ bool WdfArchive::HasEntry(const std::string& normalizedPath) const
     if (!m_IsOpen)
         return false;
     uint32_t uid = ComputeUid(normalizedPath);
-    auto     it  = std::lower_bound(m_Index.begin(), m_Index.end(), uid,
-                                    [](const WdfIndexEntry& e, uint32_t val) { return e.Uid < val; });
+    auto it = std::lower_bound(m_Index.begin(), m_Index.end(), uid, [](const WdfIndexEntry& e, uint32_t val) { return e.Uid < val; });
     return it != m_Index.end() && it->Uid == uid;
 }
 
@@ -219,8 +223,7 @@ std::optional<std::vector<uint8_t>> WdfArchive::ReadEntry(const std::string& nor
         return std::nullopt;
 
     uint32_t uid = ComputeUid(normalizedPath);
-    auto     it  = std::lower_bound(m_Index.begin(), m_Index.end(), uid,
-                                    [](const WdfIndexEntry& e, uint32_t val) { return e.Uid < val; });
+    auto it = std::lower_bound(m_Index.begin(), m_Index.end(), uid, [](const WdfIndexEntry& e, uint32_t val) { return e.Uid < val; });
 
     if (it == m_Index.end() || it->Uid != uid)
     {
@@ -238,8 +241,7 @@ std::optional<std::vector<uint8_t>> WdfArchive::ReadEntry(const std::string& nor
     }
 
     std::vector<uint8_t> buffer(entry.Size);
-    if (!m_File.read(reinterpret_cast<char*>(buffer.data()),
-                     static_cast<std::streamsize>(entry.Size)))
+    if (!m_File.read(reinterpret_cast<char*>(buffer.data()), static_cast<std::streamsize>(entry.Size)))
     {
         LX_CORE_ERROR("WdfArchive: failed to read entry '{}' from '{}'", normalizedPath, m_Path);
         return std::nullopt;
