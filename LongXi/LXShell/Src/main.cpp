@@ -6,6 +6,7 @@
 
 #include <LXEngine.h>
 #include <Application/EntryPoint.h>
+#include <Engine/Engine.h>
 #include <Texture/TextureManager.h>
 #include <Core/Logging/LogMacros.h>
 
@@ -36,7 +37,11 @@ class TestApplication : public Application
         LX_ENGINE_INFO("TEXTURE SYSTEM TEST");
         LX_ENGINE_INFO("==============================================");
 
-        TextureManager& textureManager = GetTextureManager();
+        // Access Engine through base class (need to add protected accessor or use Engine directly)
+        // For now, we'll use Engine directly - this is temporary until we add proper accessor
+        Engine& engine = GetEngine();  // TODO: Add protected accessor to Application
+
+        TextureManager& textureManager = engine.GetTextureManager();
 
         // Test 1: Load 1.dds
         LX_ENGINE_INFO("Test 1: Loading 1.dds...");

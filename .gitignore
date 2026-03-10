@@ -1,5 +1,6 @@
 # AI / IDE tool folders
 .claude/
+.codex/
 .gemini/
 .agent/
 .vs/

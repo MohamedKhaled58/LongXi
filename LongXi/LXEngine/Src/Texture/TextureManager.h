@@ -13,14 +13,13 @@
 namespace LongXi
 {
 
-class CVirtualFileSystem;
-class DX11Renderer;
+class Engine;
 
 class TextureManager
 {
   public:
-    // Constructor — requires initialized VFS and Renderer
-    TextureManager(CVirtualFileSystem& vfs, DX11Renderer& renderer);
+    // Constructor — requires Engine reference for subsystem access
+    TextureManager(Engine& engine);
     ~TextureManager();
 
     // Non-copyable
@@ -42,8 +41,7 @@ class TextureManager
     std::string Normalize(const std::string& path) const;
 
   private:
-    CVirtualFileSystem& m_Vfs;
-    DX11Renderer& m_Renderer;
+    Engine& m_Engine;
     std::unordered_map<std::string, std::shared_ptr<Texture>> m_Cache;
 };
 

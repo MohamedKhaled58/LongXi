@@ -1,15 +1,13 @@
 #include "Application/Application.h"
 #include "Window/Win32Window.h"
-#include "Renderer/DX11Renderer.h"
+#include "Engine/Engine.h"
 #include "Input/InputSystem.h"
-#include "Texture/TextureManager.h"
-#include "Core/FileSystem/VirtualFileSystem.h"
-#include "Core/FileSystem/ResourceSystem.h" // for ResourceSystem::GetExecutableDirectory()
 #include "Core/Logging/LogMacros.h"
 
 #include <windows.h>
 #include <windowsx.h>
 #include <memory>
+
 
 namespace LongXi
 {
@@ -63,72 +61,23 @@ void Application::DestroyMainWindow()
     }
 }
 
-bool Application::CreateRenderer()
+Engine& Application::GetEngine()
 {
-    m_Renderer = std::make_unique<DX11Renderer>();
+    return *m_Engine;
+}
 
-    if (!m_Renderer->Initialize(m_WindowHandle, m_Window->GetWidth(), m_Window->GetHeight()))
+bool Application::CreateEngine()
+{
+    m_Engine = std::make_unique<Engine>();
+
+    if (!m_Engine->Initialize(m_WindowHandle, m_Window->GetWidth(), m_Window->GetHeight()))
     {
-        LX_ENGINE_ERROR("Failed to initialize DX11 renderer");
-        m_Renderer.reset();
+        LX_ENGINE_ERROR("Engine initialization failed - aborting");
+        m_Engine.reset();
         return false;
     }
 
     return true;
-}
-
-bool Application::CreateInputSystem()
-{
-    m_InputSystem = std::make_unique<InputSystem>();
-    m_InputSystem->Initialize();
-    return true;
-}
-
-const InputSystem& Application::GetInput() const
-{
-    return *m_InputSystem;
-}
-
-bool Application::CreateVirtualFileSystem()
-{
-    std::string exeDir = ResourceSystem::GetExecutableDirectory();
-
-    m_VirtualFileSystem = std::make_unique<CVirtualFileSystem>();
-
-    // Mount directories first (highest priority) — patch overrides before loose files.
-    // MountDirectory returns false silently for missing dirs; non-fatal at startup.
-    if (!exeDir.empty())
-    {
-        m_VirtualFileSystem->MountDirectory(exeDir + "/Data/Patch");
-        m_VirtualFileSystem->MountDirectory(exeDir + "/Data");
-        m_VirtualFileSystem->MountDirectory(exeDir);
-    }
-
-    // Mount WDF archives after directories (lower priority — archives are baseline).
-    if (!exeDir.empty())
-    {
-        m_VirtualFileSystem->MountWdf(exeDir + "/Data/C3.wdf");
-        m_VirtualFileSystem->MountWdf(exeDir + "/Data/data.wdf");
-    }
-
-    return true;
-}
-
-const CVirtualFileSystem& Application::GetVirtualFileSystem() const
-{
-    return *m_VirtualFileSystem;
-}
-
-bool Application::CreateTextureManager()
-{
-    m_TextureManager = std::make_unique<TextureManager>(*m_VirtualFileSystem, *m_Renderer);
-    LX_ENGINE_INFO("TextureManager created");
-    return true;
-}
-
-TextureManager& Application::GetTextureManager()
-{
-    return *m_TextureManager;
 }
 
 void Application::OnResize(int width, int height)
@@ -139,10 +88,10 @@ void Application::OnResize(int width, int height)
         return;
     }
 
-    // Forward to renderer
-    if (m_Renderer && m_Renderer->IsInitialized())
+    // Forward to Engine
+    if (m_Engine && m_Engine->IsInitialized())
     {
-        m_Renderer->OnResize(width, height);
+        m_Engine->OnResize(width, height);
     }
 }
 
@@ -160,41 +109,9 @@ bool Application::Initialize()
         return false;
     }
 
-    if (!CreateRenderer())
+    if (!CreateEngine())
     {
-        LX_ENGINE_ERROR("Renderer creation failed — aborting initialization");
-        DestroyMainWindow();
-        return false;
-    }
-
-    if (!CreateInputSystem())
-    {
-        LX_ENGINE_ERROR("Input system creation failed — aborting initialization");
-        m_Renderer->Shutdown();
-        m_Renderer.reset();
-        DestroyMainWindow();
-        return false;
-    }
-
-    if (!CreateVirtualFileSystem())
-    {
-        LX_ENGINE_ERROR("Virtual file system creation failed — aborting initialization");
-        m_InputSystem->Shutdown();
-        m_InputSystem.reset();
-        m_Renderer->Shutdown();
-        m_Renderer.reset();
-        DestroyMainWindow();
-        return false;
-    }
-
-    if (!CreateTextureManager())
-    {
-        LX_ENGINE_ERROR("Texture manager creation failed — aborting initialization");
-        m_VirtualFileSystem.reset();
-        m_InputSystem->Shutdown();
-        m_InputSystem.reset();
-        m_Renderer->Shutdown();
-        m_Renderer.reset();
+        LX_ENGINE_ERROR("Engine creation failed — aborting initialization");
         DestroyMainWindow();
         return false;
     }
@@ -241,91 +158,91 @@ LRESULT CALLBACK Application::WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
 
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN:
-        if (app && app->m_InputSystem)
+        if (app && app->m_Engine && app->m_Engine->IsInitialized())
         {
             UINT vk = static_cast<UINT>(wParam);
             bool isRepeat = (lParam & 0x40000000) != 0;
-            app->m_InputSystem->OnKeyDown(vk, isRepeat);
+            app->m_Engine->GetInput().OnKeyDown(vk, isRepeat);
         }
         return 0;
 
     case WM_KEYUP:
     case WM_SYSKEYUP:
-        if (app && app->m_InputSystem)
+        if (app && app->m_Engine && app->m_Engine->IsInitialized())
         {
-            app->m_InputSystem->OnKeyUp(static_cast<UINT>(wParam));
+            app->m_Engine->GetInput().OnKeyUp(static_cast<UINT>(wParam));
         }
         return 0;
 
     case WM_KILLFOCUS:
-        if (app && app->m_InputSystem)
+        if (app && app->m_Engine && app->m_Engine->IsInitialized())
         {
-            app->m_InputSystem->OnFocusLost();
+            app->m_Engine->GetInput().OnFocusLost();
         }
         return 0;
 
     case WM_ACTIVATEAPP:
-        if (app && app->m_InputSystem && wParam == FALSE)
+        if (app && app->m_Engine && app->m_Engine->IsInitialized() && wParam == FALSE)
         {
-            app->m_InputSystem->OnFocusLost();
+            app->m_Engine->GetInput().OnFocusLost();
         }
         return 0;
 
         // ---- Mouse movement ----
 
     case WM_MOUSEMOVE:
-        if (app && app->m_InputSystem)
+        if (app && app->m_Engine && app->m_Engine->IsInitialized())
         {
-            app->m_InputSystem->OnMouseMove(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+            app->m_Engine->GetInput().OnMouseMove(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
         }
         return 0;
 
         // ---- Mouse buttons ----
 
     case WM_LBUTTONDOWN:
-        if (app && app->m_InputSystem)
+        if (app && app->m_Engine && app->m_Engine->IsInitialized())
         {
             SetCapture(hwnd);
-            app->m_InputSystem->OnMouseButtonDown(MouseButton::Left);
+            app->m_Engine->GetInput().OnMouseButtonDown(MouseButton::Left);
         }
         return 0;
 
     case WM_LBUTTONUP:
-        if (app && app->m_InputSystem)
+        if (app && app->m_Engine && app->m_Engine->IsInitialized())
         {
-            app->m_InputSystem->OnMouseButtonUp(MouseButton::Left);
+            app->m_Engine->GetInput().OnMouseButtonUp(MouseButton::Left);
             ReleaseCapture();
         }
         return 0;
 
     case WM_RBUTTONDOWN:
-        if (app && app->m_InputSystem)
+        if (app && app->m_Engine && app->m_Engine->IsInitialized())
         {
             SetCapture(hwnd);
-            app->m_InputSystem->OnMouseButtonDown(MouseButton::Right);
+            app->m_Engine->GetInput().OnMouseButtonDown(MouseButton::Right);
         }
         return 0;
 
     case WM_RBUTTONUP:
-        if (app && app->m_InputSystem)
+        if (app && app->m_Engine && app->m_Engine->IsInitialized())
         {
-            app->m_InputSystem->OnMouseButtonUp(MouseButton::Right);
+            app->m_Engine->GetInput().OnMouseButtonUp(MouseButton::Right);
             ReleaseCapture();
         }
         return 0;
 
     case WM_MBUTTONDOWN:
-        if (app && app->m_InputSystem)
+        if (app && app->m_Engine && app->m_Engine->IsInitialized())
         {
             SetCapture(hwnd);
-            app->m_InputSystem->OnMouseButtonDown(MouseButton::Middle);
+            app->m_Engine->GetInput().OnMouseButtonDown(MouseButton::Middle);
         }
         return 0;
 
     case WM_MBUTTONUP:
-        if (app && app->m_InputSystem)
+        if (app && app->m_Engine && app->m_Engine->IsInitialized())
         {
-            app->m_InputSystem->OnMouseButtonUp(MouseButton::Middle);
+            app->m_Engine->GetInput().OnMouseButtonUp(MouseButton::Middle);
             ReleaseCapture();
         }
         return 0;
@@ -333,9 +250,9 @@ LRESULT CALLBACK Application::WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
         // ---- Mouse wheel ----
 
     case WM_MOUSEWHEEL:
-        if (app && app->m_InputSystem)
+        if (app && app->m_Engine && app->m_Engine->IsInitialized())
         {
-            app->m_InputSystem->OnMouseWheel(GET_WHEEL_DELTA_WPARAM(wParam));
+            app->m_Engine->GetInput().OnMouseWheel(GET_WHEEL_DELTA_WPARAM(wParam));
         }
         return 0;
 
@@ -374,18 +291,11 @@ int Application::Run()
             DispatchMessage(&msg);
         }
 
-        // Render frame continuously
-        if (m_Renderer && m_Renderer->IsInitialized())
+        // Engine frame
+        if (m_Engine && m_Engine->IsInitialized())
         {
-            m_Renderer->BeginFrame();
-            m_Renderer->EndFrame();
-        }
-
-        // Advance input frame boundary at END of frame so Pressed/Released
-        // transitions are valid for the full frame before being cleared.
-        if (m_InputSystem)
-        {
-            m_InputSystem->Update();
+            m_Engine->Update();   // Advance input frame boundary
+            m_Engine->Render();   // Render and present frame
         }
     }
 }
@@ -403,30 +313,10 @@ void Application::Shutdown()
 
     LX_ENGINE_INFO("Application shutting down...");
 
-    // Destroy TextureManager FIRST — releases GPU resources while device is still alive
-    if (m_TextureManager)
+    // Destroy Engine (handles all subsystem shutdown internally)
+    if (m_Engine)
     {
-        m_TextureManager.reset();
-    }
-
-    // Destroy VFS (releases archive file handles)
-    if (m_VirtualFileSystem)
-    {
-        m_VirtualFileSystem.reset();
-    }
-
-    // Shutdown input before renderer
-    if (m_InputSystem)
-    {
-        m_InputSystem->Shutdown();
-        m_InputSystem.reset();
-    }
-
-    // Shutdown renderer before destroying window
-    if (m_Renderer)
-    {
-        m_Renderer->Shutdown();
-        m_Renderer.reset();
+        m_Engine.reset();
     }
 
     // Window already destroyed by WM_CLOSE→DestroyWindow in WindowProc.
