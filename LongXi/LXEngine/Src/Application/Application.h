@@ -14,6 +14,7 @@ namespace LongXi
 
 class DX11Renderer;
 class InputSystem;
+class ResourceSystem;
 
 class Application
 {
@@ -22,12 +23,13 @@ class Application
     virtual ~Application();
 
     // Core lifecycle methods
-    bool Initialize(); // Setup Win32 window, renderer, and input
+    bool Initialize(); // Setup Win32 window, renderer, input, and resources
     int Run();         // Own message pump until shutdown
     void Shutdown();   // Teardown resources, exit cleanly
 
-    // Input access for engine systems
+    // Subsystem accessors for engine systems
     const InputSystem& GetInput() const;
+    const ResourceSystem& GetResourceSystem() const;
 
   private:
     HWND m_WindowHandle;
@@ -35,6 +37,7 @@ class Application
     bool m_Initialized;
     std::unique_ptr<DX11Renderer> m_Renderer;
     std::unique_ptr<InputSystem> m_InputSystem;
+    std::unique_ptr<ResourceSystem> m_ResourceSystem;
 
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -42,6 +45,7 @@ class Application
     void DestroyMainWindow();
     bool CreateRenderer();
     bool CreateInputSystem();
+    bool CreateResourceSystem();
     void OnResize(int width, int height);
 };
 
