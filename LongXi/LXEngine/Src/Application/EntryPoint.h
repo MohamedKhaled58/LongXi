@@ -21,14 +21,14 @@ LongXi::Application* CreateApplication();
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-    // Bootstrap: console + logging before anything else
-    #ifdef LX_DEBUG
-        AllocConsole();
-        FILE* fp = nullptr;
-        freopen_s(&fp, "CONOUT$", "w", stdout);
-        freopen_s(&fp, "CONOUT$", "w", stderr);
-        std::ios::sync_with_stdio(true);
-    #endif
+// Bootstrap: console + logging before anything else
+#ifdef LX_DEBUG
+    AllocConsole();
+    FILE* fp = nullptr;
+    freopen_s(&fp, "CONOUT$", "w", stdout);
+    freopen_s(&fp, "CONOUT$", "w", stderr);
+    std::ios::sync_with_stdio(true);
+#endif
 
     LongXi::Log::Initialize();
     LX_ENGINE_INFO("LongXi Engine starting...");
@@ -52,9 +52,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     delete app;
     LongXi::Log::Shutdown();
 
-    #ifdef LX_DEBUG
-        FreeConsole();
-    #endif
+#ifdef LX_DEBUG
+    FreeConsole();
+#endif
 
     return exitCode;
 }

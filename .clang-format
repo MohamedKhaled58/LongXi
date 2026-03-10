@@ -28,7 +28,7 @@ AllowAllParametersOfDeclarationOnNextLine: true
 # Include handling
 SortIncludes: false
 IncludeBlocks: Preserve
-IncludeIsMainRegex: '(Test)?$'
+IncludeIsMainRegex: "(Test)?$"
 
 # Pointer and reference alignment
 PointerAlignment: Left
@@ -36,12 +36,10 @@ ReferenceAlignment: Left
 
 # Spacing
 SpaceBeforeParens: ControlStatements
-SpaceBeforeParens: ControlStatements
 SpaceInEmptyParentheses: false
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
 SpaceAfterCStyleCast: false
-SpaceInEmptyBlockParentheses: false
 
 # Alignment
 AlignConsecutiveMacros: false
