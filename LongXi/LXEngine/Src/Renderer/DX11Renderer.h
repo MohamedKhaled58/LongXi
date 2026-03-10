@@ -3,6 +3,7 @@
 #include <wrl/client.h>
 #include <d3d11.h>
 #include <dxgi.h>
+#include "Texture/TextureFormat.h"
 
 // =============================================================================
 // DX11Renderer — Minimal DirectX 11 render bootstrap
@@ -11,6 +12,9 @@
 
 namespace LongXi
 {
+
+// Renderer texture handle type: ComPtr-wrapped D3D11 shader resource view
+using RendererTextureHandle = Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>;
 
 class DX11Renderer
 {
@@ -33,6 +37,10 @@ class DX11Renderer
     {
         return m_IsInitialized;
     }
+
+    // Create GPU texture from CPU pixel data
+    // Returns non-empty ComPtr on success, empty ComPtr on failure
+    RendererTextureHandle CreateTexture(uint32_t width, uint32_t height, TextureFormat format, const void* pixels);
 
   private:
     bool CreateRenderTarget();

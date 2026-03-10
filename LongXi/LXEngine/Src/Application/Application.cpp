@@ -2,6 +2,7 @@
 #include "Window/Win32Window.h"
 #include "Renderer/DX11Renderer.h"
 #include "Input/InputSystem.h"
+#include "Texture/TextureManager.h"
 #include "Core/FileSystem/VirtualFileSystem.h"
 #include "Core/FileSystem/ResourceSystem.h" // for ResourceSystem::GetExecutableDirectory()
 #include "Core/Logging/LogMacros.h"
@@ -118,6 +119,18 @@ const CVirtualFileSystem& Application::GetVirtualFileSystem() const
     return *m_VirtualFileSystem;
 }
 
+bool Application::CreateTextureManager()
+{
+    m_TextureManager = std::make_unique<TextureManager>(*m_VirtualFileSystem, *m_Renderer);
+    LX_ENGINE_INFO("TextureManager created");
+    return true;
+}
+
+TextureManager& Application::GetTextureManager()
+{
+    return *m_TextureManager;
+}
+
 void Application::OnResize(int width, int height)
 {
     // Guard against zero-area (minimized window)
@@ -166,6 +179,18 @@ bool Application::Initialize()
     if (!CreateVirtualFileSystem())
     {
         LX_ENGINE_ERROR("Virtual file system creation failed — aborting initialization");
+        m_InputSystem->Shutdown();
+        m_InputSystem.reset();
+        m_Renderer->Shutdown();
+        m_Renderer.reset();
+        DestroyMainWindow();
+        return false;
+    }
+
+    if (!CreateTextureManager())
+    {
+        LX_ENGINE_ERROR("Texture manager creation failed — aborting initialization");
+        m_VirtualFileSystem.reset();
         m_InputSystem->Shutdown();
         m_InputSystem.reset();
         m_Renderer->Shutdown();
@@ -378,7 +403,13 @@ void Application::Shutdown()
 
     LX_ENGINE_INFO("Application shutting down...");
 
-    // Destroy VFS first (releases archive file handles)
+    // Destroy TextureManager FIRST — releases GPU resources while device is still alive
+    if (m_TextureManager)
+    {
+        m_TextureManager.reset();
+    }
+
+    // Destroy VFS (releases archive file handles)
     if (m_VirtualFileSystem)
     {
         m_VirtualFileSystem.reset();

@@ -157,12 +157,20 @@
     <ClInclude Include="Src\Application\EntryPoint.h" />
     <ClInclude Include="Src\Input\InputSystem.h" />
     <ClInclude Include="Src\Renderer\DX11Renderer.h" />
+    <ClInclude Include="Src\Texture\Texture.h" />
+    <ClInclude Include="Src\Texture\TextureData.h" />
+    <ClInclude Include="Src\Texture\TextureFormat.h" />
+    <ClInclude Include="Src\Texture\TextureLoader.h" />
+    <ClInclude Include="Src\Texture\TextureManager.h" />
     <ClInclude Include="Src\Window\Win32Window.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Src\Application\Application.cpp" />
     <ClCompile Include="Src\Input\InputSystem.cpp" />
     <ClCompile Include="Src\Renderer\DX11Renderer.cpp" />
+    <ClCompile Include="Src\Texture\Texture.cpp" />
+    <ClCompile Include="Src\Texture\TextureLoader.cpp" />
+    <ClCompile Include="Src\Texture\TextureManager.cpp" />
     <ClCompile Include="Src\Window\Win32Window.cpp" />
   </ItemGroup>
   <ItemGroup>

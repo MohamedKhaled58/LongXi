@@ -147,7 +147,6 @@ bool DX11Renderer::CreateRenderTarget()
 
     return true;
 }
-
 // ============================================================================
 // ReleaseRenderTarget
 // ============================================================================
@@ -236,6 +235,124 @@ void DX11Renderer::OnResize(int width, int height)
     {
         LX_ENGINE_ERROR("Failed to recreate render target after resize");
     }
+}
+
+// ============================================================================
+// CreateTexture
+// ============================================================================
+
+RendererTextureHandle DX11Renderer::CreateTexture(uint32_t width, uint32_t height, TextureFormat format, const void* pixels)
+{
+    if (!m_IsInitialized)
+    {
+        LX_ENGINE_ERROR("[Texture] Cannot create texture: renderer not initialized");
+        return RendererTextureHandle();
+    }
+
+    if (width == 0 || height == 0)
+    {
+        LX_ENGINE_ERROR("[Texture] Invalid texture dimensions: {}x{}", width, height);
+        return RendererTextureHandle();
+    }
+
+    if (!pixels)
+    {
+        LX_ENGINE_ERROR("[Texture] Null pixel data pointer");
+        return RendererTextureHandle();
+    }
+
+    // Map TextureFormat to DXGI_FORMAT
+    DXGI_FORMAT dxgiFormat;
+    switch (format)
+    {
+    case TextureFormat::RGBA8:
+        dxgiFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+        break;
+    case TextureFormat::DXT1:
+        dxgiFormat = DXGI_FORMAT_BC1_UNORM;
+        break;
+    case TextureFormat::DXT3:
+        dxgiFormat = DXGI_FORMAT_BC2_UNORM;
+        break;
+    case TextureFormat::DXT5:
+        dxgiFormat = DXGI_FORMAT_BC3_UNORM;
+        break;
+    default:
+        LX_ENGINE_ERROR("[Texture] Unknown texture format: {}", static_cast<uint32_t>(format));
+        return RendererTextureHandle();
+    }
+
+    // Compute row pitch
+    UINT rowPitch;
+    if (format == TextureFormat::RGBA8)
+    {
+        // Uncompressed: width * 4 bytes
+        rowPitch = width * 4;
+    }
+    else
+    {
+        // Compressed (DXT): block-row formula
+        // blockCols = max(1, (width + 3) / 4)
+        // rowPitch = blockCols * blockSize
+        UINT blockCols = (width + 3) / 4;
+        if (blockCols == 0)
+            blockCols = 1;
+
+        if (format == TextureFormat::DXT1)
+        {
+            rowPitch = blockCols * 8;
+        }
+        else // DXT3 or DXT5
+        {
+            rowPitch = blockCols * 16;
+        }
+    }
+
+    // Create texture description
+    D3D11_TEXTURE2D_DESC texDesc = {};
+    texDesc.Width = width;
+    texDesc.Height = height;
+    texDesc.MipLevels = 1;
+    texDesc.ArraySize = 1;
+    texDesc.Format = dxgiFormat;
+    texDesc.SampleDesc.Count = 1;
+    texDesc.SampleDesc.Quality = 0;
+    texDesc.Usage = D3D11_USAGE_IMMUTABLE;
+    texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    texDesc.CPUAccessFlags = 0;
+    texDesc.MiscFlags = 0;
+
+    // Initialize subresource data
+    D3D11_SUBRESOURCE_DATA initData = {};
+    initData.pSysMem = pixels;
+    initData.SysMemPitch = rowPitch;
+    initData.SysMemSlicePitch = 0; // Not used for 2D textures
+
+    // Create texture
+    Microsoft::WRL::ComPtr<ID3D11Texture2D> pTex;
+    HRESULT hr = m_Device->CreateTexture2D(&texDesc, &initData, &pTex);
+
+    if (FAILED(hr))
+    {
+        LX_ENGINE_ERROR("[Texture] CreateTexture2D failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
+        return RendererTextureHandle();
+    }
+
+    // Create shader resource view
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> pSRV;
+    hr = m_Device->CreateShaderResourceView(pTex.Get(), nullptr, &pSRV);
+
+    if (FAILED(hr))
+    {
+        LX_ENGINE_ERROR("[Texture] CreateShaderResourceView failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
+        return RendererTextureHandle();
+    }
+
+    // Release Texture2D immediately — SRV holds the sole reference
+    // When SRV is destroyed, Texture2D will be freed automatically
+    pTex.Reset();
+
+    return pSRV;
 }
 
 // ============================================================================
