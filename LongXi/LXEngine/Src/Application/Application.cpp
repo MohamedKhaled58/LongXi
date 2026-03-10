@@ -197,6 +197,10 @@ LRESULT CALLBACK Application::WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
         {
             int width = static_cast<int>(LOWORD(lParam));
             int height = static_cast<int>(HIWORD(lParam));
+            if (g_Window)
+            {
+                g_Window->SetSize(width, height);
+            }
             app->OnResize(width, height);
         }
         return 0;

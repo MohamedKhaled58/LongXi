@@ -24,9 +24,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 // Bootstrap: console + logging before anything else
 #ifdef LX_DEBUG
     AllocConsole();
-    FILE* fp = nullptr;
-    freopen_s(&fp, "CONOUT$", "w", stdout);
-    freopen_s(&fp, "CONOUT$", "w", stderr);
+    FILE* fpOut = nullptr;
+    FILE* fpErr = nullptr;
+    freopen_s(&fpOut, "CONOUT$", "w", stdout);
+    freopen_s(&fpErr, "CONOUT$", "w", stderr);
     std::ios::sync_with_stdio(true);
 #endif
 
@@ -45,7 +46,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
 
     int exitCode = app->Run();
-    app->Shutdown();
 
     LX_ENGINE_INFO("LongXi Engine exited with code {}", exitCode);
 

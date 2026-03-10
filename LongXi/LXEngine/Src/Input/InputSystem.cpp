@@ -132,7 +132,11 @@ static void BuildKeyTables(UINT* keyToVK, Key* vkToKey)
     Map(Key::NumpadMultiply, VK_MULTIPLY);
     Map(Key::NumpadDivide, VK_DIVIDE);
     Map(Key::NumpadDecimal, VK_DECIMAL);
-    Map(Key::NumpadEnter, VK_RETURN); // Numpad Enter shares VK_RETURN
+    // Map(Key::NumpadEnter, VK_RETURN); // Numpad Enter shares VK_RETURN
+
+    // Numpad Enter shares VK_RETURN with main Enter — only set forward mapping
+    // to keep vkToKey[VK_RETURN] pointed at Key::Enter
+    keyToVK[static_cast<size_t>(Key::NumpadEnter)] = VK_RETURN;
 
     // Punctuation (OEM keys)
     Map(Key::Semicolon, VK_OEM_1);    // ;:

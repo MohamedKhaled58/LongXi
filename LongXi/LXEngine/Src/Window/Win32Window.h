@@ -43,6 +43,12 @@ class Win32Window
         return m_Height;
     }
 
+    void SetSize(int width, int height)
+    {
+        m_Width = width;
+        m_Height = height;
+    }
+
   private:
     std::wstring m_Title;
     int m_Width;
