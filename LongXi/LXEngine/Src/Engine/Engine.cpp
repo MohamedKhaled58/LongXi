@@ -181,6 +181,29 @@ void Engine::ExecuteExternalRenderPass(const ExternalPassCallback& callback)
     m_Renderer->ExecuteExternalPass(callback);
 }
 
+void Engine::ExecuteSpritePass(const std::function<void(SpriteRenderer&)>& callback)
+{
+    if (!m_Initialized || !callback || !m_Renderer || !m_SpriteRenderer || !m_SpriteRenderer->IsInitialized())
+    {
+        return;
+    }
+
+    if (m_Renderer->GetLifecyclePhase() != FrameLifecyclePhase::InFrame || m_Renderer->GetActivePass() != RenderPassType::None)
+    {
+        return;
+    }
+
+    if (!m_Renderer->BeginPass(RenderPassType::Sprite))
+    {
+        return;
+    }
+
+    m_SpriteRenderer->Begin();
+    callback(*m_SpriteRenderer);
+    m_SpriteRenderer->End();
+    m_Renderer->EndPass();
+}
+
 void Engine::Present()
 {
     if (!m_Initialized)

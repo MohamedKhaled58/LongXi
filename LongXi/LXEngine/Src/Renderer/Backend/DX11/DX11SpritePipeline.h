@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Renderer/RendererTypes.h"
+
 #include <d3d11.h>
 #include <wrl/client.h>
 #include <cstddef>
@@ -27,13 +29,15 @@ private:
     Microsoft::WRL::ComPtr<ID3D11VertexShader> m_VertexShader;
     Microsoft::WRL::ComPtr<ID3D11PixelShader> m_PixelShader;
     Microsoft::WRL::ComPtr<ID3D11InputLayout> m_InputLayout;
-    Microsoft::WRL::ComPtr<ID3D11Buffer> m_VertexBuffer;
-    Microsoft::WRL::ComPtr<ID3D11Buffer> m_IndexBuffer;
-    Microsoft::WRL::ComPtr<ID3D11Buffer> m_ConstantBuffer;
     Microsoft::WRL::ComPtr<ID3D11BlendState> m_BlendState;
     Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_DepthState;
     Microsoft::WRL::ComPtr<ID3D11SamplerState> m_SamplerState;
     Microsoft::WRL::ComPtr<ID3D11RasterizerState> m_RasterizerState;
+
+    RendererVertexBufferHandle m_VertexBufferHandle = {};
+    RendererIndexBufferHandle m_IndexBufferHandle = {};
+    RendererConstantBufferHandle m_ConstantBufferHandle = {};
+    Renderer* m_Renderer = nullptr;
 
     int m_MaxSpritesPerBatch = 0;
     bool m_Initialized = false;

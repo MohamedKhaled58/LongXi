@@ -5,6 +5,7 @@
 #include "Renderer/Renderer.h"
 
 #include <chrono>
+#include <functional>
 #include <memory>
 #include <string>
 
@@ -38,6 +39,7 @@ public:
     void OnResize(int width, int height);
 
     void ExecuteExternalRenderPass(const ExternalPassCallback& callback);
+    void ExecuteSpritePass(const std::function<void(SpriteRenderer&)>& callback);
 
     void MountDirectory(const std::string& path);
     void MountWdf(const std::string& path);

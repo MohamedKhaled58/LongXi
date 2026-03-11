@@ -219,10 +219,12 @@ private:
             return;
         }
 
-        // Draw one visible debug sprite so texture/VFS/render validation is immediate.
-        spriteRenderer.Begin();
-        spriteRenderer.DrawSprite(m_ValidationTexture.get(), {100.0f, 100.0f}, {256.0f, 256.0f});
-        spriteRenderer.End();
+        engine.ExecuteSpritePass(
+            [this](SpriteRenderer& activeSpriteRenderer)
+            {
+                // Draw one visible debug sprite so texture/VFS/render validation is immediate.
+                activeSpriteRenderer.DrawSprite(m_ValidationTexture.get(), {100.0f, 100.0f}, {256.0f, 256.0f});
+            });
     }
 
     ImGuiLayer m_ImGuiLayer;

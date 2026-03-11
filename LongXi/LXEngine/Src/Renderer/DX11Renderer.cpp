@@ -111,10 +111,16 @@ bool DX11Renderer::Initialize(HWND hwnd, int width, int height)
         return false;
     }
 
+    m_Textures.Initialize(m_Device.Get(), &m_ResourceTables);
+    m_Buffers.Initialize(m_Device.Get(), m_Context.Get(), &m_ResourceTables);
+    m_Shaders.Initialize(m_Device.Get(), &m_ResourceTables);
+
     m_IsInitialized = true;
     m_LifecyclePhase = FrameLifecyclePhase::NotStarted;
     m_ActivePass = RenderPassType::None;
     m_RecoveryMode = RendererRecoveryMode::Normal;
+    m_LastResourceResult = {};
+    m_FrameIndex = 0;
 
     LX_ENGINE_INFO("[Renderer] Device initialized");
     return true;
@@ -312,6 +318,11 @@ void DX11Renderer::HandleContractViolation(const char* operation, const char* ex
 #endif
 }
 
+void DX11Renderer::SetResourceResult(RendererResultCode code)
+{
+    m_LastResourceResult.Code = code;
+}
+
 void DX11Renderer::EnterRecoveryMode(const char* reason, HRESULT hr)
 {
     LX_ENGINE_ERROR("[Renderer] Entering recovery mode: {} (HRESULT: 0x{:08X})", reason, static_cast<uint32_t>(hr));
@@ -326,6 +337,8 @@ void DX11Renderer::BeginFrame()
     {
         return;
     }
+
+    ++m_FrameIndex;
 
     if (m_LifecyclePhase != FrameLifecyclePhase::NotStarted && m_LifecyclePhase != FrameLifecyclePhase::FrameEnded)
     {
@@ -600,96 +613,367 @@ void DX11Renderer::OnResize(int width, int height)
     m_PendingResizeHeight = 0;
 }
 
-RendererTextureHandle DX11Renderer::CreateTexture(uint32_t width, uint32_t height, TextureFormat format, const void* pixels)
+RendererTextureHandle DX11Renderer::CreateTexture(const RendererTextureDesc& desc)
 {
     if (!m_IsInitialized)
     {
-        LX_ENGINE_ERROR("[Texture] Cannot create texture: renderer not initialized");
+        SetResourceResult(RendererResultCode::NotInitialized);
+        LX_ENGINE_ERROR("[Renderer] CreateTexture rejected: renderer not initialized");
         return {};
     }
 
-    if (width == 0 || height == 0 || !pixels)
+    RendererResult result = {};
+    RendererTextureHandle handle = m_Textures.CreateTexture(desc, result);
+    SetResourceResult(result.Code);
+
+    if (!handle.IsValid())
     {
-        LX_ENGINE_ERROR("[Texture] Invalid texture creation parameters");
-        return {};
+        LX_ENGINE_ERROR("[Renderer] CreateTexture failed (code={})", static_cast<uint32_t>(result.Code));
     }
 
-    DXGI_FORMAT dxgiFormat;
-    switch (format)
+    return handle;
+}
+
+bool DX11Renderer::DestroyTexture(RendererTextureHandle handle)
+{
+    RendererResultCode resolveCode = RendererResultCode::Success;
+    ID3D11ShaderResourceView* textureView = m_Textures.ResolveShaderResourceView(handle, resolveCode);
+    if (!textureView)
     {
-        case TextureFormat::RGBA8:
-            dxgiFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-            break;
-        case TextureFormat::DXT1:
-            dxgiFormat = DXGI_FORMAT_BC1_UNORM;
-            break;
-        case TextureFormat::DXT3:
-            dxgiFormat = DXGI_FORMAT_BC2_UNORM;
-            break;
-        case TextureFormat::DXT5:
-            dxgiFormat = DXGI_FORMAT_BC3_UNORM;
-            break;
-        default:
-            LX_ENGINE_ERROR("[Texture] Unsupported texture format: {}", static_cast<uint32_t>(format));
-            return {};
+        SetResourceResult(resolveCode);
+        LX_ENGINE_ERROR("[Renderer] DestroyTexture failed (code={})", static_cast<uint32_t>(resolveCode));
+        return false;
     }
 
-    UINT rowPitch = 0;
-    if (format == TextureFormat::RGBA8)
+    if (m_Context)
     {
-        rowPitch = width * 4;
+        ID3D11ShaderResourceView* nullViews[1] = {nullptr};
+        m_Context->VSSetShaderResources(0, 1, nullViews);
+        m_Context->PSSetShaderResources(0, 1, nullViews);
+    }
+
+    RendererResult result = {};
+    const bool ok = m_Textures.DestroyTexture(handle, result);
+    SetResourceResult(result.Code);
+
+    if (!ok)
+    {
+        LX_ENGINE_ERROR("[Renderer] DestroyTexture failed (code={})", static_cast<uint32_t>(result.Code));
+    }
+
+    return ok;
+}
+
+RendererVertexBufferHandle DX11Renderer::CreateVertexBuffer(const RendererBufferDesc& desc)
+{
+    RendererResult result = {};
+    RendererVertexBufferHandle handle = m_Buffers.CreateVertexBuffer(desc, result);
+    SetResourceResult(result.Code);
+    if (!handle.IsValid())
+    {
+        LX_ENGINE_ERROR("[Renderer] CreateVertexBuffer failed (code={})", static_cast<uint32_t>(result.Code));
+    }
+    return handle;
+}
+
+RendererIndexBufferHandle DX11Renderer::CreateIndexBuffer(const RendererBufferDesc& desc)
+{
+    RendererResult result = {};
+    RendererIndexBufferHandle handle = m_Buffers.CreateIndexBuffer(desc, result);
+    SetResourceResult(result.Code);
+    if (!handle.IsValid())
+    {
+        LX_ENGINE_ERROR("[Renderer] CreateIndexBuffer failed (code={})", static_cast<uint32_t>(result.Code));
+    }
+    return handle;
+}
+
+RendererConstantBufferHandle DX11Renderer::CreateConstantBuffer(const RendererBufferDesc& desc)
+{
+    RendererResult result = {};
+    RendererConstantBufferHandle handle = m_Buffers.CreateConstantBuffer(desc, result);
+    SetResourceResult(result.Code);
+    if (!handle.IsValid())
+    {
+        LX_ENGINE_ERROR("[Renderer] CreateConstantBuffer failed (code={})", static_cast<uint32_t>(result.Code));
+    }
+    return handle;
+}
+
+bool DX11Renderer::DestroyBuffer(RendererBufferHandle handle)
+{
+    RendererResultCode resolveCode = RendererResultCode::Success;
+    ID3D11Buffer* buffer = m_Buffers.ResolveBuffer(handle, resolveCode);
+    if (!buffer)
+    {
+        SetResourceResult(resolveCode);
+        LX_ENGINE_ERROR("[Renderer] DestroyBuffer failed (code={})", static_cast<uint32_t>(resolveCode));
+        return false;
+    }
+
+    if (m_Context)
+    {
+        if (handle.Type == RendererBufferType::Vertex)
+        {
+            ID3D11Buffer* nullBuffer = nullptr;
+            UINT stride = 0;
+            UINT offset = 0;
+            m_Context->IASetVertexBuffers(0, 1, &nullBuffer, &stride, &offset);
+        }
+        else if (handle.Type == RendererBufferType::Index)
+        {
+            m_Context->IASetIndexBuffer(nullptr, DXGI_FORMAT_R16_UINT, 0);
+        }
+        else if (handle.Type == RendererBufferType::Constant)
+        {
+            ID3D11Buffer* nullBuffer = nullptr;
+            m_Context->VSSetConstantBuffers(0, 1, &nullBuffer);
+            m_Context->PSSetConstantBuffers(0, 1, &nullBuffer);
+        }
+    }
+
+    RendererResult result = {};
+    const bool ok = m_Buffers.DestroyBuffer(handle, result);
+    SetResourceResult(result.Code);
+    if (!ok)
+    {
+        LX_ENGINE_ERROR("[Renderer] DestroyBuffer failed (code={})", static_cast<uint32_t>(result.Code));
+    }
+    return ok;
+}
+
+RendererShaderHandle DX11Renderer::CreateVertexShader(const RendererShaderDesc& desc)
+{
+    RendererResult result = {};
+    RendererShaderHandle handle = m_Shaders.CreateVertexShader(desc, result);
+    SetResourceResult(result.Code);
+    if (!handle.IsValid())
+    {
+        LX_ENGINE_ERROR("[Renderer] CreateVertexShader failed (code={})", static_cast<uint32_t>(result.Code));
+    }
+    return handle;
+}
+
+RendererShaderHandle DX11Renderer::CreatePixelShader(const RendererShaderDesc& desc)
+{
+    RendererResult result = {};
+    RendererShaderHandle handle = m_Shaders.CreatePixelShader(desc, result);
+    SetResourceResult(result.Code);
+    if (!handle.IsValid())
+    {
+        LX_ENGINE_ERROR("[Renderer] CreatePixelShader failed (code={})", static_cast<uint32_t>(result.Code));
+    }
+    return handle;
+}
+
+bool DX11Renderer::DestroyShader(RendererShaderHandle handle)
+{
+    RendererResultCode resolveCode = RendererResultCode::Success;
+    if (handle.Stage == RendererShaderStage::Vertex)
+    {
+        ID3D11VertexShader* shader = m_Shaders.ResolveVertexShader(handle, resolveCode);
+        if (!shader)
+        {
+            SetResourceResult(resolveCode);
+            LX_ENGINE_ERROR("[Renderer] DestroyShader failed (code={})", static_cast<uint32_t>(resolveCode));
+            return false;
+        }
     }
     else
     {
-        UINT blockCols = (width + 3) / 4;
-        if (blockCols == 0)
+        ID3D11PixelShader* shader = m_Shaders.ResolvePixelShader(handle, resolveCode);
+        if (!shader)
         {
-            blockCols = 1;
+            SetResourceResult(resolveCode);
+            LX_ENGINE_ERROR("[Renderer] DestroyShader failed (code={})", static_cast<uint32_t>(resolveCode));
+            return false;
         }
-        rowPitch = (format == TextureFormat::DXT1) ? (blockCols * 8) : (blockCols * 16);
     }
 
-    D3D11_TEXTURE2D_DESC texDesc = {};
-    texDesc.Width = width;
-    texDesc.Height = height;
-    texDesc.MipLevels = 1;
-    texDesc.ArraySize = 1;
-    texDesc.Format = dxgiFormat;
-    texDesc.SampleDesc.Count = 1;
-    texDesc.Usage = D3D11_USAGE_IMMUTABLE;
-    texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-
-    D3D11_SUBRESOURCE_DATA initData = {};
-    initData.pSysMem = pixels;
-    initData.SysMemPitch = rowPitch;
-
-    Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
-    HRESULT hr = m_Device->CreateTexture2D(&texDesc, &initData, &texture);
-    if (FAILED(hr))
+    if (m_Context)
     {
-        LX_ENGINE_ERROR("[Texture] CreateTexture2D failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
-        return {};
+        if (handle.Stage == RendererShaderStage::Vertex)
+        {
+            m_Context->VSSetShader(nullptr, nullptr, 0);
+        }
+        else
+        {
+            m_Context->PSSetShader(nullptr, nullptr, 0);
+        }
     }
 
-    ID3D11ShaderResourceView* rawSrv = nullptr;
-    hr = m_Device->CreateShaderResourceView(texture.Get(), nullptr, &rawSrv);
-    if (FAILED(hr))
+    RendererResult result = {};
+    const bool ok = m_Shaders.DestroyShader(handle, result);
+    SetResourceResult(result.Code);
+    if (!ok)
     {
-        LX_ENGINE_ERROR("[Texture] CreateShaderResourceView failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
-        return {};
+        LX_ENGINE_ERROR("[Renderer] DestroyShader failed (code={})", static_cast<uint32_t>(result.Code));
+    }
+    return ok;
+}
+
+bool DX11Renderer::UpdateBuffer(const RendererBufferUpdateRequest& request)
+{
+    RendererResult result = {};
+    const bool ok = m_Buffers.UpdateBuffer(request, result);
+    SetResourceResult(result.Code);
+    if (!ok)
+    {
+        LX_ENGINE_ERROR("[Renderer] UpdateBuffer failed (code={})", static_cast<uint32_t>(result.Code));
+    }
+    return ok;
+}
+
+bool DX11Renderer::MapBuffer(const RendererMapRequest& request, RendererMappedResource& mapped)
+{
+    RendererResult result = {};
+    const bool ok = m_Buffers.MapBuffer(request, mapped, result);
+    SetResourceResult(result.Code);
+    if (!ok)
+    {
+        LX_ENGINE_ERROR("[Renderer] MapBuffer failed (code={})", static_cast<uint32_t>(result.Code));
+    }
+    return ok;
+}
+
+bool DX11Renderer::UnmapBuffer(RendererBufferHandle handle)
+{
+    RendererResult result = {};
+    const bool ok = m_Buffers.UnmapBuffer(handle, result);
+    SetResourceResult(result.Code);
+    if (!ok)
+    {
+        LX_ENGINE_ERROR("[Renderer] UnmapBuffer failed (code={})", static_cast<uint32_t>(result.Code));
+    }
+    return ok;
+}
+
+bool DX11Renderer::BindVertexBuffer(RendererVertexBufferHandle handle, uint32_t stride, uint32_t offset)
+{
+    RendererResultCode resolveCode = RendererResultCode::Success;
+    ID3D11Buffer* buffer = m_Buffers.ResolveBuffer(ToBufferHandle(handle), resolveCode);
+    SetResourceResult(resolveCode);
+    if (!buffer)
+    {
+        LX_ENGINE_ERROR("[Renderer] BindVertexBuffer failed (code={})", static_cast<uint32_t>(resolveCode));
+        return false;
     }
 
-    RendererTextureHandle handle;
-    handle.NativeResource = std::shared_ptr<void>(rawSrv,
-                                                  [](void* resource)
-                                                  {
-                                                      if (resource)
-                                                      {
-                                                          static_cast<ID3D11ShaderResourceView*>(resource)->Release();
-                                                      }
-                                                  });
+    m_Context->IASetVertexBuffers(0, 1, &buffer, &stride, &offset);
+    m_ResourceTables.MarkBufferBound(ToBufferHandle(handle), m_FrameIndex);
+    SetResourceResult(RendererResultCode::Success);
+    return true;
+}
 
-    return handle;
+bool DX11Renderer::BindIndexBuffer(RendererIndexBufferHandle handle, RendererIndexFormat format, uint32_t offset)
+{
+    RendererResultCode resolveCode = RendererResultCode::Success;
+    ID3D11Buffer* buffer = m_Buffers.ResolveBuffer(ToBufferHandle(handle), resolveCode);
+    SetResourceResult(resolveCode);
+    if (!buffer)
+    {
+        LX_ENGINE_ERROR("[Renderer] BindIndexBuffer failed (code={})", static_cast<uint32_t>(resolveCode));
+        return false;
+    }
+
+    DXGI_FORMAT dxgiFormat = (format == RendererIndexFormat::UInt32) ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_R16_UINT;
+    m_Context->IASetIndexBuffer(buffer, dxgiFormat, offset);
+    m_ResourceTables.MarkBufferBound(ToBufferHandle(handle), m_FrameIndex);
+    SetResourceResult(RendererResultCode::Success);
+    return true;
+}
+
+bool DX11Renderer::BindConstantBuffer(RendererConstantBufferHandle handle, RendererShaderStage stage, uint32_t slot)
+{
+    RendererResultCode resolveCode = RendererResultCode::Success;
+    ID3D11Buffer* buffer = m_Buffers.ResolveBuffer(ToBufferHandle(handle), resolveCode);
+    SetResourceResult(resolveCode);
+    if (!buffer)
+    {
+        LX_ENGINE_ERROR("[Renderer] BindConstantBuffer failed (code={})", static_cast<uint32_t>(resolveCode));
+        return false;
+    }
+
+    if (stage == RendererShaderStage::Vertex)
+    {
+        m_Context->VSSetConstantBuffers(slot, 1, &buffer);
+    }
+    else
+    {
+        m_Context->PSSetConstantBuffers(slot, 1, &buffer);
+    }
+
+    m_ResourceTables.MarkBufferBound(ToBufferHandle(handle), m_FrameIndex);
+    SetResourceResult(RendererResultCode::Success);
+    return true;
+}
+
+bool DX11Renderer::BindShader(RendererShaderHandle handle)
+{
+    RendererResultCode resolveCode = RendererResultCode::Success;
+    if (handle.Stage == RendererShaderStage::Vertex)
+    {
+        ID3D11VertexShader* shader = m_Shaders.ResolveVertexShader(handle, resolveCode);
+        SetResourceResult(resolveCode);
+        if (!shader)
+        {
+            LX_ENGINE_ERROR("[Renderer] BindShader(VS) failed (code={})", static_cast<uint32_t>(resolveCode));
+            return false;
+        }
+
+        m_Context->VSSetShader(shader, nullptr, 0);
+    }
+    else
+    {
+        ID3D11PixelShader* shader = m_Shaders.ResolvePixelShader(handle, resolveCode);
+        SetResourceResult(resolveCode);
+        if (!shader)
+        {
+            LX_ENGINE_ERROR("[Renderer] BindShader(PS) failed (code={})", static_cast<uint32_t>(resolveCode));
+            return false;
+        }
+
+        m_Context->PSSetShader(shader, nullptr, 0);
+    }
+
+    m_ResourceTables.MarkShaderBound(handle, m_FrameIndex);
+    SetResourceResult(RendererResultCode::Success);
+    return true;
+}
+
+bool DX11Renderer::BindTexture(RendererTextureHandle handle, RendererShaderStage stage, uint32_t slot)
+{
+    RendererResultCode resolveCode = RendererResultCode::Success;
+    ID3D11ShaderResourceView* textureView = m_Textures.ResolveShaderResourceView(handle, resolveCode);
+    SetResourceResult(resolveCode);
+    if (!textureView)
+    {
+        LX_ENGINE_ERROR("[Renderer] BindTexture failed (code={})", static_cast<uint32_t>(resolveCode));
+        return false;
+    }
+
+    if (stage == RendererShaderStage::Vertex)
+    {
+        m_Context->VSSetShaderResources(slot, 1, &textureView);
+    }
+    else
+    {
+        m_Context->PSSetShaderResources(slot, 1, &textureView);
+    }
+
+    m_ResourceTables.MarkTextureBound(handle, m_FrameIndex);
+    SetResourceResult(RendererResultCode::Success);
+    return true;
+}
+
+ID3D11ShaderResourceView* DX11Renderer::ResolveShaderResourceView(RendererTextureHandle handle, RendererResultCode& outError) const
+{
+    return m_Textures.ResolveShaderResourceView(handle, outError);
+}
+
+ID3D11Buffer* DX11Renderer::ResolveBuffer(RendererBufferHandle handle, RendererResultCode& outError) const
+{
+    return m_Buffers.ResolveBuffer(handle, outError);
 }
 
 void DX11Renderer::SetViewProjection(const Matrix4& view, const Matrix4& projection)
@@ -704,6 +988,29 @@ void DX11Renderer::Shutdown()
     {
         return;
     }
+
+    m_ResourceTables.ReleaseAll();
+    const DX11ResourcePoolStats textureStats = m_ResourceTables.GetTexturePoolStats();
+    const DX11ResourcePoolStats bufferStats = m_ResourceTables.GetBufferPoolStats();
+    const DX11ResourcePoolStats shaderStats = m_ResourceTables.GetShaderPoolStats();
+    LX_ENGINE_INFO("[Renderer] Resource cleanup summary | Texture(created={}, destroyed={}, forceReleased={}, live={}) | Buffer(created={}, destroyed={}, forceReleased={}, live={}) | "
+                   "Shader(created={}, destroyed={}, forceReleased={}, live={})",
+                   textureStats.Created,
+                   textureStats.Destroyed,
+                   textureStats.ForceReleased,
+                   textureStats.Live,
+                   bufferStats.Created,
+                   bufferStats.Destroyed,
+                   bufferStats.ForceReleased,
+                   bufferStats.Live,
+                   shaderStats.Created,
+                   shaderStats.Destroyed,
+                   shaderStats.ForceReleased,
+                   shaderStats.Live);
+
+    m_Textures.Shutdown();
+    m_Buffers.Shutdown();
+    m_Shaders.Shutdown();
 
     ReleaseRenderTarget();
 
@@ -727,6 +1034,8 @@ void DX11Renderer::Shutdown()
     m_HasPendingResize = false;
     m_PendingResizeWidth = 0;
     m_PendingResizeHeight = 0;
+    m_LastResourceResult = {};
+    m_FrameIndex = 0;
 
     m_IsInitialized = false;
     LX_ENGINE_INFO("[Renderer] Shutdown complete");
