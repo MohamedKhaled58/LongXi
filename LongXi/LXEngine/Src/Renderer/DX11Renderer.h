@@ -5,63 +5,64 @@
 #include <dxgi.h>
 
 #include "Math/Math.h"
-#include "Renderer/RendererTypes.h"
+#include "Renderer/Renderer.h"
 #include "Texture/TextureFormat.h"
 
 namespace LongXi
 {
 
-// Renderer texture handle type: ComPtr-wrapped D3D11 shader resource view.
-using RendererTextureHandle = Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>;
-
-class DX11Renderer
+class DX11Renderer final : public Renderer
 {
   public:
     DX11Renderer();
-    ~DX11Renderer();
+    ~DX11Renderer() override;
 
     DX11Renderer(const DX11Renderer&) = delete;
     DX11Renderer& operator=(const DX11Renderer&) = delete;
 
-    bool Initialize(HWND hwnd, int width, int height);
-    void BeginFrame();
-    bool BeginPass(RenderPassType passType);
-    void EndPass();
-    void ExecuteExternalPass(const ExternalPassCallback& callback);
-    void EndFrame();
-    void Present();
-    void OnResize(int width, int height);
-    void Shutdown();
+    bool Initialize(HWND hwnd, int width, int height) override;
+    void BeginFrame() override;
+    bool BeginPass(RenderPassType passType) override;
+    void EndPass() override;
+    void ExecuteExternalPass(const ExternalPassCallback& callback) override;
+    void EndFrame() override;
+    void Present() override;
+    void OnResize(int width, int height) override;
+    void Shutdown() override;
 
-    void SetViewProjection(const Matrix4& view, const Matrix4& projection);
+    void Clear(const RendererColor& color) override;
+    void SetViewport(const RendererViewport& viewport) override;
+    void SetRenderTarget() override;
+    void DrawIndexed(uint32_t indexCount, uint32_t startIndex = 0, int32_t baseVertex = 0) override;
+    void SetViewProjection(const Matrix4& view, const Matrix4& projection) override;
 
-    bool IsInitialized() const
+    bool IsInitialized() const override
     {
         return m_IsInitialized;
     }
 
-    FrameLifecyclePhase GetLifecyclePhase() const
+    FrameLifecyclePhase GetLifecyclePhase() const override
     {
         return m_LifecyclePhase;
     }
 
-    RenderPassType GetActivePass() const
+    RenderPassType GetActivePass() const override
     {
         return m_ActivePass;
     }
 
-    RendererRecoveryMode GetRecoveryMode() const
+    RendererRecoveryMode GetRecoveryMode() const override
     {
         return m_RecoveryMode;
     }
 
     // Opaque native handles for shell-side integrations.
-    void* GetNativeDeviceHandle() const
+    void* GetNativeDeviceHandle() const override
     {
         return m_Device.Get();
     }
 
-    void* GetNativeContextHandle() const
+    void* GetNativeContextHandle() const override
     {
         return m_Context.Get();
     }
@@ -77,12 +78,12 @@ class DX11Renderer
         return m_Context.Get();
     }
 
-    int GetViewportWidth() const
+    int GetViewportWidth() const override
     {
         return m_ViewportWidth;
     }
 
-    int GetViewportHeight() const
+    int GetViewportHeight() const override
     {
         return m_ViewportHeight;
     }
@@ -92,7 +93,7 @@ class DX11Renderer
         return m_WindowHandle;
     }
 
-    RendererTextureHandle CreateTexture(uint32_t width, uint32_t height, TextureFormat format, const void* pixels);
+    RendererTextureHandle CreateTexture(uint32_t width, uint32_t height, TextureFormat format, const void* pixels) override;
 
   private:
     bool CreateRenderTarget();

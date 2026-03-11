@@ -1,11 +1,13 @@
 #pragma once
 
-#include "Renderer/DX11Renderer.h"
+#include "Renderer/RendererTypes.h"
+#include "Texture/TextureFormat.h"
+
 #include <cstdint>
 
 // =============================================================================
 // Texture — GPU texture resource wrapper
-// Owns a D3D11 shader resource view via ComPtr RAII
+// Owns an opaque renderer texture handle (backend encapsulated).
 // Lifetime managed by shared_ptr<Texture> in TextureManager cache
 // =============================================================================
 

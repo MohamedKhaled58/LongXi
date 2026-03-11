@@ -365,26 +365,72 @@ void DX11Renderer::BeginFrame()
         return;
     }
 
-    m_Context->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), m_DepthStencilView.Get());
-
-    D3D11_VIEWPORT viewport = {};
-    viewport.TopLeftX = 0.0f;
-    viewport.TopLeftY = 0.0f;
-    viewport.Width = static_cast<float>(m_ViewportWidth);
-    viewport.Height = static_cast<float>(m_ViewportHeight);
-    viewport.MinDepth = 0.0f;
-    viewport.MaxDepth = 1.0f;
-    m_Context->RSSetViewports(1, &viewport);
+    SetRenderTarget();
+    SetViewport({0.0f, 0.0f, static_cast<float>(m_ViewportWidth), static_cast<float>(m_ViewportHeight), 0.0f, 1.0f});
 
     m_Context->RSSetState(m_DefaultRasterizerState.Get());
     m_Context->OMSetBlendState(m_DefaultBlendState.Get(), nullptr, 0xFFFFFFFF);
     m_Context->OMSetDepthStencilState(m_DefaultDepthState.Get(), 0);
 
-    m_Context->ClearRenderTargetView(m_RenderTargetView.Get(), CLEAR_COLOR);
+    Clear({CLEAR_COLOR[0], CLEAR_COLOR[1], CLEAR_COLOR[2], CLEAR_COLOR[3]});
     m_Context->ClearDepthStencilView(m_DepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     m_LifecyclePhase = FrameLifecyclePhase::InFrame;
     m_ActivePass = RenderPassType::None;
+}
+
+void DX11Renderer::Clear(const RendererColor& color)
+{
+    if (!m_IsInitialized || !m_RenderTargetView)
+    {
+        return;
+    }
+
+    const float clearColor[4] = {color.R, color.G, color.B, color.A};
+    m_Context->ClearRenderTargetView(m_RenderTargetView.Get(), clearColor);
+}
+
+void DX11Renderer::SetViewport(const RendererViewport& viewport)
+{
+    if (!m_IsInitialized)
+    {
+        return;
+    }
+
+    D3D11_VIEWPORT dxViewport = {};
+    dxViewport.TopLeftX = viewport.X;
+    dxViewport.TopLeftY = viewport.Y;
+    dxViewport.Width = viewport.Width;
+    dxViewport.Height = viewport.Height;
+    dxViewport.MinDepth = viewport.MinDepth;
+    dxViewport.MaxDepth = viewport.MaxDepth;
+    m_Context->RSSetViewports(1, &dxViewport);
+
+    if (viewport.Width > 0.0f && viewport.Height > 0.0f)
+    {
+        m_ViewportWidth = static_cast<int>(viewport.Width);
+        m_ViewportHeight = static_cast<int>(viewport.Height);
+    }
+}
+
+void DX11Renderer::SetRenderTarget()
+{
+    if (!m_IsInitialized || !m_RenderTargetView || !m_DepthStencilView)
+    {
+        return;
+    }
+
+    m_Context->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), m_DepthStencilView.Get());
+}
+
+void DX11Renderer::DrawIndexed(uint32_t indexCount, uint32_t startIndex, int32_t baseVertex)
+{
+    if (!m_IsInitialized || m_LifecyclePhase != FrameLifecyclePhase::InPass)
+    {
+        return;
+    }
+
+    m_Context->DrawIndexed(indexCount, startIndex, baseVertex);
 }
 
 void DX11Renderer::ApplyPassState(RenderPassType passType)
@@ -555,13 +601,13 @@ RendererTextureHandle DX11Renderer::CreateTexture(uint32_t width, uint32_t heigh
     if (!m_IsInitialized)
     {
         LX_ENGINE_ERROR("[Texture] Cannot create texture: renderer not initialized");
-        return RendererTextureHandle();
+        return {};
     }
 
     if (width == 0 || height == 0 || !pixels)
     {
         LX_ENGINE_ERROR("[Texture] Invalid texture creation parameters");
-        return RendererTextureHandle();
+        return {};
     }
 
     DXGI_FORMAT dxgiFormat;
@@ -581,7 +627,7 @@ RendererTextureHandle DX11Renderer::CreateTexture(uint32_t width, uint32_t heigh
         break;
     default:
         LX_ENGINE_ERROR("[Texture] Unsupported texture format: {}", static_cast<uint32_t>(format));
-        return RendererTextureHandle();
+        return {};
     }
 
     UINT rowPitch = 0;
@@ -618,18 +664,28 @@ RendererTextureHandle DX11Renderer::CreateTexture(uint32_t width, uint32_t heigh
     if (FAILED(hr))
     {
         LX_ENGINE_ERROR("[Texture] CreateTexture2D failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
-        return RendererTextureHandle();
+        return {};
     }
 
-    RendererTextureHandle srv;
-    hr = m_Device->CreateShaderResourceView(texture.Get(), nullptr, &srv);
+    ID3D11ShaderResourceView* rawSrv = nullptr;
+    hr = m_Device->CreateShaderResourceView(texture.Get(), nullptr, &rawSrv);
     if (FAILED(hr))
     {
         LX_ENGINE_ERROR("[Texture] CreateShaderResourceView failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
-        return RendererTextureHandle();
+        return {};
     }
 
-    return srv;
+    RendererTextureHandle handle;
+    handle.NativeResource = std::shared_ptr<void>(rawSrv,
+                                                  [](void* resource)
+                                                  {
+                                                      if (resource)
+                                                      {
+                                                          static_cast<ID3D11ShaderResourceView*>(resource)->Release();
+                                                      }
+                                                  });
+
+    return handle;
 }
 
 void DX11Renderer::SetViewProjection(const Matrix4& view, const Matrix4& projection)

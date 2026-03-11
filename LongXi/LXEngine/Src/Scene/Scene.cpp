@@ -1,7 +1,6 @@
 #include "Scene/Scene.h"
 
 #include "Core/Logging/LogMacros.h"
-#include "Renderer/DX11Renderer.h"
 
 namespace LongXi
 {

@@ -1,42 +1,47 @@
 # Contract: External Pass Bridge
 
 ## Purpose
-Define how external tooling renderers (e.g., Debug UI) integrate with renderer lifecycle without backend leakage.
+Define how external tooling renderers (for example DebugUI) integrate through renderer-owned lifecycle boundaries without backend leakage.
 
 ## Participants
-- **Renderer**: Owns lifecycle, pass sequencing, and backend state.
-- **External Client**: Provides draw callback/content through bridge contract only.
+- **Renderer**: Owns frame lifecycle, pass sequencing, and GPU state contract.
+- **External Client**: Provides callback content only; no backend-native access.
 
 ## Contract Rules
-- External client never receives backend-native device/context/swapchain handles.
-- External pass executes only within renderer-owned frame lifecycle.
-- External pass cannot bypass `BeginFrame/BeginPass/EndPass/EndFrame` sequencing.
+- External client does not receive backend-native device/context/swapchain handles.
+- External pass executes only inside active renderer frame lifecycle.
+- External pass cannot bypass renderer pass ordering and state reset rules.
 
 ## Bridge Operations
 
 ### `RegisterExternalPass(passDescriptor)`
-- Registers external pass metadata (name, ordering slot, enablement).
+- Registers external pass metadata (label, order slot, enable state).
 - Returns renderer-owned bridge identifier.
 
-### `ExecuteExternalPass(bridgeId, renderCallback)`
-- **Preconditions**: Active frame; renderer authorizes pass slot.
-- **Execution**: Renderer begins managed external pass, invokes callback, then ends pass.
-- **Postconditions**: Renderer regains ownership of lifecycle and state progression.
+### `ExecuteExternalPass(bridgeId, callback)`
+- **Preconditions**: Active frame; bridge registered; callback valid.
+- **Execution**: Renderer enters managed external pass, invokes callback, exits pass, and restores lifecycle ownership.
+- **Postconditions**: Renderer state remains valid for subsequent frame progression.
 
 ### `UnregisterExternalPass(bridgeId)`
-- Removes pass registration safely outside active execution.
+- Removes bridge registration outside active execution.
 
 ## Failure and Violation Behavior
-- Callback invoked outside valid lifecycle -> rejected and logged.
-- Callback attempts backend-native access -> treated as contract violation by architecture audit.
-- Bridge execution failure -> renderer logs and follows recoverable policy if rendering cannot continue.
+- Execution outside valid lifecycle -> reject and log.
+- Unregistered bridge id -> reject and log.
+- Callback failure -> log and route through renderer recovery/violation policy.
 
-## Observability Requirements
-- Log pass registration/unregistration.
-- Log each external pass begin/end in debug diagnostics mode.
-- Emit contract violations for invalid external pass usage.
+## Observability
+- Log registration/unregistration.
+- Log external pass begin/end in debug diagnostics mode.
+- Emit contract violation events for invalid usage.
 
-## Latest Audit Result
-- Audit script: `Scripts/Audit-RendererBoundaries.ps1 -Json`
-- Date: 2026-03-11
-- Result: PASS (`ok=true`, no leakage violations outside `LXEngine/Src/Renderer`).
+## Boundary Compliance
+External pass bridge integration must preserve:
+- Backend-agnostic engine-side interfaces.
+- Renderer-exclusive ownership of backend API calls and GPU state.
+
+## Compliance Evidence (2026-03-11)
+- Boundary audit command: `powershell -ExecutionPolicy Bypass -File Scripts/Audit-RendererBoundaries.ps1 -Json`
+- Result: `{"scanned":"LongXi/LXEngine/Src","violations":[],"ok":true}`
+- Interpretation: no DirectX include/type leakage detected outside approved renderer backend implementation files.

@@ -1,68 +1,78 @@
-# Research: Spec 014 - Renderer API and GPU State Contract
+# Research: Spec 014 - Renderer API and Backend Architecture
 
-## Decision 1: Public renderer contract is backend-agnostic
-- **Decision**: Expose renderer operations and renderer-owned value/handle types only; keep DirectX 11 objects and headers internal to DX11 backend implementation.
-- **Rationale**: Prevents backend leakage, reduces coupling, and keeps engine-side contracts stable.
+## Decision 1: Public renderer API remains backend-agnostic
+- **Decision**: Engine systems consume only backend-agnostic renderer contracts (`Renderer.h`, `RendererTypes.h`); backend-native types remain internal.
+- **Rationale**: Prevents DirectX leakage, reduces coupling, and preserves future backend flexibility.
 - **Alternatives considered**:
-  - Expose read-only DX11 handles to engine modules (rejected: leaks backend and breaks boundary rule).
-  - Keep fully DX11-specific public API (rejected: locks architecture and increases churn risk).
+  - Expose `DX11Renderer` directly to engine modules (rejected: boundary violation and tight coupling).
+  - Expose read-only DirectX device/context handles in public APIs (rejected: backend leakage risk).
 
-## Decision 2: Enforce renderer lifecycle through explicit state machine
-- **Decision**: Implement `FrameLifecycleState` as legal-operation gate (`NotStarted -> InFrame -> InPass -> InFrame -> Ended`).
-- **Rationale**: Makes invalid operation order detectable and testable instead of implicit.
+## Decision 2: Renderer enforces explicit lifecycle state machine
+- **Decision**: Enforce legal renderer call ordering via explicit lifecycle phases (`NotStarted`, `InFrame`, `InPass`, `FrameEnded`).
+- **Rationale**: Eliminates implicit call-order assumptions and makes violations diagnosable.
 - **Alternatives considered**:
-  - Trust call-site ordering only (rejected: high regression risk).
-  - Soft advisory ordering without enforcement (rejected: insufficient for contract correctness).
+  - Rely on caller discipline only (rejected: high regression risk).
+  - Soft warnings without hard gating (rejected: insufficient protection).
 
-## Decision 3: Rebind baseline GPU state at every `BeginFrame`
-- **Decision**: `BeginFrame` always rebinds render target, depth-stencil target, viewport, rasterizer state, blend state, and depth-stencil state.
-- **Rationale**: Eliminates reliance on previous frame/pass state and neutralizes external state mutation side effects.
+## Decision 3: Baseline GPU state is rebound every frame
+- **Decision**: `BeginFrame` must explicitly bind required baseline state (RT, DS, viewport, rasterizer, blend, depth).
+- **Rationale**: Prevents state-leakage bugs from previous frame/pass/external renderer modifications.
 - **Alternatives considered**:
-  - Rebind only on detected changes (rejected: can miss external mutations).
-  - Rebind only after external passes (rejected: incomplete and fragile).
+  - Change-detection-only rebinding (rejected: external state mutation can bypass detection).
+  - Rebind only after external passes (rejected: incomplete guarantee).
 
-## Decision 4: Queue resize requests during active frame
-- **Decision**: If resize arrives mid-frame, store latest dimensions and apply once at next `BeginFrame`.
-- **Rationale**: Avoids resource invalidation while draw work is in progress and preserves deterministic frame boundaries.
+## Decision 4: Resize requests during active frame are queued
+- **Decision**: If resize arrives while rendering, store latest dimensions and apply once at next safe frame start.
+- **Rationale**: Avoids mid-frame resource invalidation and preserves deterministic frame boundaries.
 - **Alternatives considered**:
-  - Resize immediately mid-frame (rejected: invalidates active state/resources).
-  - Drop resize events during active frame (rejected: stale surface behavior).
+  - Immediate mid-frame resource recreation (rejected: unstable and unsafe).
+  - Drop active-frame resize events (rejected: stale surface state).
 
-## Decision 5: Provide renderer-owned external pass bridge
-- **Decision**: External renderers (e.g., Debug UI) submit through a renderer-controlled bridge without backend-native handle access.
-- **Rationale**: Preserves boundary discipline while enabling tool rendering in frame lifecycle.
+## Decision 5: External rendering uses renderer-owned pass bridge
+- **Decision**: External/tooling rendering executes through renderer-managed external-pass callback boundaries.
+- **Rationale**: Preserves renderer ownership of lifecycle and GPU state while allowing DebugUI integration.
 - **Alternatives considered**:
-  - Give external systems DX11 device/context (rejected: boundary violation).
-  - Let external systems own independent present path (rejected: lifecycle fragmentation).
+  - Give external systems backend device/context access (rejected: backend leakage).
+  - Separate independent present path for tooling (rejected: lifecycle fragmentation).
 
-## Decision 6: Contract violation behavior is environment-specific
-- **Decision**: Development builds assert + log; non-development builds log + skip invalid operation and continue safely.
-- **Rationale**: Maximizes diagnosis in development and avoids hard crashes in non-development validation runs.
+## Decision 6: Contract violation handling is environment-aware
+- **Decision**: Development builds assert + log; non-development builds log + skip invalid operations safely.
+- **Rationale**: Strong diagnostics in development without unnecessary hard failure in non-development runs.
 - **Alternatives considered**:
-  - Always terminate on violation (rejected: overly disruptive).
-  - Silent ignore (rejected: hides defects).
+  - Always terminate on violation (rejected: too disruptive).
+  - Silent ignore (rejected: masks defects).
 
-## Decision 7: Use recoverable failure policy for present/device-loss/swapchain errors
-- **Decision**: On failure, log details, enter safe non-rendering mode, and attempt controlled reinitialization on valid recovery trigger.
-- **Rationale**: Prevents undefined rendering behavior and provides deterministic recovery path.
+## Decision 7: Recovery policy for present/device/swapchain failures
+- **Decision**: Log failure details, enter safe non-rendering mode, and attempt controlled reinitialization.
+- **Rationale**: Avoids undefined rendering behavior and provides deterministic recovery flow.
 - **Alternatives considered**:
-  - Fatal terminate on first error (rejected: poor runtime resilience).
   - Continue normal rendering after failure (rejected: undefined behavior risk).
+  - Fatal termination on first failure (rejected: poor resilience).
 
-## Decision 8: Standardize renderer observability events
-- **Decision**: Log initialization, lifecycle transitions, pass boundaries, resize operations, recovery transitions, and contract violations.
-- **Rationale**: Supports reproducibility and root-cause analysis for GPU-state regressions.
+## Decision 8: Boundary compliance is validated by automated audit
+- **Decision**: Enforce include/type boundary rules using `Scripts/Audit-RendererBoundaries.ps1`.
+- **Rationale**: Makes architectural guardrails continuously verifiable.
 - **Alternatives considered**:
-  - Minimal success/failure logging only (rejected: low diagnostic value).
-  - Verbose per-draw logging in all builds (rejected: noisy and costly).
+  - Manual review only (rejected: inconsistent enforcement).
+  - Build-only checks without explicit boundary scan (rejected: weaker coverage).
+
+## Open Questions Resolution
+All open clarification items are resolved by the decisions above.
+
+## Reference Implementation Rule
+- The agent may inspect `D:\Yamen Development\Old-Reference\cqClient\Conquer` only to understand behavior/constraints.
+- Final design remains aligned with LongXi architecture.
+
+
+## Implementation Outcome Alignment (2026-03-11)
+- Public renderer contract refactored to abstract `Renderer` + `CreateRenderer()` factory entrypoint.
+- DX11 backend remains behind `DX11Renderer`; engine modules now consume `Renderer` interface.
+- Texture handle exposure refactored to opaque renderer handles (`std::shared_ptr<void>`), removing backend handle types from `Texture.h`.
+- Sprite renderer backend coupling moved behind private implementation + DX11 backend pipeline module.
+- Boundary audit script hardened to detect DirectX symbol leakage and DX11 backend-header include leakage.
 
 ## Validation Sweep Summary (2026-03-11)
-- Build validation: PASS (Debug x64 build succeeded for `LXCore`, `LXEngine`, `LXShell`).
-- Runtime initialization/lifecycle smoke: PASS (renderer, scene, camera, sprite renderer, and DebugUI all active with no lifecycle-order errors in logs).
-- Resize validation: PASS (manual resize testing confirmed stable behavior and rendering recovery).
-- Boundary audit: PASS (`Scripts/Audit-RendererBoundaries.ps1 -Json` returned `ok=true` with no violations).
-- Logging quality fix applied: per-frame sprite flush info spam removed from `SpriteRenderer::FlushBatch`.
-
-## Notes
-- Reference implementation inspection is constrained to behavior/constraints only.
-- Final design remains aligned with LongXi architecture and repository rules.
+- Boundary audit: PASS (`ok=true`, zero violations).
+- Runtime: developer-provided logs show validation scene + debug panels + texture load execution paths active.
+- Build in this automation sandbox: `MSB4018` FileTracker failure blocked full compile verification; requires confirmation on developer machine toolchain session.
+- Follow-up build check (LXEngine project-only) after API refactor produced no C++ diagnostics before the same MSBuild FileTracker (MSB4018) tooling failure.

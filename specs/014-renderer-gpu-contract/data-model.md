@@ -1,81 +1,101 @@
-# Data Model: Spec 014 - Renderer API and GPU State Contract
+# Data Model: Spec 014 - Renderer API and Backend Architecture
 
 ## Entity: FrameLifecycleState
 
 ### Purpose
-Tracks legal renderer lifecycle transitions and validates API call ordering.
+Represents legal renderer lifecycle progression and enforces API-order validity.
 
 ### Fields
-- `Phase`: NotStarted | InFrame | InPass | FrameEnded
-- `ActivePass`: None | Scene | Sprite | DebugUI | External
-- `FrameIndex`: Monotonic frame counter
-- `HasPendingPresent`: Boolean
+- `Phase`: `NotStarted | InFrame | InPass | FrameEnded`
+- `ActivePass`: `None | Scene | Sprite | DebugUI | External`
+- `FrameIndex`: monotonic frame counter
+- `HasPendingPresent`: boolean
 
 ### Validation Rules
-- `BeginFrame` valid only when `Phase` is `NotStarted` or `FrameEnded`.
-- `BeginPass` valid only when `Phase` is `InFrame` and `ActivePass` is `None`.
-- Draw operations valid only when `Phase` is `InPass`.
-- `EndPass` valid only when `Phase` is `InPass`.
-- `EndFrame` valid only when `Phase` is `InFrame` and no active pass.
-- `Present` valid only after `EndFrame`.
+- `BeginFrame` valid only from `NotStarted` or `FrameEnded`.
+- `BeginPass` valid only from `InFrame` with no active pass.
+- Draw submission valid only during `InPass`.
+- `EndPass` valid only during `InPass`.
+- `EndFrame` valid only during `InFrame` with no active pass.
+- `Present` valid only from `FrameEnded`.
 
 ### State Transitions
 - `NotStarted -> InFrame` on `BeginFrame`
 - `InFrame -> InPass` on `BeginPass`
 - `InPass -> InFrame` on `EndPass`
 - `InFrame -> FrameEnded` on `EndFrame`
-- `FrameEnded -> NotStarted` after successful `Present`/frame completion
+- `FrameEnded -> NotStarted` after successful present completion
 
 ## Entity: RenderPassType
 
 ### Purpose
-Defines pass categories and state configuration intent.
+Defines renderer-managed pass categories and pass sequencing intent.
 
 ### Values
 - `Scene`
 - `Sprite`
 - `DebugUI`
-- `External` (bridge-mediated tooling pass)
+- `External`
 
 ### Validation Rules
-- Pass order in this spec: Scene -> Sprite -> DebugUI (External pass usage is controlled by renderer integration rules).
-- Only one active pass at a time.
+- Exactly one pass active at a time.
+- Default pass order: `Scene -> Sprite -> DebugUI`.
+- External pass executes only via renderer-owned bridge.
 
 ## Entity: GpuBaselineStateProfile
 
 ### Purpose
-Represents mandatory GPU state that must be rebound at frame start.
+Defines mandatory baseline GPU state guaranteed after `BeginFrame`.
 
 ### Fields
-- `RenderTargetBound`: Boolean
-- `DepthStencilBound`: Boolean
-- `ViewportBound`: Boolean
-- `RasterizerStateBound`: Boolean
-- `BlendStateBound`: Boolean
-- `DepthStateBound`: Boolean
+- `RenderTargetBound`: boolean
+- `DepthStencilBound`: boolean
+- `ViewportBound`: boolean
+- `RasterizerStateBound`: boolean
+- `BlendStateBound`: boolean
+- `DepthStateBound`: boolean
 
 ### Validation Rules
-- All fields must be true immediately after `BeginFrame` succeeds.
-- If any field cannot be set, renderer enters recoverable failure path.
+- All fields must be true before any pass draw submission.
+- Failure to establish baseline state enters recovery handling path.
 
 ## Entity: RenderSurfaceState
 
 ### Purpose
-Represents active render-surface geometry and dependent resources.
+Tracks active render surface geometry/resources and resize-deferred updates.
 
 ### Fields
-- `Width`: Positive integer (0 allowed only for minimized/deferred state)
-- `Height`: Positive integer (0 allowed only for minimized/deferred state)
-- `Viewport`: Renderer-owned viewport descriptor
-- `RenderTargetStatus`: Valid | Invalid | Recreating
-- `DepthTargetStatus`: Valid | Invalid | Recreating
-- `PendingResize`: Boolean
-- `PendingWidth`: Integer
-- `PendingHeight`: Integer
+- `Width`: integer
+- `Height`: integer
+- `Viewport`: renderer-owned viewport descriptor
+- `RenderTargetStatus`: `Valid | Invalid | Recreating`
+- `DepthTargetStatus`: `Valid | Invalid | Recreating`
+- `PendingResize`: boolean
+- `PendingWidth`: integer
+- `PendingHeight`: integer
 
 ### Validation Rules
-- `Width` and `Height` > 0 required before creating size-dependent resources.
-- Mid-frame resize sets pending values only; apply at next `BeginFrame`.
+- Zero-size dimensions do not trigger invalid resource creation.
+- Mid-frame resize updates pending fields only.
+- Pending resize applies at next safe frame boundary.
+
+## Entity: RendererHandleTypes
+
+### Purpose
+Represents backend-agnostic renderer-facing handles and values used by engine systems.
+
+### Fields
+- `TextureHandle`
+- `BufferHandle`
+- `ShaderHandle`
+- `RenderTargetHandle`
+- `DepthTargetHandle`
+- `Viewport`
+- `Color`
+
+### Validation Rules
+- No backend-native payload or types in public handle/value definitions.
+- Handle validity is owned by renderer implementation.
 
 ## Entity: ContractViolationEvent
 
@@ -83,78 +103,57 @@ Represents active render-surface geometry and dependent resources.
 Captures invalid renderer API usage for diagnostics and policy handling.
 
 ### Fields
-- `Operation`: API call identifier
-- `ExpectedPhase`: Lifecycle phase required
-- `ActualPhase`: Lifecycle phase observed
-- `Severity`: Warning | Error | FatalCandidate
-- `BuildBehavior`: AssertAndLog | LogAndSkip
-- `Timestamp`: Event time
+- `Operation`
+- `ExpectedState`
+- `ActualState`
+- `Severity`
+- `BuildBehavior`: `AssertAndLog | LogAndSkip`
+- `Timestamp`
 
 ### Validation Rules
-- Every rejected operation must emit one violation event.
-
-## Entity: RendererHandleTypes
-
-### Purpose
-Defines backend-agnostic value/handle types consumed by engine modules.
-
-### Fields
-- `TextureHandle`
-- `BufferHandle`
-- `ViewportDesc`
-- `RenderTargetHandle`
-- `DepthTargetHandle`
-
-### Validation Rules
-- No backend-native object types may appear in these definitions.
+- Every rejected operation emits a violation event.
 
 ## Entity: ExternalPassBridge
 
 ### Purpose
-Renderer-owned bridge contract enabling tool rendering without backend leakage.
+Renderer-owned integration model for external rendering tools (for example DebugUI).
 
 ### Fields
 - `BridgeId`
 - `PassLabel`
-- `LifecycleBinding`: Begin/Render/End hooks
-- `AllowedStage`: Pass stage constraints
+- `AllowedStage`
+- `CallbackRegistrationState`
 
 ### Validation Rules
-- Bridge can execute only inside active frame and within renderer-controlled pass boundaries.
-- Bridge cannot expose backend-native handles.
+- External pass executes only within renderer-managed lifecycle.
+- External bridge does not expose backend-native handles.
 
 ## Entity: RendererRecoveryState
 
 ### Purpose
-Tracks recoverable rendering failures and controlled reinitialization flow.
+Tracks recovery behavior for present/device-loss/swapchain failure events.
 
 ### Fields
-- `Mode`: Normal | RecoveryPending | SafeNoRender | Reinitializing
-- `FailureType`: PresentFailure | DeviceLoss | SwapchainFailure
+- `Mode`: `Normal | RecoveryPending | SafeNoRender | Reinitializing`
+- `FailureType`: `PresentFailure | DeviceLoss | SwapchainFailure`
 - `LastFailureTimestamp`
 - `ReinitAttemptCount`
-- `LastReinitResult`: Success | Failure | NotAttempted
+- `LastReinitResult`: `Success | Failure | NotAttempted`
 
 ### Validation Rules
-- On failure event, state transitions to `RecoveryPending` then `SafeNoRender` until recovery trigger.
-- Reinitialization attempts must be logged and bounded by policy.
+- Runtime failure transitions to safe recovery flow.
+- Recovery attempts are bounded and logged.
 
 ## Relationships
 - `FrameLifecycleState` governs legal usage of `RenderPassType`.
-- `GpuBaselineStateProfile` must be satisfied for each `FrameLifecycleState` transition into `InFrame`.
-- `RenderSurfaceState` drives viewport and resource rebinding in baseline state.
-- `ExternalPassBridge` executes within `FrameLifecycleState` and `RenderPassType` constraints.
-- `ContractViolationEvent` may be emitted from any invalid lifecycle or boundary interaction.
-- `RendererRecoveryState` can override normal frame flow and force safe no-render mode.
+- `GpuBaselineStateProfile` must be satisfied on transition into `InFrame`.
+- `RenderSurfaceState` drives viewport and target rebinding.
+- `RendererHandleTypes` are consumed by engine systems through renderer API only.
+- `ExternalPassBridge` operates within frame lifecycle/pass constraints.
+- `ContractViolationEvent` may be emitted from any invalid lifecycle/boundary interaction.
+- `RendererRecoveryState` can override normal frame progression until recovery succeeds.
 
-
-## Implementation Alignment (Current)
-- `FrameLifecycleState` is implemented with explicit phase checks at `BeginFrame`, `BeginPass`, `EndPass`, `EndFrame`, and `Present`.
-- `RenderSurfaceState` applies a queued-resize model: active-frame resize requests are deferred to next safe frame boundary.
-- `RendererRecoveryState` enters `SafeNoRender` on present/device/swapchain failure and retries through controlled recovery path.
-- `ExternalPassBridge` is implemented as renderer-owned callback execution under `ExecuteExternalPass`.
-
-- `RendererHandleTypes` are consumed by engine systems without direct `DX11Renderer` dependency in `SceneNode`, `Scene`, and `SpriteRenderer` public interfaces.
-- `ExternalPassBridge` integration in shell uses engine bridge call (`ExecuteExternalRenderPass`) and avoids direct renderer backend class coupling.
-
-
+## Implementation Alignment (2026-03-11)
+- `RendererTextureHandle`, `RendererBufferHandle`, and `RendererShaderHandle` are represented as opaque `std::shared_ptr<void>` handles.
+- Backend-native payload is created/released only in DX11 backend implementation code.
+- Engine-facing code consumes these handles without including DirectX headers/types.

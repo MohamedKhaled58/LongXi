@@ -3,7 +3,6 @@
 #include "Core/FileSystem/VirtualFileSystem.h"
 #include "Core/Logging/LogMacros.h"
 #include "Input/InputSystem.h"
-#include "Renderer/DX11Renderer.h"
 #include "Renderer/SpriteRenderer.h"
 #include "Scene/Scene.h"
 #include "Texture/TextureManager.h"
@@ -33,7 +32,13 @@ bool Engine::Initialize(HWND windowHandle, int width, int height)
     }
 
     LX_ENGINE_INFO("[Engine] Initializing renderer");
-    m_Renderer = std::make_unique<DX11Renderer>();
+    m_Renderer = CreateRenderer();
+    if (!m_Renderer)
+    {
+        LX_ENGINE_ERROR("[Engine] Renderer backend factory returned null");
+        return false;
+    }
+
     if (!m_Renderer->Initialize(windowHandle, width, height))
     {
         LX_ENGINE_ERROR("[Engine] Renderer initialization failed");
@@ -49,7 +54,7 @@ bool Engine::Initialize(HWND windowHandle, int width, int height)
     m_VFS = std::make_unique<CVirtualFileSystem>();
 
     LX_ENGINE_INFO("[Engine] Initializing texture manager");
-    m_TextureManager = std::make_unique<TextureManager>(*this);
+    m_TextureManager = std::make_unique<TextureManager>(*m_Renderer, *m_VFS);
 
     LX_ENGINE_INFO("[Engine] Initializing sprite renderer");
     m_SpriteRenderer = std::make_unique<SpriteRenderer>();

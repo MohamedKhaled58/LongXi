@@ -1,4 +1,4 @@
-# Specification Quality Checklist: Spec 014 - Renderer API and GPU State Contract
+# Specification Quality Checklist: Spec 014 - Renderer API and Backend Architecture
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-03-11
@@ -31,4 +31,5 @@
 
 ## Notes
 
-- Validation complete. Spec is ready for `/speckit.plan`.
+- Validation complete. Existing Spec 014 updated in-place for backend-agnostic renderer API and backend architecture scope.
+- Spec is ready for `/speckit.plan`.

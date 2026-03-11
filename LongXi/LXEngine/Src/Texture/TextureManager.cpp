@@ -1,9 +1,9 @@
 #include "Texture/TextureManager.h"
 #include "Texture/TextureLoader.h"
-#include "Engine/Engine.h"
 #include "Core/FileSystem/PathUtils.h"
 #include "Core/FileSystem/VirtualFileSystem.h"
 #include "Core/Logging/LogMacros.h"
+#include "Renderer/Renderer.h"
 
 #include <ctype.h>
 
@@ -14,7 +14,7 @@ namespace LongXi
 // Constructor / Destructor
 // ============================================================================
 
-TextureManager::TextureManager(Engine& engine) : m_Engine(engine)
+TextureManager::TextureManager(Renderer& renderer, CVirtualFileSystem& vfs) : m_Renderer(renderer), m_VFS(vfs)
 {
     LX_ENGINE_INFO("[Texture] TextureManager created");
 }
@@ -59,7 +59,7 @@ std::shared_ptr<Texture> TextureManager::LoadTexture(const std::string& path)
     }
 
     // Load from VFS
-    std::vector<uint8_t> fileData = m_Engine.GetVFS().ReadAll(normalized);
+    std::vector<uint8_t> fileData = m_VFS.ReadAll(normalized);
     if (fileData.empty())
     {
         LX_ENGINE_ERROR("[Texture] File not found: {}", normalized);
@@ -104,8 +104,8 @@ std::shared_ptr<Texture> TextureManager::LoadTexture(const std::string& path)
     }
 
     // Upload to GPU
-    RendererTextureHandle handle = m_Engine.GetRenderer().CreateTexture(texData.Width, texData.Height, texData.Format, texData.Pixels.data());
-    if (!handle.Get())
+    RendererTextureHandle handle = m_Renderer.CreateTexture(texData.Width, texData.Height, texData.Format, texData.Pixels.data());
+    if (!handle.IsValid())
     {
         LX_ENGINE_ERROR("[Texture] GPU upload failed: {}", normalized);
         return nullptr;

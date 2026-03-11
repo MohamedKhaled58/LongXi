@@ -7,21 +7,21 @@
 namespace LongXi
 {
 
-class DX11Renderer;
+class Renderer;
 class Texture;
 struct SpriteVertex;
 
 class DX11SpritePipeline
 {
   public:
-    bool Initialize(DX11Renderer& renderer, int maxSpritesPerBatch, const char* vertexShaderSource, const char* pixelShaderSource);
+    bool Initialize(Renderer& renderer, int maxSpritesPerBatch, const char* vertexShaderSource, const char* pixelShaderSource);
     void Shutdown();
     bool IsInitialized() const;
 
-    bool ValidateRendererState(DX11Renderer& renderer) const;
-    void BindBatchPipeline(DX11Renderer& renderer) const;
-    void UploadProjectionMatrix(DX11Renderer& renderer, const float* matrixData, std::size_t matrixBytes);
-    void FlushBatch(DX11Renderer& renderer, const SpriteVertex* vertices, int spriteCount, const Texture& texture) const;
+    bool ValidateRendererState(Renderer& renderer) const;
+    void BindBatchPipeline(Renderer& renderer) const;
+    void UploadProjectionMatrix(Renderer& renderer, const float* matrixData, std::size_t matrixBytes);
+    void FlushBatch(Renderer& renderer, const SpriteVertex* vertices, int spriteCount, const Texture& texture) const;
 
   private:
     Microsoft::WRL::ComPtr<ID3D11VertexShader> m_VertexShader;

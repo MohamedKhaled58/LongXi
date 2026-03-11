@@ -1,60 +1,79 @@
-# Contract: Renderer Public API (Backend-Agnostic Surface)
+# Contract: Renderer Public API (Backend-Agnostic)
 
 ## Purpose
-Define the renderer contract consumed by engine systems and shell integrations, including lifecycle ordering, pass boundaries, and state invariants.
+Define the engine-facing renderer contract while keeping backend implementation details encapsulated.
 
-## Public Headers
+## Public Include Surface
 - `LongXi/LXEngine/Src/Renderer/Renderer.h`
 - `LongXi/LXEngine/Src/Renderer/RendererTypes.h`
 
-## Contracted Operation Set
+## Public API Surface
+- `Renderer` is an abstract backend-agnostic contract.
+- `CreateRenderer()` is the renderer-factory entrypoint used by engine runtime code.
+- `DX11Renderer` remains an internal backend implementation behind `Renderer`.
 
-| Operation | Required State | Guaranteed Result |
-|-----------|----------------|-------------------|
-| `Initialize(HWND, int, int)` | Not initialized, valid window, positive size | Device/swapchain/surface resources created, phase set to `NotStarted` |
-| `BeginFrame()` | `NotStarted` or `FrameEnded`, no active pass | Baseline GPU state rebound, queued resize applied if valid, phase set to `InFrame` |
-| `BeginPass(RenderPassType)` | `InFrame`, no active pass | Pass state applied, phase set to `InPass` |
-| `EndPass()` | `InPass` | Pass closed, baseline depth state restored, phase set to `InFrame` |
-| `ExecuteExternalPass(ExternalPassCallback)` | `InFrame`, callback non-null | Renderer wraps callback in renderer-owned external pass boundary |
-| `EndFrame()` | `InFrame`, no active pass | Frame closed, phase set to `FrameEnded` |
-| `Present()` | `FrameEnded` | Swapchain present attempted, frame phase reset for next frame |
-| `OnResize(int, int)` | Initialized | Mid-frame resize queued; safe-frame resize recreates RT/depth/viewport |
-| `SetViewProjection(const Matrix4&, const Matrix4&)` | Initialized | Active camera matrices stored for current frame use |
+## Forbidden Public Leakage
+Public engine headers and renderer public contracts MUST NOT expose:
+- `ID3D11Device`
+- `ID3D11DeviceContext`
+- `D3D11_VIEWPORT`
+- `DXGI_SWAP_CHAIN_DESC`
+- `DXGI_FORMAT`
 
-## Lifecycle and Pass Rules
-- Only one active pass is allowed at any point.
-- Direct draw submission must happen inside an active pass.
-- External tool rendering must run through `ExecuteExternalPass`, not direct pass ownership from callers.
-- Contract violations are rejected and logged.
+Engine modules outside renderer backend MUST NOT include:
+- `d3d11.h`
+- `dxgi.h`
 
-## Baseline GPU State Invariants
-Immediately after `BeginFrame`, renderer guarantees:
-- Render target bound
-- Depth-stencil target bound
-- Viewport applied
-- Rasterizer state applied
-- Blend state applied
-- Depth-stencil state applied
+## Operations and Guarantees
 
-No caller may assume previous-frame state survives.
+| Operation | Preconditions | Guarantees |
+|-----------|---------------|------------|
+| `Initialize(hwnd, width, height)` | Renderer not initialized; valid window and dimensions | Backend surface/device resources ready; lifecycle reset |
+| `BeginFrame()` | Lifecycle in frame-start-allowed state | Baseline GPU state explicitly rebound; pending resize applied if valid |
+| `Clear(color)` | Active frame | Active render target cleared according to API input |
+| `SetViewport(viewport)` | Active frame/pass according to policy | Renderer viewport state updated through backend |
+| `SetRenderTarget()` | Active frame/pass according to policy | Backbuffer/depth binding updated through backend |
+| `DrawIndexed(count, ...)` | Active pass and valid bindings | Indexed draw submitted through backend |
+| `EndFrame()` | No active pass | Frame lifecycle transitions to end state |
+| `Present()` | Frame ended | Swapchain present attempted under recovery policy |
+| `OnResize(width, height)` | Renderer initialized | Resize queued or applied safely; viewport/resources updated |
+
+## Frame Lifecycle Contract
+Required order:
+1. `BeginFrame`
+2. Frame/pass rendering operations
+3. `EndFrame`
+4. `Present`
+
+Invalid order must be rejected and logged.
+
+## GPU State Ownership Contract
+After `BeginFrame`, renderer guarantees baseline validity for:
+- Render target
+- Depth stencil
+- Viewport
+- Rasterizer state
+- Blend state
+- Depth state
+
+No caller may rely on state persistence from prior frame/pass.
 
 ## Resize Contract
-- `OnResize(width, height)` with zero/negative dimensions is deferred safely.
-- If called during `InPass`, resize is queued and applied at next safe `BeginFrame`.
-- Applying resize recreates swapchain-dependent render resources and updates viewport atomically.
+- Mid-frame resize is queued.
+- Next safe frame boundary applies resize.
+- Zero-size states do not trigger invalid resource recreation.
 
 ## Recovery Contract
-On present/device/swapchain failure:
-- Renderer logs failure context.
-- Renderer transitions to safe recovery mode (`RecoveryPending`/`SafeNoRender`).
-- Rendering is skipped until recovery path re-establishes valid state.
+On present/device-loss/swapchain failure:
+- Log error context.
+- Enter safe non-rendering mode.
+- Attempt controlled reinitialization based on recovery triggers.
 
-## Boundary Rules
-- Engine systems may call only the renderer API surface.
-- DirectX headers/types remain internal to renderer backend implementation and shell-side ImGui integration.
-- Include leakage is validated by `Scripts/Audit-RendererBoundaries.ps1`.
+## Boundary Compliance Contract
+- Engine systems consume renderer API only.
+- Backend-specific API use is confined to renderer backend implementation modules.
+- Boundary audit script validates compliance.
 
-## Current Validation Status
-- Boundary audit: PASS (`ok=true`, no leakage outside renderer module).
-- Build validation: PASS (Debug x64 build completed successfully on 2026-03-11).
-- Runtime stress scenarios: tracked in `quickstart.md`.
+## Implemented Handle Contract
+- `RendererTextureHandle`, `RendererBufferHandle`, and `RendererShaderHandle` use opaque ownership (`std::shared_ptr<void>`).
+- Public renderer handles expose no DirectX-native symbols or headers.
