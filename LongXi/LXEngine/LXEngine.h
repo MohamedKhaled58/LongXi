@@ -9,6 +9,8 @@
 #include "Engine/Engine.h"
 #include "Window/Win32Window.h"
 #include "Texture/TextureManager.h"
+#include "Renderer/SpriteRenderer.h"
+#include "Math/Math.h"
 #include "Core/Logging/LogMacros.h"
 
 // Entry point: include Application/EntryPoint.h ONCE in the client executable

@@ -12,6 +12,7 @@ class DX11Renderer;
 class InputSystem;
 class CVirtualFileSystem;
 class TextureManager;
+class SpriteRenderer;
 
 // =============================================================================
 // Engine — Central runtime coordinator class
@@ -72,6 +73,7 @@ class Engine
     InputSystem& GetInput();
     CVirtualFileSystem& GetVFS();
     TextureManager& GetTextureManager();
+    SpriteRenderer& GetSpriteRenderer();
 
   private:
     // Scene extension points (intentionally no-op until scene system is integrated)
@@ -84,6 +86,7 @@ class Engine
     std::unique_ptr<InputSystem> m_Input;
     std::unique_ptr<CVirtualFileSystem> m_VFS;
     std::unique_ptr<TextureManager> m_TextureManager;
+    std::unique_ptr<SpriteRenderer> m_SpriteRenderer;
 
     // State
     bool m_Initialized;

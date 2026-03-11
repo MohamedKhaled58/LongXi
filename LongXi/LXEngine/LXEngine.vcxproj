@@ -91,7 +91,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>d3d11.lib;dxgi.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;dxgi.lib;dxguid.lib;d3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <ProjectReference>
     </ProjectReference>
@@ -119,7 +119,7 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <Lib>
-      <AdditionalDependencies>d3d11.lib;dxgi.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;dxgi.lib;dxguid.lib;d3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <ProjectReference>
     </ProjectReference>
@@ -147,7 +147,7 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <Lib>
-      <AdditionalDependencies>d3d11.lib;dxgi.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;dxgi.lib;dxguid.lib;d3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <ProjectReference>
     </ProjectReference>
@@ -157,7 +157,9 @@
     <ClInclude Include="Src\Application\EntryPoint.h" />
     <ClInclude Include="Src\Engine\Engine.h" />
     <ClInclude Include="Src\Input\InputSystem.h" />
+    <ClInclude Include="Src\Math\Math.h" />
     <ClInclude Include="Src\Renderer\DX11Renderer.h" />
+    <ClInclude Include="Src\Renderer\SpriteRenderer.h" />
     <ClInclude Include="Src\Texture\Texture.h" />
     <ClInclude Include="Src\Texture\TextureData.h" />
     <ClInclude Include="Src\Texture\TextureFormat.h" />
@@ -170,6 +172,7 @@
     <ClCompile Include="Src\Engine\Engine.cpp" />
     <ClCompile Include="Src\Input\InputSystem.cpp" />
     <ClCompile Include="Src\Renderer\DX11Renderer.cpp" />
+    <ClCompile Include="Src\Renderer\SpriteRenderer.cpp" />
     <ClCompile Include="Src\Texture\Texture.cpp" />
     <ClCompile Include="Src\Texture\TextureLoader.cpp" />
     <ClCompile Include="Src\Texture\TextureManager.cpp" />
