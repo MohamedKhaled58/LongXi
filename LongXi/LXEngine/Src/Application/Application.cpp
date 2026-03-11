@@ -173,6 +173,14 @@ void Application::WireWindowCallbacks()
             m_Engine->GetInput().OnMouseWheel(delta);
         }
     };
+
+    m_Window->OnFocusLost = [this]()
+    {
+        if (m_Engine && m_Engine->IsInitialized())
+        {
+            m_Engine->GetInput().OnFocusLost();
+        }
+    };
 }
 
 // ============================================================================

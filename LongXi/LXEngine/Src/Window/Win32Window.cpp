@@ -239,6 +239,14 @@ LRESULT CALLBACK Win32Window::WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
         }
         return 0;
 
+    case WM_KILLFOCUS:
+        if (window && window->OnFocusLost)
+        {
+            window->OnFocusLost();
+        }
+        ReleaseCapture();
+        return 0;
+
     default:
         return DefWindowProc(hwnd, msg, wParam, lParam);
     }

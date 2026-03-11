@@ -62,6 +62,7 @@ class Win32Window
     std::function<void(MouseButton)> OnMouseButtonDown;
     std::function<void(MouseButton)> OnMouseButtonUp;
     std::function<void(int)> OnMouseWheel;
+    std::function<void()> OnFocusLost;
 
     // Win32 message dispatcher — retrieves Win32Window* via GWLP_USERDATA to route callbacks
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
