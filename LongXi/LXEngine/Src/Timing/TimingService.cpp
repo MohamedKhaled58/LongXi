@@ -104,9 +104,7 @@ void TimingService::BeginFrame()
     const bool bDeltaTimeClamped = clampedDeltaSeconds < unscaledDeltaSeconds;
     if (bDeltaTimeClamped && unscaledDeltaSeconds >= m_LargeGapWarningThresholdSeconds)
     {
-        LX_ENGINE_WARN("[Timing] Large frame gap detected. Unscaled {:.3f} ms clamped to {:.3f} ms",
-                       unscaledDeltaSeconds * 1000.0,
-                       clampedDeltaSeconds * 1000.0);
+        LX_ENGINE_WARN("[Timing] Large frame gap detected. Unscaled {:.3f} ms clamped to {:.3f} ms", unscaledDeltaSeconds * 1000.0, clampedDeltaSeconds * 1000.0);
     }
 
     m_PreviousFrameTimestamp = now;
