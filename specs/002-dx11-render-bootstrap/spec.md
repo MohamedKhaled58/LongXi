@@ -188,3 +188,9 @@ A developer launches `LXShell.exe`. The application initializes the DirectX 11 d
 ## Boundary Note
 
 This specification intentionally establishes only the minimal DirectX 11 render bootstrap boundary. Content rendering, shader systems, depth/stencil buffers, resource-backed drawing, and all higher-level rendering capabilities are expected to be handled by later separate specifications. This spec is deliberately narrow to ensure a stable, reviewable device/swap chain/render target foundation before adding complexity.
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

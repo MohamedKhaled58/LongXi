@@ -577,3 +577,9 @@ LongXi/LXCore/Src/Core/FileSystem/
 
 - **Spec 004 (LXCore foundation)**: Provides `LX_CORE_INFO/WARN/ERROR` logging macros. Module structure and `LXCore.h` entry point.
 - **Spec 005 (WDF Archive)**: Provides `WdfArchive` (`Open`, `HasEntry`, `ReadEntry`). UID hash is internal to `WdfArchive`.
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

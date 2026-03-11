@@ -121,3 +121,9 @@ UINT createFlags = 0;
 - `d3d11.lib` — DX11 device and context
 - `dxgi.lib` — DXGI swap chain and factory
 - `dxguid.lib` — COM GUIDs for debug interfaces
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

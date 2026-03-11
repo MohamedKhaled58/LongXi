@@ -65,3 +65,9 @@ This specification is ready for the next phase (`/speckit.clarify` or `/speckit.
 
 - Open questions OQ-001, OQ-002, OQ-003 all have recommended defaults — can be resolved during `/speckit.clarify` or accepted as-is
 - Spec intentionally avoids prescribing class structure (e.g., "Renderer" class, "DX11Context" class) — that is design work for `/speckit.plan`
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

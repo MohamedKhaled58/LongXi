@@ -33,3 +33,9 @@
 
 - All items pass. Spec is ready for `/speckit.plan`.
 - FR-039 and FR-040 reference HLSL and D3DCompile which are implementation details — these are intentionally included because this is an engine engineering spec where the platform pipeline is part of the architectural contract, consistent with the style of Spec 008.
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

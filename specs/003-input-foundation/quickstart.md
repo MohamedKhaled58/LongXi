@@ -154,3 +154,9 @@ Remove this diagnostic block before committing.
 - No side mouse buttons (X1, X2)
 - No input recording or replay
 - No thread safety (single-threaded Phase 1)
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

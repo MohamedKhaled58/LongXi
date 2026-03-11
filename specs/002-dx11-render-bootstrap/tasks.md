@@ -142,3 +142,9 @@ All phases are sequential for a single developer. Estimated execution: T001-T019
 - Commit after each logical group (Phase 1, Phase 2, Phase 3, Phase 4)
 - All DX11 COM objects use `ComPtr<T>` for RAII (per research.md R6)
 - Debug layer enabled via `#ifdef LX_DEBUG` (per research.md R7)
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

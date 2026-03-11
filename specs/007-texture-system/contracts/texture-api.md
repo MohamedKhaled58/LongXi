@@ -136,3 +136,9 @@ auto grass2 = tm.LoadTexture("texture/terrain/grass.dds");
 | DDS/TGA decode failure | `nullptr` | `[Texture] ERROR Failed to decode: <path>` |
 | GPU upload failure | `nullptr` | `[Texture] ERROR GPU upload failed: <path>` |
 | `GetTexture` on un-loaded path | `nullptr` | (no log) |
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

@@ -233,3 +233,9 @@ The following items are explicitly OUT of scope for this specification:
 11. **Engine hook points**: Engine already has stub `UpdateScene()` and `RenderScene()` methods from the Spec 009 merge. These stubs will be replaced by actual `m_Scene->Update()` and `m_Scene->Render()` calls.
 12. **No external test harness**: Testing is manual — the test application in LXShell is updated to add a SceneNode and verify update/render calls via log output.
 13. **SpriteRenderer already exists**: Spec 011 (SpriteRenderer, misnamed as Spec 010 in the branch) is already merged to master. Scene integrates alongside it without modifying SpriteRenderer.
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

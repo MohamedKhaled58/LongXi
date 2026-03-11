@@ -241,3 +241,9 @@ All gates confirmed after design phase:
 | DXT row pitch miscalculation | Block-row formula in research.md; corrupted GPU texture is visible symptom |
 | D3D11 live-object warnings | TextureManager reset first in Shutdown(); verified in Task 9 |
 | Normalize duplication (also in CVirtualFileSystem) | Acceptable for Phase 1; consolidation is follow-up work |
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

@@ -35,3 +35,9 @@
 - OQ-001 resolved: `std::string` UTF-8/ASCII, forward-slash; Win32 wide conversion at OS boundary only.
 - OQ-002 resolved: static startup root registration only.
 - OQ-003 resolved: whole-file `std::vector<uint8_t>` read; stream extension point reserved, not implemented.
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

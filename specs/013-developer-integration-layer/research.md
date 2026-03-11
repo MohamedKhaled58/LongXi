@@ -114,3 +114,9 @@ This document resolves key integration decisions for adding a development-only D
 ## Phase 0 Result
 
 All planning uncertainties are resolved. No remaining `NEEDS CLARIFICATION` items block Phase 1 design.
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

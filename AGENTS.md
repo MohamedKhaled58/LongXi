@@ -559,3 +559,9 @@ namespace LongXi
 ---
 
 This file serves as the governing instruction manual for CODEX Code in this repository. All CODEX Code behavior should be traceable back to these principles and rules.
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

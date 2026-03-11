@@ -217,3 +217,9 @@ All technical decisions align with:
 3. **CLAUDE.md policies**: m_PascalCase naming, centralized dependency management, public entry headers
 
 **Research Complete**: All NEEDS CLARIFICATION items resolved. Ready for Phase 1 design and implementation.
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

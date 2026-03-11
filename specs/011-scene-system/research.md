@@ -188,3 +188,9 @@ for (auto& child : m_Children)
 | New node dirty flag | `m_TransformDirty = true` at construction | First-frame world transform computed automatically |
 | File placement | `LXEngine/Src/Scene/` — 4 files (Scene.h/.cpp, SceneNode.h/.cpp) | Per-subsystem directory convention |
 | Vector3 location | Existing `Math/Math.h` | Co-located with Vector2/Color, no new file needed |
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

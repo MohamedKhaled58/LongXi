@@ -220,3 +220,9 @@ The following items are explicitly OUT of scope for this specification:
 12. **No external math library**: Matrix computation uses hand-computed float arrays, consistent with the existing Math.h approach (Vector2, Vector3, Color are all hand-defined POD structs).
 13. **Testing**: Manual log-driven testing — `[Camera] Initialized` confirms setup; visual inspection of rendered output confirms correctness; no automated test harness.
 14. **Initial aspect ratio source**: Scene initialization reads active renderer/backbuffer dimensions and derives the camera aspect ratio before the first projection matrix computation.
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

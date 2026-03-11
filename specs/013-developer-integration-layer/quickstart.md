@@ -162,3 +162,9 @@ All phases (1-8) and user stories (US1-US5) have been successfully implemented.
 - `LongXi/LXShell/Src/main.cpp` - DebugUI integration + validation scene
 - `.gitmodules` - Dear ImGui submodule reference
 - `specs/013-developer-integration-layer/tasks.md` - Task completion tracking
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

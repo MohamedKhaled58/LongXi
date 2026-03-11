@@ -203,3 +203,9 @@ Primary engine subsystem for texture access. Owned by `Application`.
 | `TextureData::Width > 0` and `Height > 0` | TextureLoader invariant |
 | TextureManager destroyed before DX11Renderer | FR-018 / shutdown ordering |
 | `RendererTextureHandle` defined only in `DX11Renderer.h` | Spec clarification Q3 |
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

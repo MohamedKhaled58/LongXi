@@ -72,3 +72,9 @@ LongXi/LXEngine/Src/
 **No contracts directory**: `ResourceSystem` is an internal engine subsystem with no external interface surface. The caller-facing C++ API is documented in data-model.md.
 
 **Structure Decision**: `ResourceSystem` placed in `LXCore/Src/Core/FileSystem/` following the established `Core/Logging/` pattern. Placing it in `LXCore` makes it accessible to all engine layers without upward dependencies.
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

@@ -146,3 +146,9 @@ A developer adds a file under the configured resource root. The resource/filesys
 ## Boundary Note
 
 This specification intentionally establishes only the minimal resource and filesystem access boundary. Archive integration (`.wdf` and similar formats), format-specific parsers (`.c3`, `.ani`, `.dds`, `.ini`, `.scene`, `.dmap`, `.pul`), asset caching, asynchronous loading, hot reload, and all higher-level resource systems are expected to be addressed by later separate specifications. This spec is deliberately narrow to ensure a stable, reviewable file access foundation exists before adding complexity.
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

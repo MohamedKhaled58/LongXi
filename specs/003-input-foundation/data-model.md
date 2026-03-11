@@ -193,3 +193,9 @@ Shutdown():
 - `WM_SYSKEYDOWN` must be handled (not forwarded to `DefWindowProc` blindly) to capture `LAlt` / `RAlt` state; `WM_SYSKEYUP` clears it
 - Wheel delta raw units: Win32 delivers ±120 per notch (or fractional for high-resolution wheels). Consumers of `GetWheelDelta()` should divide by `WHEEL_DELTA` (120) to get notch count, or treat raw accumulated value as scroll intensity
 - VK code range: 0–255 is the complete Win32 virtual key space. The `s_VKToKey[256]` table covers all possible values
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

@@ -154,3 +154,9 @@ All phases are sequential for a single developer. Total: 30 tasks — T001–T01
 - Diagnostic log lines (T015) are temporary — must be removed in T028 before committing
 - Commit after each logical group (Phase 2, Phase 3, Phase 4)
 - All Spec 001–003 behavior (window, renderer, input) must remain unaffected
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

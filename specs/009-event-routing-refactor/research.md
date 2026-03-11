@@ -303,3 +303,9 @@ Phase 1 will generate:
 - **data-model.md**: Document callback interfaces, ownership relationships, and state transitions
 - **contracts/**: Define Win32Window callback signatures and Engine event handler interfaces
 - **quickstart.md**: Provide step-by-step implementation guide
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

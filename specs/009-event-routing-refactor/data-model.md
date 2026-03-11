@@ -416,3 +416,9 @@ Application (owns, coordinates)
 - Each resize event forwarded synchronously via callback
 - DX11Renderer::OnResize must handle rapid successive calls gracefully
 - Target: < 1ms per event (SC-008) allows ~1000 resize events/second budget
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

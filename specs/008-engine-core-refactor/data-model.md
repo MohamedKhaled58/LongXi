@@ -459,3 +459,9 @@ TestApplication::LoadTextures()
 | Existing tests | Texture loading, input, window all pass | Manual testing |
 | Engine member count | 4 unique_ptr members | Code inspection |
 | Application::Run() calls | Only Engine::Update() and Engine::Render() | Code inspection |
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

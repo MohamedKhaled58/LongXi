@@ -362,3 +362,9 @@ US5 (P3): Platform-Independent Engine Interface
 - **Log-driven verification**: Extensive use of logging macros for debugging event routing
 - **Null safety emphasized**: All callback invocations include null checks to prevent crashes
 - **Incremental compilation**: Build after each significant change to catch errors early
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

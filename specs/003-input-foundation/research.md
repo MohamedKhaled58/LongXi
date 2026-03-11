@@ -124,3 +124,9 @@ Released(k) = !m_Current[k] && m_Previous[k]
 | VK code range | 0–255 confirmed; `bool[256]` arrays are complete |
 | Alt VK codes | `VK_MENU` → `Key::LAlt`; `VK_LMENU` / `VK_RMENU` mapped separately |
 | State pattern | Two arrays (current + previous); `Update()` copies and resets |
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

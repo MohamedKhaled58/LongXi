@@ -254,3 +254,9 @@ T036 [US6] Rotation normalization in Camera.cpp
 - All checklist tasks follow required format: checkbox + TaskID + optional `[P]` + optional story label + exact file path.
 - Keep changes scoped to camera/math/scene/renderer integration to maintain constitutional compliance.
 
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

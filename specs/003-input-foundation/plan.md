@@ -70,3 +70,9 @@ LongXi/LXEngine/
 ```
 
 **Structure Decision**: New `Input/` subdirectory under `LXEngine/Src/` following the established pattern of `Application/`, `Window/`, `Renderer/`. Single class per responsibility. No contracts directory — `InputSystem` is an internal engine subsystem with no external interface surface (no RPC, no network protocol, no CLI).
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

@@ -181,3 +181,9 @@ The following items are explicitly OUT of scope for this specification:
 13. **Single-threaded runtime**: Engine::Update() and Engine::Render() are called on the main thread. No thread synchronization is required.
 14. **Future extensibility**: The Engine design must support adding new subsystems (Scene, Camera, etc.) in future specs without changing Application.
 15. **No global state**: The refactor explicitly eliminates global variables. All state is owned by Engine or Application.
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

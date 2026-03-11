@@ -319,3 +319,9 @@ With **2-3 developers** working on this specification:
 - **Manual Test Coverage**: 11 manual test scenarios cover all acceptance criteria (AC-001 through AC-009)
 - **Format Validation**: T046 ensures all code follows .clang-format C++23 style
 - **Cross-Artifact Analysis**: T054 validates spec/plan/tasks/data-model consistency
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

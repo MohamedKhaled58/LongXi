@@ -346,3 +346,9 @@ T004, T005, T006, T007, T008 can all run in parallel (different files):
 - `Win-Format Code.bat` must be run before commit (clang-format, Allman braces, 4-space indent)
 - SpriteRenderer failure is non-fatal — Engine continues without sprites (FR-005, SC-011)
 - All types in `namespace LongXi` — no nested namespaces (FR-037)
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

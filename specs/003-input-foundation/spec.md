@@ -193,3 +193,9 @@ A developer queries mouse button state, client-area cursor position, and wheel d
 ## Boundary Note
 
 This specification intentionally establishes only the minimal Win32 input capture and query foundation. Input binding tables, action mapping, gameplay control schemes, UI interaction semantics, controller support, and all higher-level input abstractions are expected to be addressed by later separate specifications. This spec is deliberately narrow to ensure a stable, reviewable input capture layer exists before adding complexity.
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

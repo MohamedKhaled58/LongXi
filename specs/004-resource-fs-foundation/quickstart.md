@@ -147,3 +147,9 @@ auto missing = m_ResourceSystem->ReadFile("does_not_exist.dat");
 - No dynamic root registration after `Initialize()`
 - No stream-oriented access (reserved for future spec)
 - No write access of any kind
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

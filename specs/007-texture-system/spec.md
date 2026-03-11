@@ -577,3 +577,9 @@ These notes document what was confirmed from the original client source and how 
 - **Spec 006 (VFS)**: `CVirtualFileSystem::ReadAll()` for file access.
 - **LXEngine / DX11Renderer**: Extended with `CreateTexture` / `DestroyTexture` in this spec.
 - **LXCore Logging**: `LX_ENGINE_*` macros for all log output.
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

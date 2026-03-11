@@ -153,3 +153,9 @@ The Engine::Render() method owns the Begin()/End() lifecycle. Client code (TestA
 ## Agent Context Update
 
 Run after Phase 1 design to update agent context with new technology:
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

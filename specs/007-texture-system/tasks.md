@@ -216,3 +216,9 @@ Sequential: T020 — Startup/shutdown verification (after T018)
 - **Critical TGA row flip** (T006): Standard TGA is bottom-left origin; DirectX expects top-left — flip rows or textures appear upside-down
 - All new C++ code must be inside `namespace LongXi { }` per CLAUDE.md Section 22
 - Run `Win-Format Code.bat` before any commit — mandatory per CLAUDE.md
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

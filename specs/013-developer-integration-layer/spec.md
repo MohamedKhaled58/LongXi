@@ -190,3 +190,9 @@ As a release engineer, I want DebugUI compiled only for development/debug target
 5. Renderer frame lifecycle already supports adding one additional overlay render pass before present.
 6. Runtime remains single-threaded for DebugUI interactions in this phase.
 7. DebugUI is a developer-only aid and not part of player-facing feature scope.
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

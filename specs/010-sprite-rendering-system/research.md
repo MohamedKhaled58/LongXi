@@ -190,3 +190,9 @@ Index type: UINT16 (max index 4095, fits in uint16_t)
 | Init signature | `Initialize(DX11Renderer&, int, int)` → bool | Consistent with subsystem pattern |
 | d3dcompiler | Add to LXEngine premake5.lua links | Runtime HLSL compilation dependency |
 | Math types | `LongXi/LXEngine/Src/Math/Math.h` (Vector2, Color) | Shared LXEngine header, no new module |
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

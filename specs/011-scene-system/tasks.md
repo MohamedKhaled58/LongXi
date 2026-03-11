@@ -320,3 +320,9 @@ T002–T007 all target different files or different sections of Engine.h — can
 - `Win-Format Code.bat` must run before commit (Allman braces, 4-space indent, 200-char line limit)
 - Rotation values are in degrees — not radians (clarified in session 2026-03-11)
 - Parent pointer is immutable after AddChild() — re-parenting is out of scope for Phase 1
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

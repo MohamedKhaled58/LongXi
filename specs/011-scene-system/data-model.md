@@ -265,3 +265,9 @@ DX11Renderer::EndFrame()
 | `LXEngine/Src/Engine/Engine.cpp` | Add Scene include + chrono; impl init/shutdown/update/render/resize/accessor; remove stubs |
 | `LXEngine/LXEngine.h` | Add `#include "Scene/Scene.h"` and `#include "Scene/SceneNode.h"` |
 | `LXShell/Src/main.cpp` | Add TestSceneSystem() to verify initialization and node traversal |
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

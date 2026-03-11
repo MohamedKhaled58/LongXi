@@ -153,3 +153,9 @@ Shutdown():
 - `ToWide()` (file-scope static in `ResourceSystem.cpp`) is the only point where `std::string` → `std::wstring` conversion occurs; it does not appear in the public header
 - `std::filesystem` headers are included only in `ResourceSystem.cpp`, not in `ResourceSystem.h`, to minimize header inclusion weight
 - `ResourceSystem` has no dependency on `DX11Renderer`, `InputSystem`, or any gameplay type
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

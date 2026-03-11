@@ -470,3 +470,9 @@ Each success criterion (SC-001 through SC-010) maps to specific tasks:
 5. **Final validation**: Run Phase 7 polish tasks and verify all success criteria
 
 **Command to begin implementation**: `/speckit.implement`
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

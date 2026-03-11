@@ -128,3 +128,9 @@ All technical questions are resolved by direct codebase inspection:
 | CFileDiskStream file access? | std::ifstream with ToWide() conversion — matches existing pattern |
 | ResourceSystem relationship? | CVirtualFileSystem supersedes it; Application migrates to new class |
 | Exists() gap? | CVirtualFileSystem::Exists() checks all mount types including archives |
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

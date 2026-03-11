@@ -227,3 +227,9 @@ Re-evaluated after Phase 1 design. All gates still pass:
 | `ToWide()` utility is duplicated in ResourceSystem.cpp and WdfArchive.cpp | For now, add a private static helper in FileStream.cpp and MountPoint.cpp. Consolidating to a shared utility is a follow-up, not Spec 006 scope. |
 | `ResourceSystem::Exists()` bug (doesn't check archives) | Fixed implicitly by CVirtualFileSystem replacing ResourceSystem. ResourceSystem left as-is. |
 | Application accessor renamed from `GetResourceSystem` to `GetVirtualFileSystem` | Verify no callers in LXEngine or LXShell depend on the old name. Currently none found. |
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

@@ -181,3 +181,9 @@ Files up to ~50 MB read synchronously in under 1 second on modern hardware. For 
 | Return type | `std::optional<std::vector<uint8_t>>` |
 | Read granularity | Whole-file only; stream reserved as future extension |
 | Module placement | `ResourceSystem` in `LXCore/Src/Core/FileSystem/` |
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

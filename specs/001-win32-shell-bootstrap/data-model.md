@@ -361,3 +361,9 @@ The data model provides:
 - Validation rules ensuring constitutional and specification compliance
 
 This design is ready for implementation with no ambiguity in entity relationships or lifecycle management.
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.

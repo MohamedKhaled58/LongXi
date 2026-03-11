@@ -219,3 +219,9 @@ The following items are explicitly OUT of scope for this specification:
 13. **File placement**: SpriteRenderer source files are placed in `LongXi/LXEngine/Src/Renderer/` following the established pattern of placing rendering subsystems alongside DX11Renderer.
 14. **LXEngine.h update**: `SpriteRenderer.h` must be added to the LXEngine public entry point header (`LXEngine.h`) to maintain the library's single public include surface.
 15. **No external test harness**: Testing is manual and visual — the test application in LXShell is updated to draw a sprite, and correctness is verified by running the executable and observing the output.
+
+## Reference Implementation Rule
+- The agent must inspect reference implementations located in D:\Yamen Development\Old-Reference\cqClient\Conquer.
+- Relevant files may include renderer, viewport, pipeline, and device initialization code.
+- The reference code must be used only to understand behavior and constraints.
+- The new architecture must follow the LongXi engine design.
