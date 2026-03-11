@@ -88,3 +88,8 @@ out/
 build/
 bin/
 obj/
+
+# Requested: ignore docs and script assets
+*.md
+*.ps1
+Scripts/

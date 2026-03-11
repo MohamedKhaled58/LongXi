@@ -8,34 +8,32 @@
 // =============================================================================
 
 #include "Application/Application.h"
+#include "Application/DebugConsoleGuard.h"
 #include "Core/Logging/Log.h"
 #include "Core/Logging/LogMacros.h"
 
-#include <cstdio>
 #include <windows.h>
 
-// Client must implement this function
-LongXi::Application* CreateApplication();
+namespace LongXi
+{
+
+// Client must implement this function.
+Application* CreateApplication();
+
+} // namespace LongXi
 
 #ifdef LX_PLATFORM_WINDOWS
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-// Bootstrap: console + logging before anything else
-#ifdef LX_DEBUG
-    AllocConsole();
-    FILE* fpOut = nullptr;
-    FILE* fpErr = nullptr;
-    freopen_s(&fpOut, "CONOUT$", "w", stdout);
-    freopen_s(&fpErr, "CONOUT$", "w", stderr);
-    std::ios::sync_with_stdio(true);
-#endif
+    // Bootstrap: console + logging before anything else.
+    LongXi::DebugConsoleGuard debugConsoleGuard;
 
     LongXi::Log::Initialize();
     LX_ENGINE_INFO("LongXi Engine starting...");
 
     // Client creates the application
-    auto* app = CreateApplication();
+    auto* app = LongXi::CreateApplication();
     if (!app)
     {
         LX_ENGINE_ERROR("CreateApplication() returned nullptr");
@@ -57,10 +55,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     delete app;
     LongXi::Log::Shutdown();
-
-#ifdef LX_DEBUG
-    FreeConsole();
-#endif
 
     return exitCode;
 }

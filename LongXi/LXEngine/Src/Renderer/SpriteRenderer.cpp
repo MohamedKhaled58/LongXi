@@ -1,6 +1,7 @@
 #include "Renderer/SpriteRenderer.h"
 
 #include "Core/Logging/LogMacros.h"
+#include "Profiling/ProfileScope.h"
 #include "Renderer/SpritePipelineBridge.h"
 #include "Texture/Texture.h"
 
@@ -178,6 +179,8 @@ void SpriteRenderer::FlushBatch()
         return;
     }
 
+    LX_PROFILE_SCOPE("SpriteRenderer.FlushBatch");
+
     // Backend pipeline performs upload/bind via renderer resource APIs.
     m_Impl->Pipeline->FlushBatch(*m_Renderer, m_VertexData, m_SpriteCount, *m_CurrentTexture);
 
@@ -192,6 +195,8 @@ void SpriteRenderer::Begin()
         return;
     }
 
+    LX_PROFILE_SCOPE("SpriteRenderer.Begin");
+
     m_InBatch = true;
     m_SpriteCount = 0;
     m_CurrentTexture = nullptr;
@@ -205,6 +210,9 @@ void SpriteRenderer::End()
     {
         return;
     }
+
+    LX_PROFILE_SCOPE("SpriteRenderer.End");
+
     FlushBatch();
     m_InBatch = false;
 }

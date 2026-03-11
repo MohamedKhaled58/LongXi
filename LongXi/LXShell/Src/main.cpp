@@ -23,6 +23,8 @@
 #include <array>
 #include <memory>
 
+#include "Input/InputSystem.h"
+
 namespace LongXi
 {
 
@@ -88,6 +90,15 @@ public:
             if (m_ImGuiLayer.IsInitialized())
             {
                 RenderValidationSprite(engine);
+
+                const bool isF6Down = engine.GetInput().IsKeyDown(Key::F6);
+                if (isF6Down && !m_F6WasDown)
+                {
+                    m_DebugUI.ToggleProfilerPanel();
+                    LX_INFO("[DebugUI] Profiler panel toggled (F6)");
+                }
+                m_F6WasDown = isF6Down;
+
                 m_ImGuiLayer.BeginFrame();
                 m_DebugUI.UpdateViewModels(engine);
                 m_DebugUI.RenderPanels(engine);
@@ -230,12 +241,13 @@ private:
     ImGuiLayer m_ImGuiLayer;
     DebugUI m_DebugUI;
     std::shared_ptr<Texture> m_ValidationTexture;
+    bool m_F6WasDown = false;
 #endif
 };
 
 } // namespace LongXi
 
-LongXi::Application* CreateApplication()
+LongXi::Application* LongXi::CreateApplication()
 {
     return new LongXi::TestApplication();
 }

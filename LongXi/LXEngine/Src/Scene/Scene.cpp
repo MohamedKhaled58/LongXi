@@ -1,6 +1,7 @@
 #include "Scene/Scene.h"
 
 #include "Core/Logging/LogMacros.h"
+#include "Profiling/ProfileScope.h"
 
 namespace LongXi
 {
@@ -131,6 +132,8 @@ void Scene::RemoveNode(SceneNode* node)
 
 void Scene::Update(float deltaTime)
 {
+    LX_PROFILE_SCOPE("Scene.Update");
+
     for (auto& child : m_Root.m_Children)
     {
         child->TraverseUpdate(deltaTime, false);
@@ -143,6 +146,8 @@ void Scene::Render(Renderer& renderer)
     {
         return;
     }
+
+    LX_PROFILE_SCOPE("Scene.Render");
 
     m_Camera.SyncDirtyMatricesForRender(renderer.GetViewportWidth(), renderer.GetViewportHeight());
     renderer.SetViewProjection(m_Camera.GetViewMatrix(), m_Camera.GetProjectionMatrix());

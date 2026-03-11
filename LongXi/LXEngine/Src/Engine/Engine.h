@@ -2,9 +2,10 @@
 
 #include <Windows.h>
 
+#include "Profiling/ProfilerCollector.h"
 #include "Renderer/Renderer.h"
+#include "Timing/TimingService.h"
 
-#include <chrono>
 #include <functional>
 #include <memory>
 #include <string>
@@ -55,6 +56,9 @@ public:
     void* GetRendererContextHandle() const;
     int GetRendererViewportWidth() const;
     int GetRendererViewportHeight() const;
+    const TimingSnapshot& GetTimingSnapshot() const;
+    const FrameProfileSnapshot& GetLastFrameProfileSnapshot() const;
+    bool IsProfilingEnabled() const;
 
 private:
     std::unique_ptr<Renderer> m_Renderer;
@@ -63,10 +67,10 @@ private:
     std::unique_ptr<TextureManager> m_TextureManager;
     std::unique_ptr<SpriteRenderer> m_SpriteRenderer;
     std::unique_ptr<Scene> m_Scene;
+    TimingService m_TimingService;
+    ProfilerCollector m_ProfilerCollector;
 
     bool m_Initialized = false;
-    std::chrono::time_point<std::chrono::steady_clock> m_LastFrameTime;
-    bool m_FirstFrame = true;
 };
 
 } // namespace LongXi
