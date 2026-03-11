@@ -32,12 +32,11 @@ void SceneNode::RemoveChild(SceneNode* child)
         return;
     }
 
-    const auto it = std::find_if(m_Children.begin(),
-                                 m_Children.end(),
-                                 [child](const auto& p)
-                                 {
-                                     return p.get() == child;
-                                 });
+    const auto it = std::ranges::find_if(m_Children,
+                                         [child](const auto& p)
+                                         {
+                                             return p.get() == child;
+                                         });
     if (it == m_Children.end())
     {
         LX_ENGINE_ERROR("[Scene] RemoveChild: node not found");
