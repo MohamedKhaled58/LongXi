@@ -201,6 +201,16 @@ void DX11Renderer::BeginFrame()
     // Bind render target
     m_Context->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), nullptr);
 
+    // Ensure viewport is always valid for all engine render passes.
+    D3D11_VIEWPORT viewport = {};
+    viewport.TopLeftX = 0.0f;
+    viewport.TopLeftY = 0.0f;
+    viewport.Width = static_cast<float>(m_ViewportWidth);
+    viewport.Height = static_cast<float>(m_ViewportHeight);
+    viewport.MinDepth = 0.0f;
+    viewport.MaxDepth = 1.0f;
+    m_Context->RSSetViewports(1, &viewport);
+
     // Clear to cornflower blue
     m_Context->ClearRenderTargetView(m_RenderTargetView.Get(), CLEAR_COLOR);
 }
@@ -282,6 +292,19 @@ void DX11Renderer::OnResize(int width, int height)
 
     m_ViewportWidth = width;
     m_ViewportHeight = height;
+
+    // Apply new viewport immediately.
+    if (m_Context)
+    {
+        D3D11_VIEWPORT viewport = {};
+        viewport.TopLeftX = 0.0f;
+        viewport.TopLeftY = 0.0f;
+        viewport.Width = static_cast<float>(m_ViewportWidth);
+        viewport.Height = static_cast<float>(m_ViewportHeight);
+        viewport.MinDepth = 0.0f;
+        viewport.MaxDepth = 1.0f;
+        m_Context->RSSetViewports(1, &viewport);
+    }
 }
 
 // ============================================================================
