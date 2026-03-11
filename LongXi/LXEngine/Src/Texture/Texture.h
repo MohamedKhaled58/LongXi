@@ -6,9 +6,9 @@
 #include <cstdint>
 
 // =============================================================================
-// Texture — GPU texture resource wrapper
-// Owns an opaque renderer texture handle (backend encapsulated).
-// Lifetime managed by shared_ptr<Texture> in TextureManager cache
+// Texture — GPU texture metadata wrapper.
+// Stores opaque renderer texture handle (backend encapsulated).
+// GPU lifetime is renderer-owned; this object lifetime is cache-owned.
 // =============================================================================
 
 namespace LongXi

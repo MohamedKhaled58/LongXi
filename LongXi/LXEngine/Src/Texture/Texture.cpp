@@ -3,5 +3,5 @@
 namespace LongXi
 {
 // Texture class implementation is header-only
-// Destructor is default (ComPtr auto-releases GPU resources)
+// Destruction is renderer-owned via opaque handle lifetime tracking.
 } // namespace LongXi

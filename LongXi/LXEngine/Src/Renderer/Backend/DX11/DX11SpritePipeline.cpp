@@ -16,9 +16,11 @@ namespace LongXi
 bool DX11SpritePipeline::Initialize(Renderer& renderer, int maxSpritesPerBatch, const char* vertexShaderSource, const char* pixelShaderSource)
 {
     Shutdown();
+    m_Renderer = &renderer;
 
     if (!renderer.IsInitialized() || maxSpritesPerBatch <= 0 || !vertexShaderSource || !pixelShaderSource)
     {
+        m_Renderer = nullptr;
         return false;
     }
 
@@ -26,6 +28,7 @@ bool DX11SpritePipeline::Initialize(Renderer& renderer, int maxSpritesPerBatch, 
     ID3D11DeviceContext* context = static_cast<ID3D11DeviceContext*>(renderer.GetNativeContextHandle());
     if (!device || !context)
     {
+        m_Renderer = nullptr;
         return false;
     }
 
@@ -80,66 +83,63 @@ bool DX11SpritePipeline::Initialize(Renderer& renderer, int maxSpritesPerBatch, 
         return false;
     }
 
+    RendererBufferDesc vertexBufferDesc = {};
+    vertexBufferDesc.Type = RendererBufferType::Vertex;
+    vertexBufferDesc.ByteSize = static_cast<uint32_t>(maxSpritesPerBatch * 4 * sizeof(SpriteVertex));
+    vertexBufferDesc.Stride = sizeof(SpriteVertex);
+    vertexBufferDesc.Usage = RendererResourceUsage::Dynamic;
+    vertexBufferDesc.CpuAccess = RendererCpuAccessFlags::Write;
+    vertexBufferDesc.BindFlags = RendererBindFlags::VertexBuffer;
+    m_VertexBufferHandle = renderer.CreateVertexBuffer(vertexBufferDesc);
+    if (!m_VertexBufferHandle.IsValid())
     {
-        D3D11_BUFFER_DESC vbDesc = {};
-        vbDesc.Usage = D3D11_USAGE_DYNAMIC;
-        vbDesc.ByteWidth = static_cast<UINT>(maxSpritesPerBatch * 4 * sizeof(SpriteVertex));
-        vbDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-        vbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-        hr = device->CreateBuffer(&vbDesc, nullptr, &m_VertexBuffer);
-        if (FAILED(hr))
-        {
-            LX_ENGINE_ERROR("[SpriteRenderer] CreateBuffer (vertex) failed (hr={})", hr);
-            Shutdown();
-            return false;
-        }
+        LX_ENGINE_ERROR("[SpriteRenderer] CreateVertexBuffer failed via renderer API");
+        Shutdown();
+        return false;
     }
 
+    std::vector<uint16_t> indices(static_cast<std::size_t>(maxSpritesPerBatch) * 6U);
+    for (int i = 0; i < maxSpritesPerBatch; ++i)
     {
-        std::vector<uint16_t> indices(static_cast<std::size_t>(maxSpritesPerBatch) * 6U);
-        for (int i = 0; i < maxSpritesPerBatch; ++i)
-        {
-            uint16_t base = static_cast<uint16_t>(i * 4);
-            indices[static_cast<std::size_t>(i) * 6 + 0] = static_cast<uint16_t>(base + 0);
-            indices[static_cast<std::size_t>(i) * 6 + 1] = static_cast<uint16_t>(base + 1);
-            indices[static_cast<std::size_t>(i) * 6 + 2] = static_cast<uint16_t>(base + 2);
-            indices[static_cast<std::size_t>(i) * 6 + 3] = static_cast<uint16_t>(base + 2);
-            indices[static_cast<std::size_t>(i) * 6 + 4] = static_cast<uint16_t>(base + 1);
-            indices[static_cast<std::size_t>(i) * 6 + 5] = static_cast<uint16_t>(base + 3);
-        }
-
-        D3D11_BUFFER_DESC ibDesc = {};
-        ibDesc.Usage = D3D11_USAGE_IMMUTABLE;
-        ibDesc.ByteWidth = static_cast<UINT>(indices.size() * sizeof(uint16_t));
-        ibDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-
-        D3D11_SUBRESOURCE_DATA ibData = {};
-        ibData.pSysMem = indices.data();
-
-        hr = device->CreateBuffer(&ibDesc, &ibData, &m_IndexBuffer);
-        if (FAILED(hr))
-        {
-            LX_ENGINE_ERROR("[SpriteRenderer] CreateBuffer (index) failed (hr={})", hr);
-            Shutdown();
-            return false;
-        }
+        uint16_t base = static_cast<uint16_t>(i * 4);
+        indices[static_cast<std::size_t>(i) * 6 + 0] = static_cast<uint16_t>(base + 0);
+        indices[static_cast<std::size_t>(i) * 6 + 1] = static_cast<uint16_t>(base + 1);
+        indices[static_cast<std::size_t>(i) * 6 + 2] = static_cast<uint16_t>(base + 2);
+        indices[static_cast<std::size_t>(i) * 6 + 3] = static_cast<uint16_t>(base + 2);
+        indices[static_cast<std::size_t>(i) * 6 + 4] = static_cast<uint16_t>(base + 1);
+        indices[static_cast<std::size_t>(i) * 6 + 5] = static_cast<uint16_t>(base + 3);
     }
 
+    RendererBufferDesc indexBufferDesc = {};
+    indexBufferDesc.Type = RendererBufferType::Index;
+    indexBufferDesc.ByteSize = static_cast<uint32_t>(indices.size() * sizeof(uint16_t));
+    indexBufferDesc.Stride = sizeof(uint16_t);
+    indexBufferDesc.Usage = RendererResourceUsage::Static;
+    indexBufferDesc.CpuAccess = RendererCpuAccessFlags::None;
+    indexBufferDesc.BindFlags = RendererBindFlags::IndexBuffer;
+    indexBufferDesc.InitialData = indices.data();
+    indexBufferDesc.InitialDataSize = indexBufferDesc.ByteSize;
+    m_IndexBufferHandle = renderer.CreateIndexBuffer(indexBufferDesc);
+    if (!m_IndexBufferHandle.IsValid())
     {
-        D3D11_BUFFER_DESC cbDesc = {};
-        cbDesc.Usage = D3D11_USAGE_DYNAMIC;
-        cbDesc.ByteWidth = 64;
-        cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-        cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+        LX_ENGINE_ERROR("[SpriteRenderer] CreateIndexBuffer failed via renderer API");
+        Shutdown();
+        return false;
+    }
 
-        hr = device->CreateBuffer(&cbDesc, nullptr, &m_ConstantBuffer);
-        if (FAILED(hr))
-        {
-            LX_ENGINE_ERROR("[SpriteRenderer] CreateBuffer (constant) failed (hr={})", hr);
-            Shutdown();
-            return false;
-        }
+    RendererBufferDesc constantBufferDesc = {};
+    constantBufferDesc.Type = RendererBufferType::Constant;
+    constantBufferDesc.ByteSize = 64;
+    constantBufferDesc.Stride = 16;
+    constantBufferDesc.Usage = RendererResourceUsage::Dynamic;
+    constantBufferDesc.CpuAccess = RendererCpuAccessFlags::Write;
+    constantBufferDesc.BindFlags = RendererBindFlags::ConstantBuffer;
+    m_ConstantBufferHandle = renderer.CreateConstantBuffer(constantBufferDesc);
+    if (!m_ConstantBufferHandle.IsValid())
+    {
+        LX_ENGINE_ERROR("[SpriteRenderer] CreateConstantBuffer failed via renderer API");
+        Shutdown();
+        return false;
     }
 
     {
@@ -223,9 +223,28 @@ void DX11SpritePipeline::Shutdown()
     m_SamplerState.Reset();
     m_DepthState.Reset();
     m_BlendState.Reset();
-    m_ConstantBuffer.Reset();
-    m_IndexBuffer.Reset();
-    m_VertexBuffer.Reset();
+    if (m_Renderer && m_Renderer->IsInitialized())
+    {
+        if (m_VertexBufferHandle.IsValid())
+        {
+            m_Renderer->DestroyBuffer(ToBufferHandle(m_VertexBufferHandle));
+        }
+
+        if (m_IndexBufferHandle.IsValid())
+        {
+            m_Renderer->DestroyBuffer(ToBufferHandle(m_IndexBufferHandle));
+        }
+
+        if (m_ConstantBufferHandle.IsValid())
+        {
+            m_Renderer->DestroyBuffer(ToBufferHandle(m_ConstantBufferHandle));
+        }
+    }
+
+    m_VertexBufferHandle = {};
+    m_IndexBufferHandle = {};
+    m_ConstantBufferHandle = {};
+    m_Renderer = nullptr;
     m_InputLayout.Reset();
     m_PixelShader.Reset();
     m_VertexShader.Reset();
@@ -241,7 +260,8 @@ bool DX11SpritePipeline::IsInitialized() const
 
 bool DX11SpritePipeline::ValidateRendererState(Renderer& renderer) const
 {
-    return m_Initialized && renderer.IsInitialized() && renderer.GetNativeContextHandle() != nullptr;
+    return m_Initialized && renderer.IsInitialized() && renderer.GetNativeContextHandle() != nullptr && m_VertexBufferHandle.IsValid() && m_IndexBufferHandle.IsValid() &&
+           m_ConstantBufferHandle.IsValid();
 }
 
 void DX11SpritePipeline::BindBatchPipeline(Renderer& renderer) const
@@ -253,15 +273,25 @@ void DX11SpritePipeline::BindBatchPipeline(Renderer& renderer) const
 
     ID3D11DeviceContext* context = static_cast<ID3D11DeviceContext*>(renderer.GetNativeContextHandle());
 
-    UINT stride = sizeof(SpriteVertex);
-    UINT offset = 0;
-    context->IASetVertexBuffers(0, 1, m_VertexBuffer.GetAddressOf(), &stride, &offset);
-    context->IASetIndexBuffer(m_IndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
+    if (!renderer.BindVertexBuffer(m_VertexBufferHandle, sizeof(SpriteVertex), 0))
+    {
+        return;
+    }
+
+    if (!renderer.BindIndexBuffer(m_IndexBufferHandle, RendererIndexFormat::UInt16, 0))
+    {
+        return;
+    }
+
+    if (!renderer.BindConstantBuffer(m_ConstantBufferHandle, RendererShaderStage::Vertex, 0))
+    {
+        return;
+    }
+
     context->IASetInputLayout(m_InputLayout.Get());
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     context->VSSetShader(m_VertexShader.Get(), nullptr, 0);
-    context->VSSetConstantBuffers(0, 1, m_ConstantBuffer.GetAddressOf());
     context->PSSetShader(m_PixelShader.Get(), nullptr, 0);
     context->PSSetSamplers(0, 1, m_SamplerState.GetAddressOf());
 
@@ -277,13 +307,13 @@ void DX11SpritePipeline::UploadProjectionMatrix(Renderer& renderer, const float*
         return;
     }
 
-    ID3D11DeviceContext* context = static_cast<ID3D11DeviceContext*>(renderer.GetNativeContextHandle());
-    D3D11_MAPPED_SUBRESOURCE mapped = {};
-    if (SUCCEEDED(context->Map(m_ConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
-    {
-        memcpy(mapped.pData, matrixData, matrixBytes);
-        context->Unmap(m_ConstantBuffer.Get(), 0);
-    }
+    RendererBufferUpdateRequest updateRequest = {};
+    updateRequest.Handle = ToBufferHandle(m_ConstantBufferHandle);
+    updateRequest.Data = matrixData;
+    updateRequest.ByteOffset = 0;
+    updateRequest.ByteSize = static_cast<uint32_t>(matrixBytes);
+
+    renderer.UpdateBuffer(updateRequest);
 }
 
 void DX11SpritePipeline::FlushBatch(Renderer& renderer, const SpriteVertex* vertices, int spriteCount, const Texture& texture) const
@@ -293,25 +323,26 @@ void DX11SpritePipeline::FlushBatch(Renderer& renderer, const SpriteVertex* vert
         return;
     }
 
-    ID3D11DeviceContext* context = static_cast<ID3D11DeviceContext*>(renderer.GetNativeContextHandle());
+    const std::size_t byteCount = static_cast<std::size_t>(spriteCount) * 4 * sizeof(SpriteVertex);
+    RendererBufferUpdateRequest updateRequest = {};
+    updateRequest.Handle = ToBufferHandle(m_VertexBufferHandle);
+    updateRequest.Data = vertices;
+    updateRequest.ByteOffset = 0;
+    updateRequest.ByteSize = static_cast<uint32_t>(byteCount);
 
-    D3D11_MAPPED_SUBRESOURCE mapped = {};
-    if (SUCCEEDED(context->Map(m_VertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
+    if (!renderer.UpdateBuffer(updateRequest))
     {
-        const std::size_t byteCount = static_cast<std::size_t>(spriteCount) * 4 * sizeof(SpriteVertex);
-        memcpy(mapped.pData, vertices, byteCount);
-        context->Unmap(m_VertexBuffer.Get(), 0);
-    }
-
-    ID3D11ShaderResourceView* textureView = static_cast<ID3D11ShaderResourceView*>(texture.GetHandle().NativeResource.get());
-    if (!textureView)
-    {
-        LX_ENGINE_ERROR("[SpriteRenderer] Missing texture view in renderer handle");
+        LX_ENGINE_ERROR("[SpriteRenderer] Failed to upload sprite batch through renderer update API");
         return;
     }
 
-    context->PSSetShaderResources(0, 1, &textureView);
-    context->DrawIndexed(static_cast<UINT>(spriteCount) * 6, 0, 0);
+    if (!renderer.BindTexture(texture.GetHandle(), RendererShaderStage::Pixel, 0))
+    {
+        LX_ENGINE_ERROR("[SpriteRenderer] Failed to bind sprite texture handle");
+        return;
+    }
+
+    renderer.DrawIndexed(static_cast<uint32_t>(spriteCount) * 6, 0, 0);
 }
 
 } // namespace LongXi

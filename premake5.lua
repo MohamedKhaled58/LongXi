@@ -68,8 +68,9 @@ IncludeDir["LXEngineSrc"]   = path.getabsolute("LongXi/LXEngine/Src")
 	-- =========================================================================
 	-- Modules/Core  — zero or minimal deps; used by everyone
 	-- =========================================================================
-	group "Core"
+group "Core"
 		include "LongXi/LXCore"
+		-- LXEngine contains renderer backend modules under Src/Renderer/Backend/DX11 (including resource system files).
 		include "LongXi/LXEngine"
 	group ""
 

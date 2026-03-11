@@ -105,8 +105,18 @@ std::shared_ptr<Texture> TextureManager::LoadTexture(const std::string& path)
         return nullptr;
     }
 
-    // Upload to GPU
-    RendererTextureHandle handle = m_Renderer.CreateTexture(texData.Width, texData.Height, texData.Format, texData.Pixels.data());
+    // Upload to GPU via descriptor-based renderer API.
+    RendererTextureDesc textureDesc = {};
+    textureDesc.Width = texData.Width;
+    textureDesc.Height = texData.Height;
+    textureDesc.Format = texData.Format;
+    textureDesc.Usage = RendererResourceUsage::Static;
+    textureDesc.CpuAccess = RendererCpuAccessFlags::None;
+    textureDesc.BindFlags = RendererBindFlags::ShaderResource;
+    textureDesc.InitialData = texData.Pixels.data();
+    textureDesc.InitialDataSize = static_cast<uint32_t>(texData.Pixels.size());
+
+    RendererTextureHandle handle = m_Renderer.CreateTexture(textureDesc);
     if (!handle.IsValid())
     {
         LX_ENGINE_ERROR("[Texture] GPU upload failed: {}", normalized);

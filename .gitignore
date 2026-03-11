@@ -5,6 +5,7 @@
 .agent/
 .vs/
 .specify/
+.npm-cache/
 CLAUDE.md
 
 # Build Artifacts

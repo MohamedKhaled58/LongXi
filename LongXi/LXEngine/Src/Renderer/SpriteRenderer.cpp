@@ -1,7 +1,7 @@
 #include "Renderer/SpriteRenderer.h"
 
 #include "Core/Logging/LogMacros.h"
-#include "Renderer/Backend/DX11/DX11SpritePipeline.h"
+#include "Renderer/SpritePipelineBridge.h"
 #include "Texture/Texture.h"
 
 #include <cstring>
@@ -65,7 +65,7 @@ namespace LongXi
 class SpriteRenderer::Impl
 {
 public:
-    std::unique_ptr<DX11SpritePipeline> DX11Pipeline = std::make_unique<DX11SpritePipeline>();
+    std::unique_ptr<SpritePipelineBridge> Pipeline = CreateSpritePipelineBridge();
 };
 
 SpriteRenderer::SpriteRenderer()
@@ -92,7 +92,7 @@ bool SpriteRenderer::Initialize(Renderer& renderer, int width, int height)
         m_Impl = std::make_unique<Impl>();
     }
 
-    if (!m_Impl->DX11Pipeline || !m_Impl->DX11Pipeline->Initialize(renderer, MAX_SPRITES_PER_BATCH, s_VertexShaderSrc, s_PixelShaderSrc))
+    if (!m_Impl->Pipeline || !m_Impl->Pipeline->Initialize(renderer, MAX_SPRITES_PER_BATCH, s_VertexShaderSrc, s_PixelShaderSrc))
     {
         LX_ENGINE_ERROR("[SpriteRenderer] Initialization failed - sprite rendering disabled");
         m_Initialized = false;
@@ -113,9 +113,9 @@ void SpriteRenderer::Shutdown()
         return;
     }
 
-    if (m_Impl && m_Impl->DX11Pipeline)
+    if (m_Impl && m_Impl->Pipeline)
     {
-        m_Impl->DX11Pipeline->Shutdown();
+        m_Impl->Pipeline->Shutdown();
     }
 
     m_Initialized = false;
@@ -165,20 +165,21 @@ void SpriteRenderer::UpdateProjection(int width, int height)
     };
     memcpy(m_ProjectionMatrix, proj, sizeof(proj));
 
-    if (m_Impl && m_Impl->DX11Pipeline && m_Renderer)
+    if (m_Impl && m_Impl->Pipeline && m_Renderer)
     {
-        m_Impl->DX11Pipeline->UploadProjectionMatrix(*m_Renderer, m_ProjectionMatrix, sizeof(m_ProjectionMatrix));
+        m_Impl->Pipeline->UploadProjectionMatrix(*m_Renderer, m_ProjectionMatrix, sizeof(m_ProjectionMatrix));
     }
 }
 
 void SpriteRenderer::FlushBatch()
 {
-    if (m_SpriteCount == 0 || !m_CurrentTexture || !m_Impl || !m_Impl->DX11Pipeline || !m_Renderer)
+    if (m_SpriteCount == 0 || !m_CurrentTexture || !m_Impl || !m_Impl->Pipeline || !m_Renderer)
     {
         return;
     }
 
-    m_Impl->DX11Pipeline->FlushBatch(*m_Renderer, m_VertexData, m_SpriteCount, *m_CurrentTexture);
+    // Backend pipeline performs upload/bind via renderer resource APIs.
+    m_Impl->Pipeline->FlushBatch(*m_Renderer, m_VertexData, m_SpriteCount, *m_CurrentTexture);
 
     m_SpriteCount = 0;
     m_CurrentTexture = nullptr;
@@ -186,7 +187,7 @@ void SpriteRenderer::FlushBatch()
 
 void SpriteRenderer::Begin()
 {
-    if (!m_Initialized || m_InBatch || !m_Impl || !m_Impl->DX11Pipeline || !m_Renderer)
+    if (!m_Initialized || m_InBatch || !m_Impl || !m_Impl->Pipeline || !m_Renderer)
     {
         return;
     }
@@ -195,7 +196,7 @@ void SpriteRenderer::Begin()
     m_SpriteCount = 0;
     m_CurrentTexture = nullptr;
 
-    m_Impl->DX11Pipeline->BindBatchPipeline(*m_Renderer);
+    m_Impl->Pipeline->BindBatchPipeline(*m_Renderer);
 }
 
 void SpriteRenderer::End()

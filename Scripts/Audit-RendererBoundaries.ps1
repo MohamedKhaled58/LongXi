@@ -8,12 +8,14 @@ $targetRoot = "LongXi/LXEngine/Src"
 $allowedDirectXRegex = @(
     "LongXi[\\/]LXEngine[\\/]Src[\\/]Renderer[\\/]DX11Renderer\.h$",
     "LongXi[\\/]LXEngine[\\/]Src[\\/]Renderer[\\/]DX11Renderer\.cpp$",
+    "LongXi[\\/]LXEngine[\\/]Src[\\/]Renderer[\\/]SpritePipelineBridge\.cpp$",
     "LongXi[\\/]LXEngine[\\/]Src[\\/]Renderer[\\/]RendererFactory\.cpp$",
     "LongXi[\\/]LXEngine[\\/]Src[\\/]Renderer[\\/]Backend[\\/]DX11[\\/].+"
 )
 
 $directXPattern = '#\s*include\s*<d3d11\.h>|#\s*include\s*<dxgi\.h>|\bID3D11|\bIDXGI|\bD3D11_|\bDXGI_'
 $backendIncludePattern = '#\s*include\s*["<]Renderer[\\/]DX11Renderer\.h[">]'
+$backendDx11ModuleIncludePattern = '#\s*include\s*["<]Renderer[\\/]Backend[\\/]DX11[\\/][^">]+[">]'
 
 $rawMatches = @()
 try {
@@ -24,6 +26,11 @@ try {
 
 try {
     $rawMatches += (& rg --no-heading --line-number --color never $backendIncludePattern $targetRoot)
+} catch {
+}
+
+try {
+    $rawMatches += (& rg --no-heading --line-number --color never $backendDx11ModuleIncludePattern $targetRoot)
 } catch {
 }
 
