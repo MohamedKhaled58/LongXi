@@ -130,8 +130,8 @@ public:
     }
 
 private:
-    RendererHandleId AllocateSlot(std::vector<uint32_t>& freeList, uint32_t& liveCount, uint32_t& createdCount, std::vector<uint32_t>& generations);
-    void DestroySlot(RendererHandleId id, std::vector<uint32_t>& freeList, uint32_t& liveCount, uint32_t& destroyedCount);
+    static RendererHandleId AllocateSlot(std::vector<uint32_t>& freeList, uint32_t& liveCount, uint32_t& createdCount, std::vector<uint32_t>& generations);
+    static void DestroySlot(RendererHandleId id, std::vector<uint32_t>& freeList, uint32_t& liveCount, uint32_t& destroyedCount);
 
 private:
     std::vector<DX11TextureRecord> m_Textures;
