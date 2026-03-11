@@ -89,7 +89,5 @@ build/
 bin/
 obj/
 
-# Requested: ignore docs and script assets
+# Requested: ignore docs assets
 *.md
-*.ps1
-Scripts/
