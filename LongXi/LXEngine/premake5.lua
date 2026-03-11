@@ -9,12 +9,19 @@ project "LXEngine"
 		"Src/**.cpp",
 	}
 
+	-- DebugUI lives in LXShell by design (Engine stays UI-framework agnostic).
+	removefiles
+	{
+		"Src/DebugUI/**.h",
+		"Src/DebugUI/**.cpp"
+	}
+
 	includedirs
 	{
 		".",
 		"Src",
-		"../LXCore",
-		"../LXCore/Src"
+		"%{IncludeDir.LXCore}",
+		"%{IncludeDir.LXCoreSrc}"
 	}
 
 	links

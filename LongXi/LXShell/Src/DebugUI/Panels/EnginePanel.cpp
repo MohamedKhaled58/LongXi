@@ -1,0 +1,25 @@
+#include "EnginePanel.h"
+#include "Core/Logging/LogMacros.h"
+#include <imgui.h>
+
+namespace LongXi
+{
+
+void EnginePanel::Render(const EngineMetricsSnapshot& metrics)
+{
+    if (!ImGui::Begin("Engine Metrics"))
+    {
+        ImGui::End();
+        return;
+    }
+
+    ImGui::Text("Frames Per Second: %.1f", metrics.FramesPerSecond);
+    ImGui::Text("Frame Time: %.2f ms", metrics.FrameTimeMs);
+    ImGui::Text("Draw Calls: %d", metrics.DrawCallCount);
+    ImGui::Separator();
+    ImGui::Text("GPU: %s", metrics.GpuDeviceName.c_str());
+
+    ImGui::End();
+}
+
+} // namespace LongXi

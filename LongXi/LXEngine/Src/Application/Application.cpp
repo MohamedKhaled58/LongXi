@@ -242,8 +242,9 @@ int Application::Run()
         // Engine frame
         if (m_Engine && m_Engine->IsInitialized())
         {
-            m_Engine->Update(); // Advance input frame boundary
-            m_Engine->Render(); // Render and present frame
+            m_Engine->Update();
+            m_Engine->Render();
+            m_Engine->Present();
         }
     }
 }

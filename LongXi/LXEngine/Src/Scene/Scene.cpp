@@ -9,7 +9,10 @@ namespace LongXi
 // Constructor
 // ============================================================================
 
-Scene::Scene() {}
+Scene::Scene()
+{
+    m_Root.SetName("Root");
+}
 
 // ============================================================================
 // Lifecycle
@@ -64,6 +67,54 @@ Camera& Scene::GetActiveCamera()
 const Camera& Scene::GetActiveCamera() const
 {
     return m_Camera;
+}
+
+SceneNode& Scene::GetRootNode()
+{
+    return m_Root;
+}
+
+const SceneNode& Scene::GetRootNode() const
+{
+    return m_Root;
+}
+
+void Scene::VisitNodes(const std::function<void(SceneNode&, int depth)>& visitor)
+{
+    if (!visitor)
+    {
+        return;
+    }
+
+    std::function<void(SceneNode&, int)> visitRecursive = [&](SceneNode& node, int depth)
+    {
+        visitor(node, depth);
+        for (auto& child : node.m_Children)
+        {
+            visitRecursive(*child, depth + 1);
+        }
+    };
+
+    visitRecursive(m_Root, 0);
+}
+
+void Scene::VisitNodes(const std::function<void(const SceneNode&, int depth)>& visitor) const
+{
+    if (!visitor)
+    {
+        return;
+    }
+
+    std::function<void(const SceneNode&, int)> visitRecursive = [&](const SceneNode& node, int depth)
+    {
+        visitor(node, depth);
+        for (const auto& child : node.m_Children)
+        {
+            visitRecursive(*child, depth + 1);
+        }
+    };
+
+    visitRecursive(m_Root, 0);
 }
 
 // ============================================================================

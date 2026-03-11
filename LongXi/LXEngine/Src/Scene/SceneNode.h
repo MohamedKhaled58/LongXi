@@ -3,6 +3,7 @@
 #include "Math/Math.h"
 
 #include <memory>
+#include <string>
 #include <vector>
 
 // =============================================================================
@@ -57,6 +58,9 @@ class SceneNode
     const Vector3& GetRotation() const; // degrees
     const Vector3& GetScale() const;
 
+    void SetName(std::string name);
+    const std::string& GetName() const;
+
     // =========================================================================
     // World Transform (computed during traversal — read-only)
     // =========================================================================
@@ -64,6 +68,8 @@ class SceneNode
     const Vector3& GetWorldPosition() const;
     const Vector3& GetWorldRotation() const; // degrees
     const Vector3& GetWorldScale() const;
+    SceneNode* GetParent();
+    const SceneNode* GetParent() const;
 
     // =========================================================================
     // Overridable frame callbacks
@@ -105,6 +111,7 @@ class SceneNode
 
     // Owned child nodes
     std::vector<std::unique_ptr<SceneNode>> m_Children;
+    std::string m_Name = "SceneNode";
 };
 
 } // namespace LongXi

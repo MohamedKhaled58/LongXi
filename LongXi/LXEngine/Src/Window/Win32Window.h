@@ -55,6 +55,7 @@ class Win32Window
     }
 
     // Window event callbacks — wired by Application after engine initialization
+    std::function<bool(UINT, WPARAM, LPARAM)> OnRawMessage;
     std::function<void(int, int)> OnResize;
     std::function<void(UINT, bool)> OnKeyDown;
     std::function<void(UINT)> OnKeyUp;

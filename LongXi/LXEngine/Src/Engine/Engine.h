@@ -54,8 +54,11 @@ class Engine
     // Advance one frame of engine runtime (input, game logic, etc.)
     void Update();
 
-    // Render one frame
+    // Render one frame (scene, sprites - does NOT Present)
     void Render();
+
+    // Present the rendered frame (must be called after Render())
+    void Present();
 
     // Handle window resize event
     void OnResize(int width, int height);
@@ -77,6 +80,13 @@ class Engine
     TextureManager& GetTextureManager();
     SpriteRenderer& GetSpriteRenderer();
     Scene& GetScene();
+
+    // Opaque renderer-native handles for shell-side integrations (e.g. ImGui).
+    // Keeps D3D types out of LXShell public headers.
+    void* GetRendererDeviceHandle() const;
+    void* GetRendererContextHandle() const;
+    int GetRendererViewportWidth() const;
+    int GetRendererViewportHeight() const;
 
   private:
     // Subsystem ownership

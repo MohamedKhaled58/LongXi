@@ -18,8 +18,13 @@ if errorlevel 1 (
     exit /b 1
 )
 
-if not exist "LongXi.slnx" (
-    echo LongXi.slnx was not found. Run "Win-Generate Project.bat" first.
+set "SOLUTION=LongXi.slnx"
+if not exist "%SOLUTION%" (
+    if exist "LongXi.sln" set "SOLUTION=LongXi.sln"
+)
+
+if not exist "%SOLUTION%" (
+    echo LongXi.slnx/LongXi.sln was not found. Run "Win-Generate Project.bat" first.
     pause
     exit /b 1
 )
@@ -32,7 +37,7 @@ if "%PLAT%"=="" set "PLAT=x64"
 set "MSBUILD_EXE=%VSINSTALLDIR%MSBuild\Current\Bin\MSBuild.exe"
 if not exist "%MSBUILD_EXE%" set "MSBUILD_EXE=msbuild"
 
-"%MSBUILD_EXE%" "LongXi.slnx" /m /p:Configuration=%CFG%;Platform=%PLAT%;PlatformToolset=v145
+"%MSBUILD_EXE%" "%SOLUTION%" /m /p:Configuration=%CFG%;Platform=%PLAT%
 set "BUILD_EXIT=%ERRORLEVEL%"
 if not "%BUILD_EXIT%"=="0" (
     echo.
@@ -41,5 +46,5 @@ if not "%BUILD_EXIT%"=="0" (
     exit /b %BUILD_EXIT%
 )
 
-echo Build succeeded (Configuration=%CFG%, Platform=%PLAT%, PlatformToolset=v145).
+echo Build succeeded (Solution=%SOLUTION%, Configuration=%CFG%, Platform=%PLAT%).
 pause

@@ -2,20 +2,23 @@
 setlocal
 cd /d "%~dp0"
 
+set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
 set "CLANG_FORMAT="
-for %%P in (
-    "%ProgramFiles%\Microsoft Visual Studio\18\Community\VC\Tools\Llvm\x64\bin\clang-format.exe"
-    "%ProgramFiles%\Microsoft Visual Studio\18\Professional\VC\Tools\Llvm\x64\bin\clang-format.exe"
-    "%ProgramFiles%\Microsoft Visual Studio\18\Enterprise\VC\Tools\Llvm\x64\bin\clang-format.exe"
-    "%ProgramFiles(x86)%\Microsoft Visual Studio\18\Community\VC\Tools\Llvm\x64\bin\clang-format.exe"
-    "%ProgramFiles(x86)%\Microsoft Visual Studio\18\Professional\VC\Tools\Llvm\x64\bin\clang-format.exe"
-    "%ProgramFiles(x86)%\Microsoft Visual Studio\18\Enterprise\VC\Tools\Llvm\x64\bin\clang-format.exe"
-) do (
-    if not defined CLANG_FORMAT if exist %%~P set "CLANG_FORMAT=%%~P"
+
+if exist "%VSWHERE%" (
+    for /f "usebackq delims=" %%I in (`"%VSWHERE%" -latest -products * -version [18.0^,19.0^) -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do (
+        if not defined CLANG_FORMAT if exist "%%~I\VC\Tools\Llvm\x64\bin\clang-format.exe" set "CLANG_FORMAT=%%~I\VC\Tools\Llvm\x64\bin\clang-format.exe"
+    )
 )
 
 if not defined CLANG_FORMAT (
-    echo ERROR: clang-format.exe was not found in a VS2026 LLVM toolchain path.
+    for /f "delims=" %%I in ('where clang-format.exe 2^>nul') do (
+        if not defined CLANG_FORMAT set "CLANG_FORMAT=%%~fI"
+    )
+)
+
+if not defined CLANG_FORMAT (
+    echo ERROR: clang-format.exe was not found in Visual Studio 2026 or PATH.
     echo Install LLVM/Clang tools in Visual Studio Installer and retry.
     pause
     exit /b 1

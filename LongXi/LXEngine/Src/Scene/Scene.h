@@ -3,6 +3,8 @@
 #include "Scene/Camera.h"
 #include "Scene/SceneNode.h"
 
+#include <functional>
+
 // =============================================================================
 // Scene — Engine subsystem that owns the world object hierarchy
 //
@@ -55,6 +57,12 @@ class Scene
 
     Camera& GetActiveCamera();
     const Camera& GetActiveCamera() const;
+    SceneNode& GetRootNode();
+    const SceneNode& GetRootNode() const;
+
+    // Generic scene hierarchy traversal utility for runtime systems.
+    void VisitNodes(const std::function<void(SceneNode&, int depth)>& visitor);
+    void VisitNodes(const std::function<void(const SceneNode&, int depth)>& visitor) const;
 
   private:
     SceneNode m_Root;

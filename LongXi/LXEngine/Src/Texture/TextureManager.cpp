@@ -161,6 +161,22 @@ std::shared_ptr<Texture> TextureManager::GetTexture(const std::string& path)
     return nullptr;
 }
 
+void TextureManager::ForEachLoadedTexture(const std::function<void(const std::string& path, const Texture& texture)>& visitor) const
+{
+    if (!visitor)
+    {
+        return;
+    }
+
+    for (const auto& [path, texture] : m_Cache)
+    {
+        if (texture)
+        {
+            visitor(path, *texture);
+        }
+    }
+}
+
 // ============================================================================
 // ClearCache
 // ============================================================================

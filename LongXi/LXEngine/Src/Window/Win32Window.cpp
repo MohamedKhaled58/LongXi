@@ -131,6 +131,15 @@ LRESULT CALLBACK Win32Window::WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
 {
     Win32Window* window = reinterpret_cast<Win32Window*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
 
+    // Let optional raw handler consume input before InputSystem routing callbacks.
+    if (window && window->OnRawMessage)
+    {
+        if (window->OnRawMessage(msg, wParam, lParam))
+        {
+            return 0;
+        }
+    }
+
     switch (msg)
     {
     case WM_CLOSE:

@@ -23,12 +23,20 @@ class Application
 
     // Core lifecycle methods
     virtual bool Initialize(); // Setup Win32 window and engine
-    int Run();                 // Own message pump until shutdown
-    void Shutdown();           // Teardown resources, exit cleanly
+    virtual int Run();         // Own message pump until shutdown
+    virtual void Shutdown();   // Teardown resources, exit cleanly
 
   protected:
-    // Protected accessor for subclasses to access Engine
+    // Protected accessors for subclasses
     Engine& GetEngine();
+    HWND GetWindowHandle() const
+    {
+        return m_WindowHandle;
+    }
+    Win32Window& GetWindow()
+    {
+        return *m_Window;
+    }
 
   private:
     HWND m_WindowHandle;
