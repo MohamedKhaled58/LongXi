@@ -261,8 +261,16 @@ std::vector<uint8_t> CVirtualFileSystem::ReadAll(const std::string& path) const
         return {};
 
     std::vector<uint8_t> buffer(stream->Size());
-    if (!buffer.empty())
-        stream->Read(buffer.data(), buffer.size());
+    if (buffer.empty())
+        return buffer;
+
+    size_t bytesRead = stream->Read(buffer.data(), buffer.size());
+    if (bytesRead != buffer.size())
+    {
+        LX_CORE_WARN("[VFS] Short read: requested {} bytes, read {}", buffer.size(), bytesRead);
+        buffer.resize(bytesRead);
+    }
+
     return buffer;
 }
 
