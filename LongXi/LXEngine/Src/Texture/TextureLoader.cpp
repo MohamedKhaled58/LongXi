@@ -251,6 +251,7 @@ bool TextureLoader::LoadTGA(const std::vector<uint8_t>& data, TextureData& out)
     // Extract dimensions (little-endian)
     uint32_t width = header.width;
     uint32_t height = header.height;
+    bool topOrigin = (header.imageDescriptor & 0x20) != 0;
 
     if (width == 0 || height == 0)
     {
@@ -447,18 +448,23 @@ bool TextureLoader::LoadTGA(const std::vector<uint8_t>& data, TextureData& out)
         }
     }
 
-    // Flip rows bottom-to-top (TGA is bottom-left origin, DirectX expects top-left)
-    uint32_t rowBytes = width * 4;
-    std::vector<uint8_t> tempRow(rowBytes);
-
-    for (uint32_t y = 0; y < height / 2; ++y)
+    // TGA origin bit:
+    // 0 = bottom-left origin (needs flip for top-left render conventions)
+    // 1 = top-left origin (already correct)
+    if (!topOrigin)
     {
-        uint8_t* topRow = rgbaPixels.data() + y * rowBytes;
-        uint8_t* bottomRow = rgbaPixels.data() + (height - 1 - y) * rowBytes;
+        uint32_t rowBytes = width * 4;
+        std::vector<uint8_t> tempRow(rowBytes);
 
-        std::memcpy(tempRow.data(), topRow, rowBytes);
-        std::memcpy(topRow, bottomRow, rowBytes);
-        std::memcpy(bottomRow, tempRow.data(), rowBytes);
+        for (uint32_t y = 0; y < height / 2; ++y)
+        {
+            uint8_t* topRow = rgbaPixels.data() + y * rowBytes;
+            uint8_t* bottomRow = rgbaPixels.data() + (height - 1 - y) * rowBytes;
+
+            std::memcpy(tempRow.data(), topRow, rowBytes);
+            std::memcpy(topRow, bottomRow, rowBytes);
+            std::memcpy(bottomRow, tempRow.data(), rowBytes);
+        }
     }
 
     // Output
