@@ -1,6 +1,7 @@
 #include "Engine/Engine.h"
 #include "Renderer/DX11Renderer.h"
 #include "Renderer/SpriteRenderer.h"
+#include "Scene/Scene.h"
 #include "Input/InputSystem.h"
 #include "Core/FileSystem/VirtualFileSystem.h"
 #include "Texture/TextureManager.h"
@@ -72,6 +73,16 @@ bool Engine::Initialize(HWND windowHandle, int width, int height)
         LX_ENGINE_WARN("[Engine] SpriteRenderer initialization failed — sprite rendering disabled");
     }
 
+    // Step 6: Initialize Scene (non-fatal — engine continues if it fails)
+    LX_ENGINE_INFO("[Engine] Initializing scene");
+    m_LastFrameTime = std::chrono::steady_clock::now();
+    m_FirstFrame = true;
+    m_Scene = std::make_unique<Scene>();
+    if (!m_Scene->Initialize())
+    {
+        LX_ENGINE_WARN("[Engine] Scene initialization failed");
+    }
+
     m_Initialized = true;
     LX_ENGINE_INFO("[Engine] Engine initialization complete");
     return true;
@@ -87,7 +98,14 @@ void Engine::Shutdown()
     LX_ENGINE_INFO("[Engine] Shutting down");
 
     // Shutdown in reverse dependency order
-    // SpriteRenderer FIRST — releases GPU sprite resources before device
+    // Scene FIRST — destroys all world objects while other subsystems still live
+    if (m_Scene)
+    {
+        m_Scene->Shutdown();
+        m_Scene.reset();
+    }
+
+    // SpriteRenderer — releases GPU sprite resources before device
     if (m_SpriteRenderer)
     {
         m_SpriteRenderer->Shutdown();
@@ -143,7 +161,16 @@ void Engine::Update()
     // Advance input frame boundary
     m_Input->Update();
 
-    UpdateScene();
+    // Measure deltaTime using steady_clock (0.0f on first frame to avoid large initial tick)
+    auto now = std::chrono::steady_clock::now();
+    float deltaTime = m_FirstFrame ? 0.0f : std::chrono::duration<float>(now - m_LastFrameTime).count();
+    m_LastFrameTime = now;
+    m_FirstFrame = false;
+
+    if (m_Scene && m_Scene->IsInitialized())
+    {
+        m_Scene->Update(deltaTime);
+    }
 }
 
 void Engine::Render()
@@ -156,7 +183,11 @@ void Engine::Render()
 
     m_Renderer->BeginFrame();
 
-    RenderScene();
+    // Scene render pass — 3D world geometry before 2D screen-space sprites
+    if (m_Scene && m_Scene->IsInitialized())
+    {
+        m_Scene->Render(*m_Renderer);
+    }
 
     // Sprite rendering pass — runs after scene, before EndFrame (screen-space overlay)
     if (m_SpriteRenderer && m_SpriteRenderer->IsInitialized())
@@ -192,6 +223,12 @@ void Engine::OnResize(int width, int height)
     if (m_SpriteRenderer && m_SpriteRenderer->IsInitialized())
     {
         m_SpriteRenderer->OnResize(width, height);
+    }
+
+    // Forward to scene
+    if (m_Scene && m_Scene->IsInitialized())
+    {
+        m_Scene->OnResize(width, height);
     }
 }
 
@@ -246,8 +283,9 @@ SpriteRenderer& Engine::GetSpriteRenderer()
     return *m_SpriteRenderer;
 }
 
-void Engine::UpdateScene() {}
-
-void Engine::RenderScene() {}
+Scene& Engine::GetScene()
+{
+    return *m_Scene;
+}
 
 } // namespace LongXi

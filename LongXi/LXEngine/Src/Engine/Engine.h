@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Windows.h>
+#include <chrono>
 #include <memory>
 #include <string>
 
@@ -13,6 +14,7 @@ class InputSystem;
 class CVirtualFileSystem;
 class TextureManager;
 class SpriteRenderer;
+class Scene;
 
 // =============================================================================
 // Engine — Central runtime coordinator class
@@ -74,11 +76,7 @@ class Engine
     CVirtualFileSystem& GetVFS();
     TextureManager& GetTextureManager();
     SpriteRenderer& GetSpriteRenderer();
-
-  private:
-    // Scene extension points (intentionally no-op until scene system is integrated)
-    void UpdateScene();
-    void RenderScene();
+    Scene& GetScene();
 
   private:
     // Subsystem ownership
@@ -87,9 +85,12 @@ class Engine
     std::unique_ptr<CVirtualFileSystem> m_VFS;
     std::unique_ptr<TextureManager> m_TextureManager;
     std::unique_ptr<SpriteRenderer> m_SpriteRenderer;
+    std::unique_ptr<Scene> m_Scene;
 
     // State
     bool m_Initialized;
+    std::chrono::time_point<std::chrono::steady_clock> m_LastFrameTime;
+    bool m_FirstFrame = true;
 };
 
 } // namespace LongXi
