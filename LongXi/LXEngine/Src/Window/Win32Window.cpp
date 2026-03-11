@@ -8,6 +8,28 @@
 namespace LongXi
 {
 
+static UINT NormalizeVirtualKey(UINT vk, LPARAM lParam)
+{
+    if (vk == VK_SHIFT)
+    {
+        UINT scanCode = (static_cast<UINT>(lParam) >> 16) & 0xFFu;
+        UINT mapped = MapVirtualKeyW(scanCode, MAPVK_VSC_TO_VK_EX);
+        if (mapped == VK_LSHIFT || mapped == VK_RSHIFT)
+            return mapped;
+
+        // Fallback if scan code mapping is unavailable.
+        return VK_LSHIFT;
+    }
+
+    if (vk == VK_CONTROL)
+        return (lParam & 0x01000000) ? VK_RCONTROL : VK_LCONTROL;
+
+    if (vk == VK_MENU)
+        return (lParam & 0x01000000) ? VK_RMENU : VK_LMENU;
+
+    return vk;
+}
+
 // ============================================================================
 // Constructor / Destructor
 // ============================================================================
@@ -140,7 +162,7 @@ LRESULT CALLBACK Win32Window::WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
     case WM_SYSKEYDOWN:
         if (window && window->OnKeyDown)
         {
-            UINT vk = static_cast<UINT>(wParam);
+            UINT vk = NormalizeVirtualKey(static_cast<UINT>(wParam), lParam);
             bool isRepeat = (lParam & 0x40000000) != 0;
             window->OnKeyDown(vk, isRepeat);
         }
@@ -150,7 +172,8 @@ LRESULT CALLBACK Win32Window::WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
     case WM_SYSKEYUP:
         if (window && window->OnKeyUp)
         {
-            window->OnKeyUp(static_cast<UINT>(wParam));
+            UINT vk = NormalizeVirtualKey(static_cast<UINT>(wParam), lParam);
+            window->OnKeyUp(vk);
         }
         return 0;
 
