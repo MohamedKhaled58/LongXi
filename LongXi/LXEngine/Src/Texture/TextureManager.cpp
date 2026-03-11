@@ -1,11 +1,10 @@
 #include "Texture/TextureManager.h"
 #include "Texture/TextureLoader.h"
 #include "Engine/Engine.h"
+#include "Core/FileSystem/PathUtils.h"
 #include "Core/FileSystem/VirtualFileSystem.h"
 #include "Core/Logging/LogMacros.h"
 
-#include <algorithm>
-#include <cstring>
 #include <ctype.h>
 
 namespace LongXi
@@ -31,106 +30,9 @@ TextureManager::~TextureManager()
 
 std::string TextureManager::Normalize(const std::string& path) const
 {
-    if (path.empty())
-    {
-        return path;
-    }
-
-    std::string normalized;
-    normalized.reserve(path.length());
-
-    // Step 1: Convert backslash to forward slash
-    // Step 2: Convert to lowercase
-    // Step 3: Collapse duplicate slashes
-    bool lastWasSlash = false;
-    for (char c : path)
-    {
-        if (c == '\\')
-        {
-            c = '/';
-        }
-
-        c = static_cast<char>(tolower(static_cast<unsigned char>(c)));
-
-        if (c == '/')
-        {
-            if (!lastWasSlash)
-            {
-                normalized += c;
-                lastWasSlash = true;
-            }
-            // else: skip duplicate slash
-        }
-        else
-        {
-            normalized += c;
-            lastWasSlash = false;
-        }
-    }
-
-    // Step 4: Strip leading slash
-    if (!normalized.empty() && normalized[0] == '/')
-    {
-        normalized.erase(0, 1);
-    }
-
-    // Step 5: Strip trailing slash
-    if (!normalized.empty() && normalized[normalized.length() - 1] == '/')
-    {
-        normalized.erase(normalized.length() - 1, 1);
-    }
-
-    // Step 6: Reject ".." segments (security: prevent directory traversal)
-    size_t dotDotPos = normalized.find("..");
-    if (dotDotPos != std::string::npos)
-    {
-        // Check if it's a standalone ".." segment
-        bool hasDotDotSegment = false;
-        if (dotDotPos == 0)
-        {
-            hasDotDotSegment = true;
-        }
-        else if (normalized[dotDotPos - 1] == '/')
-        {
-            // Check if followed by slash or end of string
-            if (dotDotPos + 2 >= normalized.length() || normalized[dotDotPos + 2] == '/')
-            {
-                hasDotDotSegment = true;
-            }
-        }
-
-        if (hasDotDotSegment)
-        {
-            LX_ENGINE_WARN("[Texture] Path rejected (contains '..'): {}", path);
-            return "";
-        }
-    }
-
-    // Step 7: Collapse "." segments
-    size_t dotSlashPos = 0;
-    while ((dotSlashPos = normalized.find("./")) != std::string::npos)
-    {
-        normalized.erase(dotSlashPos, 2);
-    }
-
-    // Remove trailing "/." if present
-    if (normalized.length() >= 2 && normalized[normalized.length() - 2] == '/' && normalized[normalized.length() - 1] == '.')
-    {
-        normalized.erase(normalized.length() - 2, 2);
-    }
-
-    // Standalone "." becomes empty
-    if (normalized == "." || normalized == "/.")
-    {
-        return "";
-    }
-
-    // Step 8: Return empty if result is empty
-    if (normalized.empty())
-    {
-        return "";
-    }
-
+    std::string normalized = PathUtils::NormalizeResourcePath(path, true);
+    if (normalized.empty() && !path.empty())
+        LX_ENGINE_WARN("[Texture] Path rejected during normalization: {}", path);
     return normalized;
 }
 

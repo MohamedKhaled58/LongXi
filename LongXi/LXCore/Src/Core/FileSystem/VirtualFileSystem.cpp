@@ -1,9 +1,9 @@
 #include "Core/FileSystem/VirtualFileSystem.h"
+#include "Core/FileSystem/PathUtils.h"
 #include "Core/FileSystem/WdfArchive.h"
 #include "Core/Logging/LogMacros.h"
 
 #include <Windows.h>
-#include <algorithm>
 #include <filesystem>
 
 namespace LongXi
@@ -39,120 +39,10 @@ CVirtualFileSystem::~CVirtualFileSystem() = default;
 
 std::string CVirtualFileSystem::Normalize(const std::string& path) const
 {
-    if (path.empty())
-        return {};
-
-    // Trim leading/trailing ASCII whitespace
-    auto start = path.find_first_not_of(" \t\r\n");
-    if (start == std::string::npos)
-        return {};
-    auto end = path.find_last_not_of(" \t\r\n");
-    std::string s = path.substr(start, end - start + 1);
-
-    // Step 1: Replace \ with /
-    for (char& c : s)
-    {
-        if (c == '\\')
-            c = '/';
-    }
-
-    // Step 2: Lowercase
-    std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-
-    // Step 3: Collapse consecutive / into one
-    std::string collapsed;
-    collapsed.reserve(s.size());
-    bool lastSlash = false;
-    for (char c : s)
-    {
-        if (c == '/')
-        {
-            if (!lastSlash)
-                collapsed += c;
-            lastSlash = true;
-        }
-        else
-        {
-            collapsed += c;
-            lastSlash = false;
-        }
-    }
-    s = std::move(collapsed);
-
-    // Step 4: Strip leading /
-    if (!s.empty() && s[0] == '/')
-        s = s.substr(1);
-
-    // Step 5: Strip trailing /
-    if (!s.empty() && s.back() == '/')
-        s.pop_back();
-
-    // Steps 6–7: Split on /, reject .., collapse .
-    std::vector<std::string> segments;
-    std::string seg;
-    auto flushSeg = [&]()
-    {
-        if (seg.empty())
-            return;
-        if (seg == "..")
-        {
-            LX_CORE_WARN("CVirtualFileSystem: rejected path with traversal '..': '{}'", path);
-            segments.clear();
-            seg.clear();
-        }
-        else if (seg != ".")
-        {
-            segments.push_back(seg);
-            seg.clear();
-        }
-        else
-        {
-            seg.clear(); // collapse '.'
-        }
-    };
-
-    bool rejected = false;
-    for (char c : s)
-    {
-        if (c == '/')
-        {
-            if (!seg.empty() && seg == "..")
-            {
-                rejected = true;
-                break;
-            }
-            flushSeg();
-        }
-        else
-        {
-            seg += c;
-        }
-    }
-    if (!rejected && !seg.empty() && seg == "..")
-        rejected = true;
-    if (!rejected)
-        flushSeg();
-
-    if (rejected)
-    {
-        LX_CORE_WARN("CVirtualFileSystem: rejected path with traversal '..': '{}'", path);
-        return {};
-    }
-
-    // Step 8: Return empty if result has no segments
-    if (segments.empty())
-        return {};
-
-    // Rejoin with /
-    std::string result;
-    result.reserve(s.size());
-    for (size_t i = 0; i < segments.size(); ++i)
-    {
-        if (i > 0)
-            result += '/';
-        result += segments[i];
-    }
-    return result;
+    std::string normalized = PathUtils::NormalizeResourcePath(path, true);
+    if (normalized.empty() && !path.empty())
+        LX_CORE_WARN("CVirtualFileSystem: rejected invalid path: '{}'", path);
+    return normalized;
 }
 
 // ============================================================================

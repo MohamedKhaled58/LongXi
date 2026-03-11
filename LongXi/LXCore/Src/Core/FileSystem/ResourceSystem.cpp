@@ -1,4 +1,5 @@
 #include "Core/FileSystem/ResourceSystem.h"
+#include "Core/FileSystem/PathUtils.h"
 #include "Core/FileSystem/WdfArchive.h"
 #include "Core/Logging/LogMacros.h"
 
@@ -65,99 +66,10 @@ std::string ResourceSystem::GetExecutableDirectory()
 
 std::string ResourceSystem::Normalize(const std::string& path) const
 {
-    if (path.empty())
-        return {};
-
-    std::string s = path;
-
-    // 1. Trim leading/trailing ASCII whitespace
-    auto start = s.find_first_not_of(" \t\r\n");
-    auto end = s.find_last_not_of(" \t\r\n");
-    if (start == std::string::npos)
-        return {};
-    s = s.substr(start, end - start + 1);
-
-    // 2. Replace all backslashes with forward slashes
-    for (char& c : s)
-    {
-        if (c == '\\')
-            c = '/';
-    }
-
-    // 3. Collapse consecutive '/' into a single '/'
-    std::string collapsed;
-    collapsed.reserve(s.size());
-    bool lastWasSlash = false;
-    for (char c : s)
-    {
-        if (c == '/')
-        {
-            if (!lastWasSlash)
-                collapsed += c;
-            lastWasSlash = true;
-        }
-        else
-        {
-            collapsed += c;
-            lastWasSlash = false;
-        }
-    }
-    s = std::move(collapsed);
-
-    // 4. Strip a single leading '/' (make relative)
-    if (!s.empty() && s[0] == '/')
-        s = s.substr(1);
-
-    // 5. Split on '/', check for '..' (reject) and '.' (collapse)
-    std::vector<std::string> segments;
-    std::string segment;
-    for (char c : s)
-    {
-        if (c == '/')
-        {
-            if (!segment.empty())
-            {
-                if (segment == "..")
-                {
-                    LX_CORE_WARN("ResourceSystem: rejected path with traversal sequence: '{}'", path);
-                    return {};
-                }
-                if (segment != ".")
-                    segments.push_back(segment);
-                segment.clear();
-            }
-        }
-        else
-        {
-            segment += c;
-        }
-    }
-    // Handle last segment
-    if (!segment.empty())
-    {
-        if (segment == "..")
-        {
-            LX_CORE_WARN("ResourceSystem: rejected path with traversal sequence: '{}'", path);
-            return {};
-        }
-        if (segment != ".")
-            segments.push_back(segment);
-    }
-
-    if (segments.empty())
-        return {};
-
-    // 6. Rejoin with '/'
-    std::string result;
-    result.reserve(s.size());
-    for (size_t i = 0; i < segments.size(); ++i)
-    {
-        if (i > 0)
-            result += '/';
-        result += segments[i];
-    }
-
-    return result;
+    std::string normalized = PathUtils::NormalizeResourcePath(path, false);
+    if (normalized.empty() && !path.empty())
+        LX_CORE_WARN("ResourceSystem: rejected invalid path: '{}'", path);
+    return normalized;
 }
 
 // ============================================================================
