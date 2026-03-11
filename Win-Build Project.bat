@@ -35,7 +35,13 @@ set "PLAT=%~2"
 if "%PLAT%"=="" set "PLAT=x64"
 
 set "MSBUILD_EXE=%VSINSTALLDIR%MSBuild\Current\Bin\MSBuild.exe"
-if not exist "%MSBUILD_EXE%" set "MSBUILD_EXE=msbuild"
+if not exist "%MSBUILD_EXE%" (
+    echo ERROR: VS2026 MSBuild was not found at:
+    echo   %MSBUILD_EXE%
+    echo Ensure VS2026 with C++ workload is installed and Setup-VS2026-Env.bat succeeds.
+    pause
+    exit /b 1
+)
 
 "%MSBUILD_EXE%" "%SOLUTION%" /m /p:Configuration=%CFG%;Platform=%PLAT%
 set "BUILD_EXIT=%ERRORLEVEL%"
