@@ -56,9 +56,17 @@ public:
     void* GetRendererContextHandle() const;
     int GetRendererViewportWidth() const;
     int GetRendererViewportHeight() const;
+
+    void SetFrameLimiterEnabled(bool enabled);
+    bool IsFrameLimiterEnabled() const;
+    void SetFrameRateLimit(double targetFramesPerSecond);
+    double GetFrameRateLimit() const;
+    void SetMaxDeltaTime(double maxDeltaSeconds);
+    double GetMaxDeltaTime() const;
+
     const TimingSnapshot& GetTimingSnapshot() const;
     const FrameProfileSnapshot& GetLastFrameProfileSnapshot() const;
-    bool IsProfilingEnabled() const;
+    static bool IsProfilingEnabled();
 
 private:
     std::unique_ptr<Renderer> m_Renderer;

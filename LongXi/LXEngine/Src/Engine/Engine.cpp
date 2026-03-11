@@ -76,10 +76,18 @@ bool Engine::Initialize(HWND windowHandle, int width, int height)
     }
 
     m_TimingService.Initialize();
+    m_TimingService.SetFrameLimiterEnabled(true);
+    m_TimingService.SetFrameRateLimit(60.0);
+    m_TimingService.SetMaxDeltaTime(0.100);
     m_ProfilerCollector.Initialize();
     ProfilerCollector::SetActiveCollector(IsProfilingEnabled() ? &m_ProfilerCollector : nullptr);
 
     m_Initialized = true;
+
+    LX_ENGINE_INFO("[Timing] Frame limiter {} at {:.1f} FPS (max delta {:.1f} ms)",
+                   m_TimingService.IsFrameLimiterEnabled() ? "enabled" : "disabled",
+                   m_TimingService.GetFrameRateLimit(),
+                   m_TimingService.GetMaxDeltaTime() * 1000.0);
 
     const double startupMs = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - startupStart).count();
     LX_ENGINE_INFO("[Engine] Engine initialization complete ({:.2f} ms)", startupMs);
@@ -368,6 +376,36 @@ int Engine::GetRendererViewportHeight() const
     return m_Renderer ? m_Renderer->GetViewportHeight() : 0;
 }
 
+void Engine::SetFrameLimiterEnabled(bool enabled)
+{
+    m_TimingService.SetFrameLimiterEnabled(enabled);
+}
+
+bool Engine::IsFrameLimiterEnabled() const
+{
+    return m_TimingService.IsFrameLimiterEnabled();
+}
+
+void Engine::SetFrameRateLimit(double targetFramesPerSecond)
+{
+    m_TimingService.SetFrameRateLimit(targetFramesPerSecond);
+}
+
+double Engine::GetFrameRateLimit() const
+{
+    return m_TimingService.GetFrameRateLimit();
+}
+
+void Engine::SetMaxDeltaTime(double maxDeltaSeconds)
+{
+    m_TimingService.SetMaxDeltaTime(maxDeltaSeconds);
+}
+
+double Engine::GetMaxDeltaTime() const
+{
+    return m_TimingService.GetMaxDeltaTime();
+}
+
 const TimingSnapshot& Engine::GetTimingSnapshot() const
 {
     return m_TimingService.GetSnapshot();
@@ -378,7 +416,7 @@ const FrameProfileSnapshot& Engine::GetLastFrameProfileSnapshot() const
     return m_ProfilerCollector.GetLastFrameSnapshot();
 }
 
-bool Engine::IsProfilingEnabled() const
+bool Engine::IsProfilingEnabled()
 {
 #if defined(LX_DEBUG) || defined(LX_DEV)
     return true;
