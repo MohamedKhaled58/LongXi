@@ -29,6 +29,7 @@ Intermediate/
 .vs/
 *.user
 *.suo
+*.sln
 *.sln.docstates
 *.vcxproj
 *.vcxproj.filters

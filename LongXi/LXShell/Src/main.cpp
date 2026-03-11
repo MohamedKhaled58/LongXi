@@ -30,10 +30,74 @@ class TestApplication : public Application
         // Test sprite renderer initialization
         TestSpriteSystem();
 
+        // Test scene system initialization and node lifecycle
+        TestSceneSystem();
+
         return true;
     }
 
   private:
+    void TestSceneSystem()
+    {
+        LX_ENGINE_INFO("==============================================");
+        LX_ENGINE_INFO("SCENE SYSTEM TEST");
+        LX_ENGINE_INFO("==============================================");
+
+        Engine& engine = GetEngine();
+
+        // Verify Scene initialized
+        if (engine.GetScene().IsInitialized())
+        {
+            LX_ENGINE_INFO("✓ SUCCESS: Scene initialized");
+        }
+        else
+        {
+            LX_ENGINE_ERROR("✗ FAILED: Scene not initialized");
+        }
+
+        // Test node add / remove lifecycle
+        auto testNode = std::make_unique<SceneNode>();
+        testNode->SetPosition({10.0f, 0.0f, 0.0f});
+        SceneNode* rawPtr = testNode.get();
+        engine.GetScene().AddNode(std::move(testNode));
+        LX_ENGINE_INFO("✓ Scene node added at position (10, 0, 0)");
+
+        engine.GetScene().RemoveNode(rawPtr);
+        LX_ENGINE_INFO("✓ Scene node removed");
+
+        // Test hierarchical transform propagation:
+        // Parent at world (10,0,0) + Child at local (5,0,0) = Child world (15,0,0)
+        auto parentNode = std::make_unique<SceneNode>();
+        parentNode->SetPosition({10.0f, 0.0f, 0.0f});
+
+        auto childNode = std::make_unique<SceneNode>();
+        childNode->SetPosition({5.0f, 0.0f, 0.0f});
+        SceneNode* childRaw = childNode.get();
+
+        parentNode->AddChild(std::move(childNode));
+        SceneNode* parentRaw = parentNode.get();
+        engine.GetScene().AddNode(std::move(parentNode));
+
+        // Run one update to trigger world transform computation
+        engine.GetScene().Update(0.0f);
+
+        const Vector3& childWorldPos = childRaw->GetWorldPosition();
+        if (childWorldPos.x == 15.0f && childWorldPos.y == 0.0f && childWorldPos.z == 0.0f)
+        {
+            LX_ENGINE_INFO("✓ SUCCESS: Child world position is (15, 0, 0) as expected");
+        }
+        else
+        {
+            LX_ENGINE_ERROR("✗ FAILED: Child world position is ({}, {}, {}), expected (15, 0, 0)", childWorldPos.x, childWorldPos.y, childWorldPos.z);
+        }
+
+        engine.GetScene().RemoveNode(parentRaw); // also destroys child
+
+        LX_ENGINE_INFO("==============================================");
+        LX_ENGINE_INFO("SCENE SYSTEM TEST COMPLETE");
+        LX_ENGINE_INFO("==============================================");
+    }
+
     void TestSpriteSystem()
     {
         LX_ENGINE_INFO("==============================================");
