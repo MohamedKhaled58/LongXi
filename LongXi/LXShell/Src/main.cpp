@@ -4,6 +4,7 @@
 
 #include <Application/Application.h>
 #include <Application/EntryPoint.h>
+#include <Core/FileSystem/VirtualFileSystem.h>
 #include <Core/Logging/LogMacros.h>
 #include <Engine/Engine.h>
 #include <Scene/Camera.h>
@@ -16,6 +17,8 @@
 #include "DebugUI/DebugUI.h"
 #include "ImGui/ImGuiLayer.h"
 #endif
+
+#include <array>
 
 namespace LongXi
 {
@@ -132,19 +135,37 @@ class TestApplication : public Application
         Engine& engine = GetEngine();
         Scene& scene = engine.GetScene();
         TextureManager& textureManager = engine.GetTextureManager();
+        CVirtualFileSystem& vfs = engine.GetVFS();
 
         auto rootNode = std::make_unique<SceneNode>();
         rootNode->SetName("ValidationRoot");
         rootNode->SetPosition({0.0f, 0.0f, 0.0f});
         LX_ENGINE_INFO("[ValidationScene] Validation root created");
 
-        static const char* TEST_TEXTURE_PATH = "Data/texture/test.dds";
-        auto testTexture = textureManager.LoadTexture(TEST_TEXTURE_PATH);
+        constexpr std::array<const char*, 6> textureCandidates = {
+            "Data/texture/test.dds",
+            "texture/test.dds",
+            "data/texture/test.dds",
+            "Data/texture/1.dds",
+            "texture/1.dds",
+            "1.dds",
+        };
 
-        if (!testTexture)
+        std::shared_ptr<Texture> testTexture;
+        const char* resolvedPath = nullptr;
+        for (const char* candidate : textureCandidates)
         {
-            LX_ENGINE_WARN("[ValidationScene] '{}' not found, falling back to '1.dds'", TEST_TEXTURE_PATH);
-            testTexture = textureManager.LoadTexture("1.dds");
+            if (!vfs.Exists(candidate))
+            {
+                continue;
+            }
+
+            testTexture = textureManager.LoadTexture(candidate);
+            if (testTexture)
+            {
+                resolvedPath = candidate;
+                break;
+            }
         }
 
         if (testTexture)
@@ -154,11 +175,11 @@ class TestApplication : public Application
             spriteNode->SetPosition({0.0f, 0.0f, 0.0f});
             spriteNode->SetScale({1.0f, 1.0f, 1.0f});
             rootNode->AddChild(std::move(spriteNode));
-            LX_ENGINE_INFO("[ValidationScene] Test sprite node attached");
+            LX_ENGINE_INFO("[ValidationScene] Test sprite node attached (texture: {})", resolvedPath ? resolvedPath : "unknown");
         }
         else
         {
-            LX_ENGINE_WARN("[ValidationScene] No test texture available");
+            LX_ENGINE_WARN("[ValidationScene] No test texture available in mounted VFS paths (tried {} candidates)", textureCandidates.size());
         }
 
         scene.AddNode(std::move(rootNode));
