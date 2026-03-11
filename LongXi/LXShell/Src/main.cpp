@@ -7,9 +7,11 @@
 #include <Core/FileSystem/VirtualFileSystem.h>
 #include <Core/Logging/LogMacros.h>
 #include <Engine/Engine.h>
+#include <Renderer/SpriteRenderer.h>
 #include <Scene/Camera.h>
 #include <Scene/Scene.h>
 #include <Scene/SceneNode.h>
+#include <Texture/Texture.h>
 #include <Texture/TextureManager.h>
 #include <Window/Win32Window.h>
 
@@ -19,6 +21,7 @@
 #endif
 
 #include <array>
+#include <memory>
 
 namespace LongXi
 {
@@ -84,6 +87,7 @@ class TestApplication : public Application
 #if defined(LX_DEBUG) || defined(LX_DEV)
             if (m_ImGuiLayer.IsInitialized())
             {
+                RenderValidationSprite(engine);
                 m_ImGuiLayer.BeginFrame();
                 m_DebugUI.UpdateViewModels(engine);
                 m_DebugUI.RenderPanels(engine);
@@ -170,6 +174,7 @@ class TestApplication : public Application
 
         if (testTexture)
         {
+            m_ValidationTexture = testTexture;
             auto spriteNode = std::make_unique<SceneNode>();
             spriteNode->SetName("TestSpriteNode");
             spriteNode->SetPosition({0.0f, 0.0f, 0.0f});
@@ -180,6 +185,7 @@ class TestApplication : public Application
         else
         {
             LX_ENGINE_WARN("[ValidationScene] No test texture available in mounted VFS paths (tried {} candidates)", textureCandidates.size());
+            m_ValidationTexture.reset();
         }
 
         scene.AddNode(std::move(rootNode));
@@ -195,8 +201,28 @@ class TestApplication : public Application
         LX_ENGINE_INFO("==============================================");
     }
 
+    void RenderValidationSprite(Engine& engine)
+    {
+        if (!m_ValidationTexture)
+        {
+            return;
+        }
+
+        SpriteRenderer& spriteRenderer = engine.GetSpriteRenderer();
+        if (!spriteRenderer.IsInitialized())
+        {
+            return;
+        }
+
+        // Draw one visible debug sprite so texture/VFS/render validation is immediate.
+        spriteRenderer.Begin();
+        spriteRenderer.DrawSprite(m_ValidationTexture.get(), {100.0f, 100.0f}, {256.0f, 256.0f});
+        spriteRenderer.End();
+    }
+
     ImGuiLayer m_ImGuiLayer;
     DebugUI m_DebugUI;
+    std::shared_ptr<Texture> m_ValidationTexture;
 #endif
 };
 

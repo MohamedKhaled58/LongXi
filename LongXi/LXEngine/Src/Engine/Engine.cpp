@@ -158,9 +158,6 @@ void Engine::Update()
         return;
     }
 
-    // Advance input frame boundary
-    m_Input->Update();
-
     // Measure deltaTime using steady_clock (0.0f on first frame to avoid large initial tick)
     auto now = std::chrono::steady_clock::now();
     float deltaTime = m_FirstFrame ? 0.0f : std::chrono::duration<float>(now - m_LastFrameTime).count();
@@ -209,6 +206,14 @@ void Engine::Present()
     }
 
     m_Renderer->EndFrame();
+
+    // Advance input frame boundary at end-of-frame so this frame's input
+    // (including wheel delta and key/button transitions) is visible to all
+    // update/render/debug systems before being reset for the next frame.
+    if (m_Input)
+    {
+        m_Input->Update();
+    }
 }
 
 void Engine::OnResize(int width, int height)
