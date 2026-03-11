@@ -74,6 +74,11 @@ class Engine
     TextureManager& GetTextureManager();
 
   private:
+    // Scene extension points (intentionally no-op until scene system is integrated)
+    void UpdateScene();
+    void RenderScene();
+
+  private:
     // Subsystem ownership
     std::unique_ptr<DX11Renderer> m_Renderer;
     std::unique_ptr<InputSystem> m_Input;

@@ -127,7 +127,7 @@ void Engine::Update()
     // Advance input frame boundary
     m_Input->Update();
 
-    // TODO: Update Scene (future spec)
+    UpdateScene();
 }
 
 void Engine::Render()
@@ -140,7 +140,7 @@ void Engine::Render()
 
     m_Renderer->BeginFrame();
 
-    // TODO: Scene.Render() (future spec)
+    RenderScene();
 
     m_Renderer->EndFrame();
 }
@@ -210,5 +210,9 @@ TextureManager& Engine::GetTextureManager()
 {
     return *m_TextureManager;
 }
+
+void Engine::UpdateScene() {}
+
+void Engine::RenderScene() {}
 
 } // namespace LongXi
