@@ -22,7 +22,7 @@ Application::~Application()
 {
     if (m_Initialized)
     {
-        Shutdown();
+        Application::Shutdown();
     }
 }
 
@@ -93,7 +93,6 @@ void Application::ConfigureVirtualFileSystem()
         LX_ENGINE_INFO("[Application] Configuring VFS mounts");
 
         // Mount directories first (highest priority)
-        m_Engine->MountDirectory(exeDir + "/Data/Patch");
         m_Engine->MountDirectory(exeDir + "/Data");
         m_Engine->MountDirectory(exeDir);
 

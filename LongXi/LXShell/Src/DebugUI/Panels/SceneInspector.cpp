@@ -46,7 +46,7 @@ void SceneInspector::Render(const std::vector<SceneNodeViewModel>& nodes, Scene&
             if (ImGui::Selectable(label.c_str(), s_SelectedNode == nodeViewModel.Node))
             {
                 s_SelectedNode = nodeViewModel.Node;
-                LX_ENGINE_INFO("[SceneInspector] Node selected: {}", nodeViewModel.NodeName);
+                LX_INFO("[SceneInspector] Node selected: {}", nodeViewModel.NodeName);
             }
 
             ImGui::PopID();
@@ -82,21 +82,21 @@ void SceneInspector::Render(const std::vector<SceneNodeViewModel>& nodes, Scene&
             if (ImGui::DragFloat3("Position", position, 0.1f))
             {
                 s_SelectedNode->SetPosition({position[0], position[1], position[2]});
-                LX_ENGINE_INFO("[SceneInspector] Position changed: ({}, {}, {})", position[0], position[1], position[2]);
+                LX_INFO("[SceneInspector] Position changed: ({}, {}, {})", position[0], position[1], position[2]);
             }
 
             // Rotation editing
             if (ImGui::DragFloat3("Rotation", rotation, 1.0f))
             {
                 s_SelectedNode->SetRotation({rotation[0], rotation[1], rotation[2]});
-                LX_ENGINE_INFO("[SceneInspector] Rotation changed: ({}, {}, {})", rotation[0], rotation[1], rotation[2]);
+                LX_INFO("[SceneInspector] Rotation changed: ({}, {}, {})", rotation[0], rotation[1], rotation[2]);
             }
 
             // Scale editing
             if (ImGui::DragFloat3("Scale", scale, 0.1f))
             {
                 s_SelectedNode->SetScale({scale[0], scale[1], scale[2]});
-                LX_ENGINE_INFO("[SceneInspector] Scale changed: ({}, {}, {})", scale[0], scale[1], scale[2]);
+                LX_INFO("[SceneInspector] Scale changed: ({}, {}, {})", scale[0], scale[1], scale[2]);
             }
         }
         else

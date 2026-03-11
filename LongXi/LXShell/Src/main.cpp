@@ -42,7 +42,7 @@ class TestApplication : public Application
         {
             if (!m_ImGuiLayer.Initialize(engine, GetWindowHandle()))
             {
-                LX_ENGINE_WARN("[Application] ImGuiLayer initialization failed, running without developer UI");
+                LX_WARN("[Application] ImGuiLayer initialization failed, running without developer UI");
             }
             else
             {
@@ -57,12 +57,12 @@ class TestApplication : public Application
 
     int Run() override
     {
-        LX_ENGINE_INFO("Entering main loop");
+        LX_INFO("Entering main loop");
 
         Engine& engine = GetEngine();
         if (!engine.IsInitialized())
         {
-            LX_ENGINE_ERROR("Cannot run: engine is not initialized");
+            LX_ERROR("Cannot run: engine is not initialized");
             return 1;
         }
 
@@ -73,7 +73,7 @@ class TestApplication : public Application
             {
                 if (msg.message == WM_QUIT)
                 {
-                    LX_ENGINE_INFO("Exiting main loop");
+                    LX_INFO("Exiting main loop");
                     return static_cast<int>(msg.wParam);
                 }
 
@@ -92,6 +92,7 @@ class TestApplication : public Application
                 m_DebugUI.UpdateViewModels(engine);
                 m_DebugUI.RenderPanels(engine);
                 m_ImGuiLayer.EndFrame();
+                engine.ExecuteExternalRenderPass([this]() { m_ImGuiLayer.RenderDrawData(); });
             }
 #endif
 
@@ -132,9 +133,9 @@ class TestApplication : public Application
 
     void SetupValidationScene()
     {
-        LX_ENGINE_INFO("==============================================");
-        LX_ENGINE_INFO("VALIDATION SCENE SETUP");
-        LX_ENGINE_INFO("==============================================");
+        LX_INFO("==============================================");
+        LX_INFO("VALIDATION SCENE SETUP");
+        LX_INFO("==============================================");
 
         Engine& engine = GetEngine();
         Scene& scene = engine.GetScene();
@@ -144,7 +145,7 @@ class TestApplication : public Application
         auto rootNode = std::make_unique<SceneNode>();
         rootNode->SetName("ValidationRoot");
         rootNode->SetPosition({0.0f, 0.0f, 0.0f});
-        LX_ENGINE_INFO("[ValidationScene] Validation root created");
+        LX_INFO("[ValidationScene] Validation root created");
 
         constexpr std::array<const char*, 6> textureCandidates = {
             "Data/texture/test.dds",
@@ -180,11 +181,11 @@ class TestApplication : public Application
             spriteNode->SetPosition({0.0f, 0.0f, 0.0f});
             spriteNode->SetScale({1.0f, 1.0f, 1.0f});
             rootNode->AddChild(std::move(spriteNode));
-            LX_ENGINE_INFO("[ValidationScene] Test sprite node attached (texture: {})", resolvedPath ? resolvedPath : "unknown");
+            LX_INFO("[ValidationScene] Test sprite node attached (texture: {})", resolvedPath ? resolvedPath : "unknown");
         }
         else
         {
-            LX_ENGINE_WARN("[ValidationScene] No test texture available in mounted VFS paths (tried {} candidates)", textureCandidates.size());
+            LX_WARN("[ValidationScene] No test texture available in mounted VFS paths (tried {} candidates)", textureCandidates.size());
             m_ValidationTexture.reset();
         }
 
@@ -196,9 +197,9 @@ class TestApplication : public Application
         camera.SetFOV(60.0f);
         camera.SetNearFar(0.1f, 1000.0f);
 
-        LX_ENGINE_INFO("==============================================");
-        LX_ENGINE_INFO("VALIDATION SCENE SETUP COMPLETE");
-        LX_ENGINE_INFO("==============================================");
+        LX_INFO("==============================================");
+        LX_INFO("VALIDATION SCENE SETUP COMPLETE");
+        LX_INFO("==============================================");
     }
 
     void RenderValidationSprite(Engine& engine)

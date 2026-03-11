@@ -25,6 +25,7 @@ class ImGuiLayer
 
     void BeginFrame();
     void EndFrame();
+    void RenderDrawData();
     void OnResize(int width, int height);
 
     // Returns true if ImGui consumed the input message.
@@ -33,8 +34,6 @@ class ImGuiLayer
   private:
     bool m_Initialized = false;
     HWND m_WindowHandle = nullptr;
-    void* m_NativeDevice = nullptr;
-    void* m_NativeContext = nullptr;
     int m_ViewportWidth = 0;
     int m_ViewportHeight = 0;
 };

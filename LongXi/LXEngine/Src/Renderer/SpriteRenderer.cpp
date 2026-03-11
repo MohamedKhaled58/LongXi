@@ -1,10 +1,9 @@
 #include "Renderer/SpriteRenderer.h"
-#include "Renderer/DX11Renderer.h"
-#include "Texture/Texture.h"
-#include "Core/Logging/LogMacros.h"
 
-#include <d3dcompiler.h>
-#include <windows.h>
+#include "Core/Logging/LogMacros.h"
+#include "Renderer/Backend/DX11/DX11SpritePipeline.h"
+#include "Texture/Texture.h"
+
 #include <cstring>
 
 // ============================================================================
@@ -63,11 +62,7 @@ float4 PS(PSInput input) : SV_TARGET
 namespace LongXi
 {
 
-// ============================================================================
-// Constructor / Destructor
-// ============================================================================
-
-SpriteRenderer::SpriteRenderer() : m_Renderer(nullptr), m_SpriteCount(0), m_CurrentTexture(nullptr), m_Initialized(false), m_InBatch(false)
+SpriteRenderer::SpriteRenderer() : m_Renderer(nullptr), m_DX11Pipeline(std::make_unique<DX11SpritePipeline>()), m_SpriteCount(0), m_CurrentTexture(nullptr), m_Initialized(false), m_InBatch(false)
 {
     memset(m_ProjectionMatrix, 0, sizeof(m_ProjectionMatrix));
 }
@@ -77,270 +72,21 @@ SpriteRenderer::~SpriteRenderer()
     Shutdown();
 }
 
-// ============================================================================
-// Lifecycle
-// ============================================================================
-
-bool SpriteRenderer::Initialize(DX11Renderer& renderer, int width, int height)
+bool SpriteRenderer::Initialize(Renderer& renderer, int width, int height)
 {
     m_Renderer = &renderer;
-    ID3D11Device* device = renderer.GetDevice();
-
-    Microsoft::WRL::ComPtr<ID3DBlob> vsBlob;
-    Microsoft::WRL::ComPtr<ID3DBlob> psBlob;
-    Microsoft::WRL::ComPtr<ID3DBlob> errorBlob;
-
-    // ---- Compile vertex shader ----
-    HRESULT hr = D3DCompile(s_VertexShaderSrc, strlen(s_VertexShaderSrc), nullptr, nullptr, nullptr, "VS", "vs_4_0", 0, 0, &vsBlob, &errorBlob);
-    if (FAILED(hr))
+    if (!m_DX11Pipeline)
     {
-        const char* msg = errorBlob ? static_cast<const char*>(errorBlob->GetBufferPointer()) : "unknown error";
-        LX_ENGINE_ERROR("[SpriteRenderer] Vertex shader compile failed: {}", msg);
-        LX_ENGINE_ERROR("[SpriteRenderer] Initialization failed — sprite rendering disabled");
+        m_DX11Pipeline = std::make_unique<DX11SpritePipeline>();
+    }
+
+    if (!m_DX11Pipeline->Initialize(renderer, MAX_SPRITES_PER_BATCH, s_VertexShaderSrc, s_PixelShaderSrc))
+    {
+        LX_ENGINE_ERROR("[SpriteRenderer] Initialization failed - sprite rendering disabled");
         m_Initialized = false;
         return false;
     }
 
-    hr = device->CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, &m_VertexShader);
-    if (FAILED(hr))
-    {
-        LX_ENGINE_ERROR("[SpriteRenderer] CreateVertexShader failed (hr={})", hr);
-        LX_ENGINE_ERROR("[SpriteRenderer] Initialization failed — sprite rendering disabled");
-        m_Initialized = false;
-        return false;
-    }
-
-    // ---- Compile pixel shader ----
-    hr = D3DCompile(s_PixelShaderSrc, strlen(s_PixelShaderSrc), nullptr, nullptr, nullptr, "PS", "ps_4_0", 0, 0, &psBlob, &errorBlob);
-    if (FAILED(hr))
-    {
-        const char* msg = errorBlob ? static_cast<const char*>(errorBlob->GetBufferPointer()) : "unknown error";
-        LX_ENGINE_ERROR("[SpriteRenderer] Pixel shader compile failed: {}", msg);
-        LX_ENGINE_ERROR("[SpriteRenderer] Initialization failed — sprite rendering disabled");
-        m_VertexShader.Reset();
-        m_Initialized = false;
-        return false;
-    }
-
-    hr = device->CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, &m_PixelShader);
-    if (FAILED(hr))
-    {
-        LX_ENGINE_ERROR("[SpriteRenderer] CreatePixelShader failed (hr={})", hr);
-        LX_ENGINE_ERROR("[SpriteRenderer] Initialization failed — sprite rendering disabled");
-        m_VertexShader.Reset();
-        m_Initialized = false;
-        return false;
-    }
-
-    // ---- Input layout ----
-    D3D11_INPUT_ELEMENT_DESC layout[] = {
-        {"POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 8, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0},
-    };
-
-    hr = device->CreateInputLayout(layout, 3, vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &m_InputLayout);
-    if (FAILED(hr))
-    {
-        LX_ENGINE_ERROR("[SpriteRenderer] CreateInputLayout failed (hr={})", hr);
-        LX_ENGINE_ERROR("[SpriteRenderer] Initialization failed — sprite rendering disabled");
-        m_PixelShader.Reset();
-        m_VertexShader.Reset();
-        m_Initialized = false;
-        return false;
-    }
-
-    // ---- Dynamic vertex buffer ----
-    {
-        D3D11_BUFFER_DESC vbDesc = {};
-        vbDesc.Usage = D3D11_USAGE_DYNAMIC;
-        vbDesc.ByteWidth = MAX_SPRITES_PER_BATCH * 4 * sizeof(SpriteVertex);
-        vbDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-        vbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-        hr = device->CreateBuffer(&vbDesc, nullptr, &m_VertexBuffer);
-        if (FAILED(hr))
-        {
-            LX_ENGINE_ERROR("[SpriteRenderer] CreateBuffer (vertex) failed (hr={})", hr);
-            LX_ENGINE_ERROR("[SpriteRenderer] Initialization failed — sprite rendering disabled");
-            m_InputLayout.Reset();
-            m_PixelShader.Reset();
-            m_VertexShader.Reset();
-            m_Initialized = false;
-            return false;
-        }
-    }
-
-    // ---- Static index buffer ----
-    {
-        uint16_t indices[MAX_SPRITES_PER_BATCH * 6];
-        for (int i = 0; i < MAX_SPRITES_PER_BATCH; ++i)
-        {
-            uint16_t base = static_cast<uint16_t>(i * 4);
-            indices[i * 6 + 0] = base + 0;
-            indices[i * 6 + 1] = base + 1;
-            indices[i * 6 + 2] = base + 2;
-            indices[i * 6 + 3] = base + 2;
-            indices[i * 6 + 4] = base + 1;
-            indices[i * 6 + 5] = base + 3;
-        }
-
-        D3D11_BUFFER_DESC ibDesc = {};
-        ibDesc.Usage = D3D11_USAGE_IMMUTABLE;
-        ibDesc.ByteWidth = sizeof(indices);
-        ibDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-
-        D3D11_SUBRESOURCE_DATA ibData = {};
-        ibData.pSysMem = indices;
-
-        hr = device->CreateBuffer(&ibDesc, &ibData, &m_IndexBuffer);
-        if (FAILED(hr))
-        {
-            LX_ENGINE_ERROR("[SpriteRenderer] CreateBuffer (index) failed (hr={})", hr);
-            LX_ENGINE_ERROR("[SpriteRenderer] Initialization failed — sprite rendering disabled");
-            m_VertexBuffer.Reset();
-            m_InputLayout.Reset();
-            m_PixelShader.Reset();
-            m_VertexShader.Reset();
-            m_Initialized = false;
-            return false;
-        }
-    }
-
-    // ---- Constant buffer (64 bytes = float4x4) ----
-    {
-        D3D11_BUFFER_DESC cbDesc = {};
-        cbDesc.Usage = D3D11_USAGE_DYNAMIC;
-        cbDesc.ByteWidth = 64;
-        cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-        cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-        hr = device->CreateBuffer(&cbDesc, nullptr, &m_ConstantBuffer);
-        if (FAILED(hr))
-        {
-            LX_ENGINE_ERROR("[SpriteRenderer] CreateBuffer (constant) failed (hr={})", hr);
-            LX_ENGINE_ERROR("[SpriteRenderer] Initialization failed — sprite rendering disabled");
-            m_IndexBuffer.Reset();
-            m_VertexBuffer.Reset();
-            m_InputLayout.Reset();
-            m_PixelShader.Reset();
-            m_VertexShader.Reset();
-            m_Initialized = false;
-            return false;
-        }
-    }
-
-    // ---- Alpha blend state ----
-    {
-        D3D11_BLEND_DESC blendDesc = {};
-        blendDesc.AlphaToCoverageEnable = false;
-        blendDesc.IndependentBlendEnable = false;
-        blendDesc.RenderTarget[0].BlendEnable = true;
-        blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-        blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-        blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-        blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-        blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
-        blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-        blendDesc.RenderTarget[0].RenderTargetWriteMask = 0x0F;
-
-        hr = device->CreateBlendState(&blendDesc, &m_BlendState);
-        if (FAILED(hr))
-        {
-            LX_ENGINE_ERROR("[SpriteRenderer] CreateBlendState failed (hr={})", hr);
-            LX_ENGINE_ERROR("[SpriteRenderer] Initialization failed — sprite rendering disabled");
-            m_ConstantBuffer.Reset();
-            m_IndexBuffer.Reset();
-            m_VertexBuffer.Reset();
-            m_InputLayout.Reset();
-            m_PixelShader.Reset();
-            m_VertexShader.Reset();
-            m_Initialized = false;
-            return false;
-        }
-    }
-
-    // ---- Depth-stencil state (depth disabled) ----
-    {
-        D3D11_DEPTH_STENCIL_DESC dsDesc = {};
-        dsDesc.DepthEnable = false;
-        dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-        dsDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
-        dsDesc.StencilEnable = false;
-
-        hr = device->CreateDepthStencilState(&dsDesc, &m_DepthState);
-        if (FAILED(hr))
-        {
-            LX_ENGINE_ERROR("[SpriteRenderer] CreateDepthStencilState failed (hr={})", hr);
-            LX_ENGINE_ERROR("[SpriteRenderer] Initialization failed — sprite rendering disabled");
-            m_BlendState.Reset();
-            m_ConstantBuffer.Reset();
-            m_IndexBuffer.Reset();
-            m_VertexBuffer.Reset();
-            m_InputLayout.Reset();
-            m_PixelShader.Reset();
-            m_VertexShader.Reset();
-            m_Initialized = false;
-            return false;
-        }
-    }
-
-    // ---- Linear-clamp sampler ----
-    {
-        D3D11_SAMPLER_DESC sampDesc = {};
-        sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-        sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-        sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-        sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-        sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-        hr = device->CreateSamplerState(&sampDesc, &m_SamplerState);
-        if (FAILED(hr))
-        {
-            LX_ENGINE_ERROR("[SpriteRenderer] CreateSamplerState failed (hr={})", hr);
-            LX_ENGINE_ERROR("[SpriteRenderer] Initialization failed — sprite rendering disabled");
-            m_DepthState.Reset();
-            m_BlendState.Reset();
-            m_ConstantBuffer.Reset();
-            m_IndexBuffer.Reset();
-            m_VertexBuffer.Reset();
-            m_InputLayout.Reset();
-            m_PixelShader.Reset();
-            m_VertexShader.Reset();
-            m_Initialized = false;
-            return false;
-        }
-    }
-
-    // ---- Rasterizer state (no cull, solid fill) ----
-    {
-        D3D11_RASTERIZER_DESC rasDesc = {};
-        rasDesc.FillMode = D3D11_FILL_SOLID;
-        rasDesc.CullMode = D3D11_CULL_NONE;
-        rasDesc.FrontCounterClockwise = false;
-        rasDesc.DepthClipEnable = true;
-        rasDesc.ScissorEnable = false;
-
-        hr = device->CreateRasterizerState(&rasDesc, &m_RasterizerState);
-        if (FAILED(hr))
-        {
-            LX_ENGINE_ERROR("[SpriteRenderer] CreateRasterizerState failed (hr={})", hr);
-            LX_ENGINE_ERROR("[SpriteRenderer] Initialization failed — sprite rendering disabled");
-            m_SamplerState.Reset();
-            m_DepthState.Reset();
-            m_BlendState.Reset();
-            m_ConstantBuffer.Reset();
-            m_IndexBuffer.Reset();
-            m_VertexBuffer.Reset();
-            m_InputLayout.Reset();
-            m_PixelShader.Reset();
-            m_VertexShader.Reset();
-            m_Initialized = false;
-            return false;
-        }
-    }
-
-    // ---- Upload initial projection matrix ----
     UpdateProjection(width, height);
 
     m_Initialized = true;
@@ -355,16 +101,10 @@ void SpriteRenderer::Shutdown()
         return;
     }
 
-    m_RasterizerState.Reset();
-    m_SamplerState.Reset();
-    m_DepthState.Reset();
-    m_BlendState.Reset();
-    m_ConstantBuffer.Reset();
-    m_IndexBuffer.Reset();
-    m_VertexBuffer.Reset();
-    m_InputLayout.Reset();
-    m_PixelShader.Reset();
-    m_VertexShader.Reset();
+    if (m_DX11Pipeline)
+    {
+        m_DX11Pipeline->Shutdown();
+    }
 
     m_Initialized = false;
     LX_ENGINE_INFO("[SpriteRenderer] Shutdown");
@@ -374,10 +114,6 @@ bool SpriteRenderer::IsInitialized() const
 {
     return m_Initialized;
 }
-
-// ============================================================================
-// Resize
-// ============================================================================
 
 void SpriteRenderer::OnResize(int width, int height)
 {
@@ -392,18 +128,11 @@ void SpriteRenderer::OnResize(int width, int height)
     UpdateProjection(width, height);
 }
 
-// ============================================================================
-// Private Helpers
-// ============================================================================
-
 void SpriteRenderer::UpdateProjection(int width, int height)
 {
     float w = static_cast<float>(width);
     float h = static_cast<float>(height);
 
-    // Row-major orthographic projection
-    // Maps [0,W] x [0,H] to clip space [-1,1] x [1,-1] (Y flipped for top-left origin)
-    // Used with #pragma pack_matrix(row_major) in HLSL so no CPU-side transpose needed
     float proj[16] = {
         2.0f / w,
         0.0f,
@@ -424,56 +153,28 @@ void SpriteRenderer::UpdateProjection(int width, int height)
     };
     memcpy(m_ProjectionMatrix, proj, sizeof(proj));
 
-    // Upload to constant buffer
-    if (m_ConstantBuffer && m_Renderer)
+    if (m_DX11Pipeline && m_Renderer)
     {
-        ID3D11DeviceContext* ctx = m_Renderer->GetContext();
-        D3D11_MAPPED_SUBRESOURCE mapped = {};
-        if (SUCCEEDED(ctx->Map(m_ConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
-        {
-            memcpy(mapped.pData, m_ProjectionMatrix, sizeof(m_ProjectionMatrix));
-            ctx->Unmap(m_ConstantBuffer.Get(), 0);
-        }
+        m_DX11Pipeline->UploadProjectionMatrix(*m_Renderer, m_ProjectionMatrix, sizeof(m_ProjectionMatrix));
     }
 }
 
 void SpriteRenderer::FlushBatch()
 {
-    if (m_SpriteCount == 0 || !m_CurrentTexture)
+    if (m_SpriteCount == 0 || !m_CurrentTexture || !m_DX11Pipeline || !m_Renderer)
     {
         return;
     }
 
-    ID3D11DeviceContext* ctx = m_Renderer->GetContext();
-
-    // Upload vertex data (DISCARD avoids GPU/CPU stall)
-    D3D11_MAPPED_SUBRESOURCE mapped = {};
-    if (SUCCEEDED(ctx->Map(m_VertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
-    {
-        memcpy(mapped.pData, m_VertexData, static_cast<size_t>(m_SpriteCount) * 4 * sizeof(SpriteVertex));
-        ctx->Unmap(m_VertexBuffer.Get(), 0);
-    }
-
-    // Bind texture SRV
-    ID3D11ShaderResourceView* srv = m_CurrentTexture->GetHandle().Get();
-    ctx->PSSetShaderResources(0, 1, &srv);
-    LX_ENGINE_INFO("[SpriteRenderer] Texture bound");
-
-    // Submit draw call
-    ctx->DrawIndexed(static_cast<UINT>(m_SpriteCount) * 6, 0, 0);
-    LX_ENGINE_INFO("[SpriteRenderer] Batch flushed ({} sprites)", m_SpriteCount);
+    m_DX11Pipeline->FlushBatch(*m_Renderer, m_VertexData, m_SpriteCount, *m_CurrentTexture);
 
     m_SpriteCount = 0;
     m_CurrentTexture = nullptr;
 }
 
-// ============================================================================
-// Frame Rendering
-// ============================================================================
-
 void SpriteRenderer::Begin()
 {
-    if (!m_Initialized || m_InBatch)
+    if (!m_Initialized || m_InBatch || !m_DX11Pipeline || !m_Renderer)
     {
         return;
     }
@@ -482,32 +183,7 @@ void SpriteRenderer::Begin()
     m_SpriteCount = 0;
     m_CurrentTexture = nullptr;
 
-    ID3D11DeviceContext* ctx = m_Renderer->GetContext();
-
-    // Bind vertex buffer
-    UINT stride = sizeof(SpriteVertex);
-    UINT offset = 0;
-    ctx->IASetVertexBuffers(0, 1, m_VertexBuffer.GetAddressOf(), &stride, &offset);
-
-    // Bind index buffer
-    ctx->IASetIndexBuffer(m_IndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
-
-    // Input layout and primitive topology
-    ctx->IASetInputLayout(m_InputLayout.Get());
-    ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-    // Shaders
-    ctx->VSSetShader(m_VertexShader.Get(), nullptr, 0);
-    ctx->VSSetConstantBuffers(0, 1, m_ConstantBuffer.GetAddressOf());
-    ctx->PSSetShader(m_PixelShader.Get(), nullptr, 0);
-    ctx->PSSetSamplers(0, 1, m_SamplerState.GetAddressOf());
-
-    // Output merger states
-    ctx->OMSetBlendState(m_BlendState.Get(), nullptr, 0xFFFFFFFF);
-    ctx->OMSetDepthStencilState(m_DepthState.Get(), 0);
-
-    // Rasterizer
-    ctx->RSSetState(m_RasterizerState.Get());
+    m_DX11Pipeline->BindBatchPipeline(*m_Renderer);
 }
 
 void SpriteRenderer::End()
@@ -544,36 +220,33 @@ void SpriteRenderer::DrawSprite(Texture* texture, Vector2 position, Vector2 size
         return;
     }
 
-    // Flush if texture changed
     if (m_CurrentTexture != nullptr && m_CurrentTexture != texture)
     {
         FlushBatch();
     }
     m_CurrentTexture = texture;
 
-    // Flush if batch is full
     if (m_SpriteCount >= MAX_SPRITES_PER_BATCH)
     {
         FlushBatch();
         m_CurrentTexture = texture;
     }
 
-    // Build 4 vertices for this quad
     SpriteVertex* v = &m_VertexData[m_SpriteCount * 4];
 
-    v[0].Position = {position.x, position.y}; // TL
+    v[0].Position = {position.x, position.y};
     v[0].UV = {uvMin.x, uvMin.y};
     v[0].Color = color;
 
-    v[1].Position = {position.x + size.x, position.y}; // TR
+    v[1].Position = {position.x + size.x, position.y};
     v[1].UV = {uvMax.x, uvMin.y};
     v[1].Color = color;
 
-    v[2].Position = {position.x, position.y + size.y}; // BL
+    v[2].Position = {position.x, position.y + size.y};
     v[2].UV = {uvMin.x, uvMax.y};
     v[2].Color = color;
 
-    v[3].Position = {position.x + size.x, position.y + size.y}; // BR
+    v[3].Position = {position.x + size.x, position.y + size.y};
     v[3].UV = {uvMax.x, uvMax.y};
     v[3].Color = color;
 

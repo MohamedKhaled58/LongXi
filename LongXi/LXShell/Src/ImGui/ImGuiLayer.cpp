@@ -18,13 +18,13 @@ bool ImGuiLayer::Initialize(Engine& engine, HWND windowHandle)
 {
     if (m_Initialized)
     {
-        LX_ENGINE_WARN("[ImGuiLayer] Already initialized");
+        LX_WARN("[ImGuiLayer] Already initialized");
         return true;
     }
 
     if (!windowHandle)
     {
-        LX_ENGINE_ERROR("[ImGuiLayer] Invalid window handle");
+        LX_ERROR("[ImGuiLayer] Invalid window handle");
         return false;
     }
 
@@ -32,13 +32,11 @@ bool ImGuiLayer::Initialize(Engine& engine, HWND windowHandle)
     ID3D11DeviceContext* context = static_cast<ID3D11DeviceContext*>(engine.GetRendererContextHandle());
     if (!device || !context)
     {
-        LX_ENGINE_ERROR("[ImGuiLayer] Missing renderer device/context");
+        LX_ERROR("[ImGuiLayer] Missing renderer device/context");
         return false;
     }
 
     m_WindowHandle = windowHandle;
-    m_NativeDevice = device;
-    m_NativeContext = context;
     m_ViewportWidth = engine.GetRendererViewportWidth();
     m_ViewportHeight = engine.GetRendererViewportHeight();
 
@@ -51,21 +49,21 @@ bool ImGuiLayer::Initialize(Engine& engine, HWND windowHandle)
 
     if (!ImGui_ImplWin32_Init(windowHandle))
     {
-        LX_ENGINE_ERROR("[ImGuiLayer] ImGui_ImplWin32_Init failed");
+        LX_ERROR("[ImGuiLayer] ImGui_ImplWin32_Init failed");
         ImGui::DestroyContext();
         return false;
     }
 
-    if (!ImGui_ImplDX11_Init(static_cast<ID3D11Device*>(m_NativeDevice), static_cast<ID3D11DeviceContext*>(m_NativeContext)))
+    if (!ImGui_ImplDX11_Init(device, context))
     {
-        LX_ENGINE_ERROR("[ImGuiLayer] ImGui_ImplDX11_Init failed");
+        LX_ERROR("[ImGuiLayer] ImGui_ImplDX11_Init failed");
         ImGui_ImplWin32_Shutdown();
         ImGui::DestroyContext();
         return false;
     }
 
     m_Initialized = true;
-    LX_ENGINE_INFO("[ImGuiLayer] Initialized");
+    LX_INFO("[ImGuiLayer] Initialized");
     return true;
 }
 
@@ -81,9 +79,7 @@ void ImGuiLayer::Shutdown()
     ImGui::DestroyContext();
 
     m_Initialized = false;
-    m_NativeDevice = nullptr;
-    m_NativeContext = nullptr;
-    LX_ENGINE_INFO("[ImGuiLayer] Shutdown complete");
+    LX_INFO("[ImGuiLayer] Shutdown complete");
 }
 
 void ImGuiLayer::BeginFrame()
@@ -106,6 +102,15 @@ void ImGuiLayer::EndFrame()
     }
 
     ImGui::Render();
+}
+
+void ImGuiLayer::RenderDrawData()
+{
+    if (!m_Initialized)
+    {
+        return;
+    }
+
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }
 
