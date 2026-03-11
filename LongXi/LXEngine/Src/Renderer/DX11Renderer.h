@@ -13,7 +13,7 @@ namespace LongXi
 
 class DX11Renderer final : public Renderer
 {
-  public:
+public:
     DX11Renderer();
     ~DX11Renderer() override;
 
@@ -95,7 +95,7 @@ class DX11Renderer final : public Renderer
 
     RendererTextureHandle CreateTexture(uint32_t width, uint32_t height, TextureFormat format, const void* pixels) override;
 
-  private:
+private:
     bool CreateRenderTarget();
     bool CreateDepthBuffer();
     bool CreateDefaultStates();
@@ -107,7 +107,7 @@ class DX11Renderer final : public Renderer
     void HandleContractViolation(const char* operation, const char* expectedState);
     void ApplyPassState(RenderPassType passType);
 
-  private:
+private:
     Microsoft::WRL::ComPtr<ID3D11Device> m_Device;
     Microsoft::WRL::ComPtr<ID3D11DeviceContext> m_Context;
     Microsoft::WRL::ComPtr<IDXGISwapChain> m_SwapChain;

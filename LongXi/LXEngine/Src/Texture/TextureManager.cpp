@@ -14,7 +14,9 @@ namespace LongXi
 // Constructor / Destructor
 // ============================================================================
 
-TextureManager::TextureManager(Renderer& renderer, CVirtualFileSystem& vfs) : m_Renderer(renderer), m_VFS(vfs)
+TextureManager::TextureManager(Renderer& renderer, CVirtualFileSystem& vfs)
+    : m_Renderer(renderer)
+    , m_VFS(vfs)
 {
     LX_ENGINE_INFO("[Texture] TextureManager created");
 }
@@ -121,18 +123,18 @@ std::shared_ptr<Texture> TextureManager::LoadTexture(const std::string& path)
     const char* formatStr = "Unknown";
     switch (texData.Format)
     {
-    case TextureFormat::RGBA8:
-        formatStr = "RGBA8";
-        break;
-    case TextureFormat::DXT1:
-        formatStr = "DXT1";
-        break;
-    case TextureFormat::DXT3:
-        formatStr = "DXT3";
-        break;
-    case TextureFormat::DXT5:
-        formatStr = "DXT5";
-        break;
+        case TextureFormat::RGBA8:
+            formatStr = "RGBA8";
+            break;
+        case TextureFormat::DXT1:
+            formatStr = "DXT1";
+            break;
+        case TextureFormat::DXT3:
+            formatStr = "DXT3";
+            break;
+        case TextureFormat::DXT5:
+            formatStr = "DXT5";
+            break;
     }
 
     LX_ENGINE_INFO("[Texture] Loaded: {} ({}x{} {})", normalized, texData.Width, texData.Height, formatStr);

@@ -7,7 +7,7 @@ namespace LongXi
 
 class InputMonitor
 {
-  public:
+public:
     static void Render(const InputStateViewModel& inputState);
 };
 

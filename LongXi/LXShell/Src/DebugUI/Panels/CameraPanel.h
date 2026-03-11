@@ -9,7 +9,7 @@ class Camera;
 
 class CameraPanel
 {
-  public:
+public:
     static void Render(const CameraStateViewModel& cameraState, Camera& camera);
 };
 

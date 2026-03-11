@@ -11,7 +11,7 @@ namespace LongXi
 
 class Scene
 {
-  public:
+public:
     Scene();
     ~Scene() = default;
 
@@ -37,7 +37,7 @@ class Scene
     void VisitNodes(const std::function<void(SceneNode&, int depth)>& visitor);
     void VisitNodes(const std::function<void(const SceneNode&, int depth)>& visitor) const;
 
-  private:
+private:
     SceneNode m_Root;
     Camera m_Camera;
     bool m_Initialized = false;

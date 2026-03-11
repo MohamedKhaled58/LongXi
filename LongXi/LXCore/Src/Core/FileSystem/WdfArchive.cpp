@@ -106,7 +106,10 @@ static uint32_t NormalizeAndHash(const std::string& path)
 // WdfArchive
 // ============================================================================
 
-WdfArchive::WdfArchive() : m_IsOpen(false) {}
+WdfArchive::WdfArchive()
+    : m_IsOpen(false)
+{
+}
 
 WdfArchive::~WdfArchive()
 {
@@ -171,11 +174,21 @@ bool WdfArchive::Open(const std::string& absolutePath)
     }
 
     // [Adopted — verify] Sort defensively; warn if not pre-sorted.
-    bool wasSorted = std::is_sorted(m_Index.begin(), m_Index.end(), [](const WdfIndexEntry& a, const WdfIndexEntry& b) { return a.Uid < b.Uid; });
+    bool wasSorted = std::is_sorted(m_Index.begin(),
+                                    m_Index.end(),
+                                    [](const WdfIndexEntry& a, const WdfIndexEntry& b)
+                                    {
+                                        return a.Uid < b.Uid;
+                                    });
     if (!wasSorted)
     {
         LX_CORE_WARN("WdfArchive: index not pre-sorted in '{}' — sorting in memory", absolutePath);
-        std::sort(m_Index.begin(), m_Index.end(), [](const WdfIndexEntry& a, const WdfIndexEntry& b) { return a.Uid < b.Uid; });
+        std::sort(m_Index.begin(),
+                  m_Index.end(),
+                  [](const WdfIndexEntry& a, const WdfIndexEntry& b)
+                  {
+                      return a.Uid < b.Uid;
+                  });
     }
 
     m_IsOpen = true;
@@ -216,7 +229,13 @@ bool WdfArchive::HasEntry(const std::string& normalizedPath) const
     if (!m_IsOpen)
         return false;
     uint32_t uid = ComputeUid(normalizedPath);
-    auto it = std::lower_bound(m_Index.begin(), m_Index.end(), uid, [](const WdfIndexEntry& e, uint32_t val) { return e.Uid < val; });
+    auto it = std::lower_bound(m_Index.begin(),
+                               m_Index.end(),
+                               uid,
+                               [](const WdfIndexEntry& e, uint32_t val)
+                               {
+                                   return e.Uid < val;
+                               });
     return it != m_Index.end() && it->Uid == uid;
 }
 
@@ -227,7 +246,13 @@ std::optional<std::vector<uint8_t>> WdfArchive::ReadEntry(const std::string& nor
         return std::nullopt;
 
     uint32_t uid = ComputeUid(normalizedPath);
-    auto it = std::lower_bound(m_Index.begin(), m_Index.end(), uid, [](const WdfIndexEntry& e, uint32_t val) { return e.Uid < val; });
+    auto it = std::lower_bound(m_Index.begin(),
+                               m_Index.end(),
+                               uid,
+                               [](const WdfIndexEntry& e, uint32_t val)
+                               {
+                                   return e.Uid < val;
+                               });
 
     if (it == m_Index.end() || it->Uid != uid)
     {

@@ -14,7 +14,7 @@ namespace LongXi
 
 class Log
 {
-  public:
+public:
     static void Initialize();
     static void Shutdown();
 
@@ -31,7 +31,7 @@ class Log
         return s_ShellLogger;
     }
 
-  private:
+private:
     static std::shared_ptr<spdlog::logger> s_CoreLogger;
     static std::shared_ptr<spdlog::logger> s_EngineLogger;
     static std::shared_ptr<spdlog::logger> s_ShellLogger;

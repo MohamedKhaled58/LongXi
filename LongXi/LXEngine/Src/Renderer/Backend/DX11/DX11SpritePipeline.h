@@ -13,7 +13,7 @@ struct SpriteVertex;
 
 class DX11SpritePipeline
 {
-  public:
+public:
     bool Initialize(Renderer& renderer, int maxSpritesPerBatch, const char* vertexShaderSource, const char* pixelShaderSource);
     void Shutdown();
     bool IsInitialized() const;
@@ -23,7 +23,7 @@ class DX11SpritePipeline
     void UploadProjectionMatrix(Renderer& renderer, const float* matrixData, std::size_t matrixBytes);
     void FlushBatch(Renderer& renderer, const SpriteVertex* vertices, int spriteCount, const Texture& texture) const;
 
-  private:
+private:
     Microsoft::WRL::ComPtr<ID3D11VertexShader> m_VertexShader;
     Microsoft::WRL::ComPtr<ID3D11PixelShader> m_PixelShader;
     Microsoft::WRL::ComPtr<ID3D11InputLayout> m_InputLayout;

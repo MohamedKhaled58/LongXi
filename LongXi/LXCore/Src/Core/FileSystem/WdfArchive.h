@@ -45,7 +45,7 @@ struct WdfIndexEntry
 // ============================================================================
 class WdfArchive
 {
-  public:
+public:
     WdfArchive();
     ~WdfArchive();
 
@@ -67,11 +67,11 @@ class WdfArchive
     // Returns nullopt if entry not found or read fails (logged).
     std::optional<std::vector<uint8_t>> ReadEntry(const std::string& normalizedPath) const;
 
-  private:
+private:
     // [Adopted — verify] hash reimplemented from x86 assembly reference
     uint32_t ComputeUid(const std::string& path) const;
 
-  private:
+private:
     std::string m_Path;
     mutable std::ifstream m_File;       // mutable — seekg/read are non-const
     std::vector<WdfIndexEntry> m_Index; // sorted by Uid after Open()

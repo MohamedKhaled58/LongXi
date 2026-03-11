@@ -64,11 +64,17 @@ namespace LongXi
 
 class SpriteRenderer::Impl
 {
-  public:
+public:
     std::unique_ptr<DX11SpritePipeline> DX11Pipeline = std::make_unique<DX11SpritePipeline>();
 };
 
-SpriteRenderer::SpriteRenderer() : m_Renderer(nullptr), m_Impl(std::make_unique<Impl>()), m_SpriteCount(0), m_CurrentTexture(nullptr), m_Initialized(false), m_InBatch(false)
+SpriteRenderer::SpriteRenderer()
+    : m_Renderer(nullptr)
+    , m_Impl(std::make_unique<Impl>())
+    , m_SpriteCount(0)
+    , m_CurrentTexture(nullptr)
+    , m_Initialized(false)
+    , m_InBatch(false)
 {
     memset(m_ProjectionMatrix, 0, sizeof(m_ProjectionMatrix));
 }

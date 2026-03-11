@@ -28,7 +28,7 @@ namespace LongXi
 
 class TestApplication : public Application
 {
-  public:
+public:
     bool Initialize() override
     {
         if (!Application::Initialize())
@@ -92,7 +92,11 @@ class TestApplication : public Application
                 m_DebugUI.UpdateViewModels(engine);
                 m_DebugUI.RenderPanels(engine);
                 m_ImGuiLayer.EndFrame();
-                engine.ExecuteExternalRenderPass([this]() { m_ImGuiLayer.RenderDrawData(); });
+                engine.ExecuteExternalRenderPass(
+                    [this]()
+                    {
+                        m_ImGuiLayer.RenderDrawData();
+                    });
             }
 #endif
 
@@ -108,7 +112,7 @@ class TestApplication : public Application
         Application::Shutdown();
     }
 
-  private:
+private:
 #if defined(LX_DEBUG) || defined(LX_DEV)
     void WireImGuiCallbacks()
     {

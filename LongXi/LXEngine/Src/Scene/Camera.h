@@ -7,7 +7,7 @@ namespace LongXi
 
 class Camera
 {
-  public:
+public:
     Camera();
 
     void SetPosition(Vector3 position);
@@ -33,7 +33,7 @@ class Camera
     bool IsProjectionDirty() const;
     void SyncDirtyMatricesForRender(int viewportWidth, int viewportHeight);
 
-  private:
+private:
     Vector3 m_Position = {0.0f, 0.0f, -10.0f};
     Vector3 m_RotationDegrees = {0.0f, 0.0f, 0.0f};
 

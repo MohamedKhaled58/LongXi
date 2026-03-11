@@ -25,7 +25,7 @@ class WdfArchive;
 
 class ResourceSystem
 {
-  public:
+public:
     ResourceSystem();  // defined in .cpp — WdfArchive full type required by unique_ptr
     ~ResourceSystem(); // defined in .cpp — WdfArchive full type required by unique_ptr
 
@@ -49,11 +49,11 @@ class ResourceSystem
     // Register a WDF archive by relative path (resolved against existing roots).
     bool AddArchive(const std::string& relPath);
 
-  private:
+private:
     std::string Normalize(const std::string& path) const;
     std::string Resolve(const std::string& normalizedPath) const;
 
-  private:
+private:
     std::vector<std::string> m_Roots;
     std::vector<std::unique_ptr<WdfArchive>> m_Archives;
 };

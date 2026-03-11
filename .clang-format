@@ -2,69 +2,91 @@
 Language: Cpp
 BasedOnStyle: Microsoft
 Standard: Latest
-IndentWidth: 4
-TabWidth: 4
-UseTab: Never
-ColumnLimit: 200
 
-# Brace placement
-BreakBeforeBraces: Allman
-
-# Short statement formatting
-AllowShortIfStatementsOnASingleLine: Never
-AllowShortLoopsOnASingleLine: false
-AllowShortFunctionsOnASingleLine: Empty
-AllowShortBlocksOnASingleLine: Never
-AllowShortEnumsOnASingleLine: false
-AllowShortCaseLabelsOnASingleLine: false
-
-# Function and parameter formatting
-BinPackArguments: false
-BinPackParameters: false
-AlignAfterOpenBracket: Align
-AllowAllArgumentsOnNextLine: true
-AllowAllParametersOfDeclarationOnNextLine: true
-
-# Include handling
-SortIncludes: false
-IncludeBlocks: Preserve
-IncludeIsMainRegex: "(Test)?$"
-
-# Pointer and reference alignment
-PointerAlignment: Left
-ReferenceAlignment: Left
-
-# Spacing
-SpaceBeforeParens: ControlStatements
-SpaceInEmptyParentheses: false
-SpacesInParentheses: false
-SpacesInSquareBrackets: false
-SpaceAfterCStyleCast: false
-
-# Alignment
-AlignConsecutiveMacros: false
-AlignConsecutiveAssignments: false
-AlignConsecutiveBitFields: false
-AlignConsecutiveDeclarations: false
-AlignEscapedNewlines: Left
-AlignOperands: true
-AlignTrailingComments: true
-
-# Comment formatting
-ReflowComments: true
-# Note: clang-format cannot force // vs /* */ style, but it will format existing comments consistently
-
-# Line breaks
-MaxEmptyLinesToKeep: 2
+# ── Indentation & Layout ─────────────────────────────────────────────────────
+IndentWidth:                      4
+TabWidth:                         4
+UseTab:                           Never
+ContinuationIndentWidth:          4
+ConstructorInitializerIndentWidth: 4
+AccessModifierOffset:             -4
+NamespaceIndentation:             None
+FixNamespaceComments:             true
+ColumnLimit:                      200
+MaxEmptyLinesToKeep:              2
 KeepEmptyLinesAtTheStartOfBlocks: false
 
-# Modern C++ features
-NamespaceIndentation: None
-FixNamespaceComments: true
+# ── Brace Placement (Allman) ─────────────────────────────────────────────────
+BreakBeforeBraces: Allman
 
-# Other
-PenaltyBreakAssignment: 2
+# ── Short Statement Rules ────────────────────────────────────────────────────
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine:        false
+AllowShortFunctionsOnASingleLine:    Empty
+AllowShortBlocksOnASingleLine:       Never
+AllowShortEnumsOnASingleLine:        false
+AllowShortCaseLabelsOnASingleLine:   false
+AllowShortLambdasOnASingleLine:      Empty
+
+# ── Function / Parameter / Call Formatting ───────────────────────────────────
+BinPackArguments:                         false
+BinPackParameters:                        false
+AlignAfterOpenBracket:                    Align
+AllowAllArgumentsOnNextLine:              true
+AllowAllParametersOfDeclarationOnNextLine: true
+
+# ── Class & Hierarchy Formatting ─────────────────────────────────────────────
+# Puts the colon and each base class on its own line:
+#   class Foo
+#       : public Bar
+#       , public Baz
+BreakInheritanceList: BeforeComma
+
+# Puts each constructor initializer on its own line:
+#   Foo()
+#       : m_A(0)
+#       , m_B(1)
+BreakConstructorInitializers: BeforeComma
+PackConstructorInitializers:  Never
+
+# Case labels are indented under switch for clear visual nesting
+IndentCaseLabels:  true
+IndentCaseBlocks:  false
+
+# Blank line before each access modifier block (public / protected / private)
+EmptyLineBeforeAccessModifier: LogicalBlock
+
+# ── Pointer & Reference Alignment ────────────────────────────────────────────
+PointerAlignment:   Left
+ReferenceAlignment: Left
+
+# ── Spacing ──────────────────────────────────────────────────────────────────
+SpaceBeforeParens:        ControlStatements
+SpaceInEmptyParentheses:  false
+SpacesInParentheses:      false
+SpacesInSquareBrackets:   false
+SpaceAfterCStyleCast:     false
+
+# ── Alignment ────────────────────────────────────────────────────────────────
+AlignConsecutiveMacros:       false
+AlignConsecutiveAssignments:  false
+AlignConsecutiveBitFields:    false
+AlignConsecutiveDeclarations: false
+AlignEscapedNewlines:         Left
+AlignOperands:                true
+AlignTrailingComments:        true
+
+# ── Comments ─────────────────────────────────────────────────────────────────
+ReflowComments: true
+
+# ── Includes ─────────────────────────────────────────────────────────────────
+SortIncludes:       false
+IncludeBlocks:      Preserve
+IncludeIsMainRegex: "(Test)?$"
+
+# ── Break Penalties ──────────────────────────────────────────────────────────
+PenaltyBreakAssignment:               2
 PenaltyBreakBeforeFirstCallParameter: 19
-PenaltyBreakComment: 300
-PenaltyBreakFirstLessLess: 120
-PenaltyBreakString: 1000
+PenaltyBreakComment:                  300
+PenaltyBreakFirstLessLess:            120
+PenaltyBreakString:                   1000

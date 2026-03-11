@@ -18,7 +18,7 @@ enum class MouseButton : uint8_t;
 
 class Win32Window
 {
-  public:
+public:
     Win32Window(const std::wstring& title, int width, int height);
     ~Win32Window();
 
@@ -68,7 +68,7 @@ class Win32Window
     // Win32 message dispatcher — retrieves Win32Window* via GWLP_USERDATA to route callbacks
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-  private:
+private:
     std::wstring m_Title;
     int m_Width;
     int m_Height;

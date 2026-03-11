@@ -23,7 +23,7 @@ namespace LongXi
 // =============================================================================
 class IFileStream
 {
-  public:
+public:
     virtual ~IFileStream() = default;
 
     IFileStream(const IFileStream&) = delete;
@@ -43,7 +43,7 @@ class IFileStream
     // Returns total stream size in bytes. Does not change after construction.
     virtual size_t Size() const = 0;
 
-  protected:
+protected:
     IFileStream() = default;
 };
 
@@ -52,7 +52,7 @@ class IFileStream
 // =============================================================================
 class CFileDiskStream : public IFileStream
 {
-  public:
+public:
     // Open absolutePath for binary reading. On failure, Size() == 0.
     explicit CFileDiskStream(const std::string& absolutePath);
     ~CFileDiskStream() override;
@@ -65,7 +65,7 @@ class CFileDiskStream : public IFileStream
     size_t Tell() const override;
     size_t Size() const override;
 
-  private:
+private:
     std::ifstream m_File;
     size_t m_Size;
     size_t m_Position;
@@ -76,7 +76,7 @@ class CFileDiskStream : public IFileStream
 // =============================================================================
 class CFileWdfStream : public IFileStream
 {
-  public:
+public:
     // Take ownership of the extracted WDF entry bytes by move.
     explicit CFileWdfStream(std::vector<uint8_t> data);
     ~CFileWdfStream() override = default;
@@ -89,7 +89,7 @@ class CFileWdfStream : public IFileStream
     size_t Tell() const override;
     size_t Size() const override;
 
-  private:
+private:
     std::vector<uint8_t> m_Data;
     size_t m_Position;
 };

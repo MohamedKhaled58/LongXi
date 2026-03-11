@@ -17,7 +17,7 @@ class Win32Window;
 
 class Application
 {
-  public:
+public:
     Application();
     virtual ~Application();
 
@@ -26,7 +26,7 @@ class Application
     virtual int Run();         // Own message pump until shutdown
     virtual void Shutdown();   // Teardown resources, exit cleanly
 
-  protected:
+protected:
     // Protected accessors for subclasses
     Engine& GetEngine();
     HWND GetWindowHandle() const
@@ -38,7 +38,7 @@ class Application
         return *m_Window;
     }
 
-  private:
+private:
     HWND m_WindowHandle;
     bool m_Initialized;
     std::unique_ptr<Win32Window> m_Window;

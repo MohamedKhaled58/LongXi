@@ -31,7 +31,11 @@ static Matrix4 MakeIdentityMatrix()
     return matrix;
 }
 
-DX11Renderer::DX11Renderer() : m_CurrentViewMatrix(MakeIdentityMatrix()), m_CurrentProjectionMatrix(MakeIdentityMatrix()) {}
+DX11Renderer::DX11Renderer()
+    : m_CurrentViewMatrix(MakeIdentityMatrix())
+    , m_CurrentProjectionMatrix(MakeIdentityMatrix())
+{
+}
 
 DX11Renderer::~DX11Renderer()
 {
@@ -437,17 +441,17 @@ void DX11Renderer::ApplyPassState(RenderPassType passType)
 {
     switch (passType)
     {
-    case RenderPassType::Scene:
-        m_Context->OMSetDepthStencilState(m_DefaultDepthState.Get(), 0);
-        break;
-    case RenderPassType::Sprite:
-    case RenderPassType::DebugUI:
-    case RenderPassType::External:
-        m_Context->OMSetDepthStencilState(m_NoDepthState.Get(), 0);
-        break;
-    case RenderPassType::None:
-    default:
-        break;
+        case RenderPassType::Scene:
+            m_Context->OMSetDepthStencilState(m_DefaultDepthState.Get(), 0);
+            break;
+        case RenderPassType::Sprite:
+        case RenderPassType::DebugUI:
+        case RenderPassType::External:
+            m_Context->OMSetDepthStencilState(m_NoDepthState.Get(), 0);
+            break;
+        case RenderPassType::None:
+        default:
+            break;
     }
 }
 
@@ -613,21 +617,21 @@ RendererTextureHandle DX11Renderer::CreateTexture(uint32_t width, uint32_t heigh
     DXGI_FORMAT dxgiFormat;
     switch (format)
     {
-    case TextureFormat::RGBA8:
-        dxgiFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-        break;
-    case TextureFormat::DXT1:
-        dxgiFormat = DXGI_FORMAT_BC1_UNORM;
-        break;
-    case TextureFormat::DXT3:
-        dxgiFormat = DXGI_FORMAT_BC2_UNORM;
-        break;
-    case TextureFormat::DXT5:
-        dxgiFormat = DXGI_FORMAT_BC3_UNORM;
-        break;
-    default:
-        LX_ENGINE_ERROR("[Texture] Unsupported texture format: {}", static_cast<uint32_t>(format));
-        return {};
+        case TextureFormat::RGBA8:
+            dxgiFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+            break;
+        case TextureFormat::DXT1:
+            dxgiFormat = DXGI_FORMAT_BC1_UNORM;
+            break;
+        case TextureFormat::DXT3:
+            dxgiFormat = DXGI_FORMAT_BC2_UNORM;
+            break;
+        case TextureFormat::DXT5:
+            dxgiFormat = DXGI_FORMAT_BC3_UNORM;
+            break;
+        default:
+            LX_ENGINE_ERROR("[Texture] Unsupported texture format: {}", static_cast<uint32_t>(format));
+            return {};
     }
 
     UINT rowPitch = 0;

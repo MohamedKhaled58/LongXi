@@ -8,7 +8,7 @@ namespace LongXi
 
 class TextureViewer
 {
-  public:
+public:
     static void Render(const std::vector<TextureInfoViewModel>& textures);
 };
 

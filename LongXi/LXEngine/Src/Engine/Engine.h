@@ -19,7 +19,7 @@ class Scene;
 
 class Engine
 {
-  public:
+public:
     Engine();
     ~Engine();
 
@@ -54,7 +54,7 @@ class Engine
     int GetRendererViewportWidth() const;
     int GetRendererViewportHeight() const;
 
-  private:
+private:
     std::unique_ptr<Renderer> m_Renderer;
     std::unique_ptr<InputSystem> m_Input;
     std::unique_ptr<CVirtualFileSystem> m_VFS;

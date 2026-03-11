@@ -156,7 +156,10 @@ static void BuildKeyTables(UINT* keyToVK, Key* vkToKey)
 // Constructor
 // ============================================================================
 
-InputSystem::InputSystem() : m_MouseX(0), m_MouseY(0), m_WheelDelta(0)
+InputSystem::InputSystem()
+    : m_MouseX(0)
+    , m_MouseY(0)
+    , m_WheelDelta(0)
 {
     memset(m_KeyCurrent, 0, sizeof(m_KeyCurrent));
     memset(m_KeyPrevious, 0, sizeof(m_KeyPrevious));

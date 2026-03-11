@@ -14,7 +14,7 @@ class Engine;
 
 class ImGuiLayer
 {
-  public:
+public:
     bool Initialize(Engine& engine, HWND windowHandle);
     void Shutdown();
 
@@ -31,7 +31,7 @@ class ImGuiLayer
     // Returns true if ImGui consumed the input message.
     bool HandleWin32Message(uint32_t msg, uint64_t wParam, int64_t lParam);
 
-  private:
+private:
     bool m_Initialized = false;
     HWND m_WindowHandle = nullptr;
     int m_ViewportWidth = 0;

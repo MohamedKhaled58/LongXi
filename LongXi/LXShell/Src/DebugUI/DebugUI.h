@@ -62,12 +62,12 @@ struct InputStateViewModel
 
 class DebugUI
 {
-  public:
+public:
     void UpdateViewModels(Engine& engine);
     void RenderPanels(Engine& engine);
     void SetLastInputConsumedByDebugUI(bool consumed);
 
-  private:
+private:
     EngineMetricsSnapshot m_EngineMetrics;
     std::vector<SceneNodeViewModel> m_SceneNodes;
     std::vector<TextureInfoViewModel> m_Textures;

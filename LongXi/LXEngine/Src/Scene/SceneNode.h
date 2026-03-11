@@ -12,7 +12,7 @@ namespace LongXi
 
 class SceneNode
 {
-  public:
+public:
     SceneNode();
     virtual ~SceneNode() = default;
 
@@ -42,14 +42,14 @@ class SceneNode
     virtual void Update(float deltaTime);
     virtual void Submit(Renderer& renderer);
 
-  private:
+private:
     void TraverseUpdate(float deltaTime, bool parentWasRecomputed);
     void TraverseRender(Renderer& renderer);
     void ComputeWorldTransform();
 
     friend class Scene;
 
-  private:
+private:
     Vector3 m_Position = {0.0f, 0.0f, 0.0f};
     Vector3 m_Rotation = {0.0f, 0.0f, 0.0f};
     Vector3 m_Scale = {1.0f, 1.0f, 1.0f};

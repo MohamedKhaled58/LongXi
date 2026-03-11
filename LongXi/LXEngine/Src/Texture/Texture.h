@@ -16,7 +16,7 @@ namespace LongXi
 
 class Texture
 {
-  public:
+public:
     ~Texture() = default;
 
     // Non-copyable
@@ -44,9 +44,15 @@ class Texture
         return m_Handle;
     }
 
-  private:
+private:
     // Private constructor — only TextureManager can create Texture instances
-    Texture(RendererTextureHandle handle, uint32_t width, uint32_t height, TextureFormat format) : m_Handle(handle), m_Width(width), m_Height(height), m_Format(format) {}
+    Texture(RendererTextureHandle handle, uint32_t width, uint32_t height, TextureFormat format)
+        : m_Handle(handle)
+        , m_Width(width)
+        , m_Height(height)
+        , m_Format(format)
+    {
+    }
 
     RendererTextureHandle m_Handle;
     uint32_t m_Width;

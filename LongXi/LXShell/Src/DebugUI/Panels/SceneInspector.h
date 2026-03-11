@@ -10,7 +10,7 @@ class Scene;
 
 class SceneInspector
 {
-  public:
+public:
     static void Render(const std::vector<SceneNodeViewModel>& nodes, class Scene& scene);
     static SceneNode* s_SelectedNode;
 };

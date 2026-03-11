@@ -23,7 +23,7 @@ namespace LongXi
 
 class CVirtualFileSystem
 {
-  public:
+public:
     CVirtualFileSystem();
     // Defined in .cpp — unique_ptr<IMountPoint> destructor requires complete type.
     ~CVirtualFileSystem();
@@ -58,7 +58,7 @@ class CVirtualFileSystem
     // Reads all bytes of a resource. Returns {} if not found.
     std::vector<uint8_t> ReadAll(const std::string& path) const;
 
-  private:
+private:
     // Normalize a caller-provided path: backslash→slash, lowercase, collapse //,
     // strip leading/trailing /, reject .., collapse . — returns "" on failure.
     std::string Normalize(const std::string& path) const;

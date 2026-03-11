@@ -19,7 +19,7 @@ class CVirtualFileSystem;
 
 class TextureManager
 {
-  public:
+public:
     // Constructor — requires explicit subsystem dependencies
     TextureManager(Renderer& renderer, CVirtualFileSystem& vfs);
     ~TextureManager();
@@ -41,11 +41,11 @@ class TextureManager
     // Clear all cached textures (callers holding shared_ptr retain their instances)
     void ClearCache();
 
-  private:
+private:
     // Normalize path to lowercase forward-slash no-leading-slash form
     std::string Normalize(const std::string& path) const;
 
-  private:
+private:
     Renderer& m_Renderer;
     CVirtualFileSystem& m_VFS;
     std::unordered_map<std::string, std::shared_ptr<Texture>> m_Cache;

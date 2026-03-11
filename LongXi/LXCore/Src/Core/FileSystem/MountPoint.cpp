@@ -28,7 +28,8 @@ static std::wstring ToWide(const std::string& utf8)
 // CDirectoryMountPoint
 // ============================================================================
 
-CDirectoryMountPoint::CDirectoryMountPoint(const std::string& rootDirectory) : m_Root(rootDirectory)
+CDirectoryMountPoint::CDirectoryMountPoint(const std::string& rootDirectory)
+    : m_Root(rootDirectory)
 {
     // Strip trailing slash(es)
     while (!m_Root.empty() && (m_Root.back() == '/' || m_Root.back() == '\\'))
@@ -55,7 +56,10 @@ std::unique_ptr<IFileStream> CDirectoryMountPoint::Open(const std::string& norma
 // CWdfMountPoint
 // ============================================================================
 
-CWdfMountPoint::CWdfMountPoint(std::unique_ptr<WdfArchive> archive) : m_Archive(std::move(archive)) {}
+CWdfMountPoint::CWdfMountPoint(std::unique_ptr<WdfArchive> archive)
+    : m_Archive(std::move(archive))
+{
+}
 
 // Destructor defined here so WdfArchive full type is visible for unique_ptr cleanup.
 CWdfMountPoint::~CWdfMountPoint() = default;

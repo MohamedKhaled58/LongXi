@@ -7,7 +7,7 @@ namespace LongXi
 
 class EnginePanel
 {
-  public:
+public:
     static void Render(const EngineMetricsSnapshot& metrics);
 };
 

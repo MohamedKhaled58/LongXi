@@ -23,7 +23,7 @@ class WdfArchive; // forward declaration — full type required in .cpp only
 // =============================================================================
 class IMountPoint
 {
-  public:
+public:
     virtual ~IMountPoint() = default;
 
     IMountPoint(const IMountPoint&) = delete;
@@ -36,7 +36,7 @@ class IMountPoint
     // Returns nullptr if not found or on I/O error.
     virtual std::unique_ptr<IFileStream> Open(const std::string& normalizedPath) const = 0;
 
-  protected:
+protected:
     IMountPoint() = default;
 };
 
@@ -45,13 +45,13 @@ class IMountPoint
 // =============================================================================
 class CDirectoryMountPoint : public IMountPoint
 {
-  public:
+public:
     explicit CDirectoryMountPoint(const std::string& rootDirectory);
 
     bool Exists(const std::string& normalizedPath) const override;
     std::unique_ptr<IFileStream> Open(const std::string& normalizedPath) const override;
 
-  private:
+private:
     std::string m_Root; // absolute directory path; no trailing slash
 };
 
@@ -60,7 +60,7 @@ class CDirectoryMountPoint : public IMountPoint
 // =============================================================================
 class CWdfMountPoint : public IMountPoint
 {
-  public:
+public:
     // Takes ownership of the already-opened WdfArchive.
     explicit CWdfMountPoint(std::unique_ptr<WdfArchive> archive);
 
@@ -73,7 +73,7 @@ class CWdfMountPoint : public IMountPoint
     bool Exists(const std::string& normalizedPath) const override;
     std::unique_ptr<IFileStream> Open(const std::string& normalizedPath) const override;
 
-  private:
+private:
     std::unique_ptr<WdfArchive> m_Archive;
 };
 

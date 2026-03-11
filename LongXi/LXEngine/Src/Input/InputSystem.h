@@ -161,7 +161,7 @@ enum class MouseButton : uint8_t
 // =============================================================================
 class InputSystem
 {
-  public:
+public:
     InputSystem();
     ~InputSystem() = default;
 
@@ -201,7 +201,7 @@ class InputSystem
     int GetMouseY() const;
     int GetWheelDelta() const;
 
-  private:
+private:
     // Keyboard state — indexed by Win32 VK code (0–255)
     bool m_KeyCurrent[256];
     bool m_KeyPrevious[256];

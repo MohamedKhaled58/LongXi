@@ -21,7 +21,7 @@ struct SpriteVertex
 
 class SpriteRenderer
 {
-  public:
+public:
     SpriteRenderer();
     ~SpriteRenderer();
 
@@ -39,13 +39,13 @@ class SpriteRenderer
     void DrawSprite(Texture* texture, Vector2 position, Vector2 size, Vector2 uvMin, Vector2 uvMax, LongXi::Color color);
     void End();
 
-  private:
+private:
     void FlushBatch();
     void UpdateProjection(int width, int height);
 
     class Impl;
 
-  private:
+private:
     Renderer* m_Renderer = nullptr;
     std::unique_ptr<Impl> m_Impl;
 

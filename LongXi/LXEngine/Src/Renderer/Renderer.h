@@ -13,7 +13,7 @@ namespace LongXi
 
 class Renderer
 {
-  public:
+public:
     virtual ~Renderer() = default;
 
     virtual bool Initialize(HWND hwnd, int width, int height) = 0;

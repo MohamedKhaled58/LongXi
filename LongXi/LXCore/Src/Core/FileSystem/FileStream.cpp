@@ -28,7 +28,9 @@ static std::wstring ToWide(const std::string& utf8)
 // CFileDiskStream
 // ============================================================================
 
-CFileDiskStream::CFileDiskStream(const std::string& absolutePath) : m_Size(0), m_Position(0)
+CFileDiskStream::CFileDiskStream(const std::string& absolutePath)
+    : m_Size(0)
+    , m_Position(0)
 {
     m_File.open(ToWide(absolutePath), std::ios::binary | std::ios::ate);
     if (!m_File.is_open())
@@ -102,7 +104,11 @@ size_t CFileDiskStream::Size() const
 // CFileWdfStream
 // ============================================================================
 
-CFileWdfStream::CFileWdfStream(std::vector<uint8_t> data) : m_Data(std::move(data)), m_Position(0) {}
+CFileWdfStream::CFileWdfStream(std::vector<uint8_t> data)
+    : m_Data(std::move(data))
+    , m_Position(0)
+{
+}
 
 size_t CFileWdfStream::Read(void* buffer, size_t size)
 {

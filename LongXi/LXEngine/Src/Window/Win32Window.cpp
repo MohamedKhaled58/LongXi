@@ -34,7 +34,14 @@ static UINT NormalizeVirtualKey(UINT vk, LPARAM lParam)
 // Constructor / Destructor
 // ============================================================================
 
-Win32Window::Win32Window(const std::wstring& title, int width, int height) : m_Title(title), m_Width(width), m_Height(height), m_WindowHandle(nullptr), m_ClassAtom(0) {}
+Win32Window::Win32Window(const std::wstring& title, int width, int height)
+    : m_Title(title)
+    , m_Width(width)
+    , m_Height(height)
+    , m_WindowHandle(nullptr)
+    , m_ClassAtom(0)
+{
+}
 
 Win32Window::~Win32Window()
 {
@@ -142,122 +149,122 @@ LRESULT CALLBACK Win32Window::WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
 
     switch (msg)
     {
-    case WM_CLOSE:
-        LX_ENGINE_INFO("[Window] WM_CLOSE received - destroying window");
-        DestroyWindow(hwnd);
-        return 0;
+        case WM_CLOSE:
+            LX_ENGINE_INFO("[Window] WM_CLOSE received - destroying window");
+            DestroyWindow(hwnd);
+            return 0;
 
-    case WM_DESTROY:
-        LX_ENGINE_INFO("[Window] WM_DESTROY received - posting quit message");
-        PostQuitMessage(0);
-        return 0;
+        case WM_DESTROY:
+            LX_ENGINE_INFO("[Window] WM_DESTROY received - posting quit message");
+            PostQuitMessage(0);
+            return 0;
 
-    case WM_SIZE:
-        if (window)
-        {
-            int width = static_cast<int>(LOWORD(lParam));
-            int height = static_cast<int>(HIWORD(lParam));
-            window->SetSize(width, height);
-            // Guard against zero-area (minimized window)
-            if (width > 0 && height > 0 && window->OnResize)
+        case WM_SIZE:
+            if (window)
             {
-                LX_ENGINE_INFO("[Window] WM_SIZE received: {}x{}", width, height);
-                window->OnResize(width, height);
+                int width = static_cast<int>(LOWORD(lParam));
+                int height = static_cast<int>(HIWORD(lParam));
+                window->SetSize(width, height);
+                // Guard against zero-area (minimized window)
+                if (width > 0 && height > 0 && window->OnResize)
+                {
+                    LX_ENGINE_INFO("[Window] WM_SIZE received: {}x{}", width, height);
+                    window->OnResize(width, height);
+                }
             }
-        }
-        return 0;
+            return 0;
 
-    case WM_KEYDOWN:
-    case WM_SYSKEYDOWN:
-        if (window && window->OnKeyDown)
-        {
-            UINT vk = NormalizeVirtualKey(static_cast<UINT>(wParam), lParam);
-            bool isRepeat = (lParam & 0x40000000) != 0;
-            window->OnKeyDown(vk, isRepeat);
-        }
-        return 0;
+        case WM_KEYDOWN:
+        case WM_SYSKEYDOWN:
+            if (window && window->OnKeyDown)
+            {
+                UINT vk = NormalizeVirtualKey(static_cast<UINT>(wParam), lParam);
+                bool isRepeat = (lParam & 0x40000000) != 0;
+                window->OnKeyDown(vk, isRepeat);
+            }
+            return 0;
 
-    case WM_KEYUP:
-    case WM_SYSKEYUP:
-        if (window && window->OnKeyUp)
-        {
-            UINT vk = NormalizeVirtualKey(static_cast<UINT>(wParam), lParam);
-            window->OnKeyUp(vk);
-        }
-        return 0;
+        case WM_KEYUP:
+        case WM_SYSKEYUP:
+            if (window && window->OnKeyUp)
+            {
+                UINT vk = NormalizeVirtualKey(static_cast<UINT>(wParam), lParam);
+                window->OnKeyUp(vk);
+            }
+            return 0;
 
-    case WM_MOUSEMOVE:
-        if (window && window->OnMouseMove)
-        {
-            window->OnMouseMove(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-        }
-        return 0;
+        case WM_MOUSEMOVE:
+            if (window && window->OnMouseMove)
+            {
+                window->OnMouseMove(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+            }
+            return 0;
 
-    case WM_LBUTTONDOWN:
-        if (window && window->OnMouseButtonDown)
-        {
-            SetCapture(hwnd);
-            window->OnMouseButtonDown(MouseButton::Left);
-        }
-        return 0;
+        case WM_LBUTTONDOWN:
+            if (window && window->OnMouseButtonDown)
+            {
+                SetCapture(hwnd);
+                window->OnMouseButtonDown(MouseButton::Left);
+            }
+            return 0;
 
-    case WM_LBUTTONUP:
-        if (window && window->OnMouseButtonUp)
-        {
-            window->OnMouseButtonUp(MouseButton::Left);
+        case WM_LBUTTONUP:
+            if (window && window->OnMouseButtonUp)
+            {
+                window->OnMouseButtonUp(MouseButton::Left);
+                ReleaseCapture();
+            }
+            return 0;
+
+        case WM_RBUTTONDOWN:
+            if (window && window->OnMouseButtonDown)
+            {
+                SetCapture(hwnd);
+                window->OnMouseButtonDown(MouseButton::Right);
+            }
+            return 0;
+
+        case WM_RBUTTONUP:
+            if (window && window->OnMouseButtonUp)
+            {
+                window->OnMouseButtonUp(MouseButton::Right);
+                ReleaseCapture();
+            }
+            return 0;
+
+        case WM_MBUTTONDOWN:
+            if (window && window->OnMouseButtonDown)
+            {
+                SetCapture(hwnd);
+                window->OnMouseButtonDown(MouseButton::Middle);
+            }
+            return 0;
+
+        case WM_MBUTTONUP:
+            if (window && window->OnMouseButtonUp)
+            {
+                window->OnMouseButtonUp(MouseButton::Middle);
+                ReleaseCapture();
+            }
+            return 0;
+
+        case WM_MOUSEWHEEL:
+            if (window && window->OnMouseWheel)
+            {
+                window->OnMouseWheel(GET_WHEEL_DELTA_WPARAM(wParam));
+            }
+            return 0;
+
+        case WM_KILLFOCUS:
+            if (window && window->OnFocusLost)
+            {
+                window->OnFocusLost();
+            }
             ReleaseCapture();
-        }
-        return 0;
+            return 0;
 
-    case WM_RBUTTONDOWN:
-        if (window && window->OnMouseButtonDown)
-        {
-            SetCapture(hwnd);
-            window->OnMouseButtonDown(MouseButton::Right);
-        }
-        return 0;
-
-    case WM_RBUTTONUP:
-        if (window && window->OnMouseButtonUp)
-        {
-            window->OnMouseButtonUp(MouseButton::Right);
-            ReleaseCapture();
-        }
-        return 0;
-
-    case WM_MBUTTONDOWN:
-        if (window && window->OnMouseButtonDown)
-        {
-            SetCapture(hwnd);
-            window->OnMouseButtonDown(MouseButton::Middle);
-        }
-        return 0;
-
-    case WM_MBUTTONUP:
-        if (window && window->OnMouseButtonUp)
-        {
-            window->OnMouseButtonUp(MouseButton::Middle);
-            ReleaseCapture();
-        }
-        return 0;
-
-    case WM_MOUSEWHEEL:
-        if (window && window->OnMouseWheel)
-        {
-            window->OnMouseWheel(GET_WHEEL_DELTA_WPARAM(wParam));
-        }
-        return 0;
-
-    case WM_KILLFOCUS:
-        if (window && window->OnFocusLost)
-        {
-            window->OnFocusLost();
-        }
-        ReleaseCapture();
-        return 0;
-
-    default:
-        return DefWindowProc(hwnd, msg, wParam, lParam);
+        default:
+            return DefWindowProc(hwnd, msg, wParam, lParam);
     }
 }
 

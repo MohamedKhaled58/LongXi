@@ -14,7 +14,7 @@ namespace LongXi
 
 class TextureLoader
 {
-  public:
+public:
     // Load DDS file data (DXT1, DXT3, DXT5, RGBA8)
     // Returns true on success, false on failure (out is unchanged on failure)
     static bool LoadDDS(const std::vector<uint8_t>& data, TextureData& out);

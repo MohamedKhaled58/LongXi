@@ -32,23 +32,23 @@ size_t EstimateTextureMemoryBytes(const Texture& texture)
 
     switch (texture.GetFormat())
     {
-    case TextureFormat::RGBA8:
-        return width * height * 4u;
-    case TextureFormat::DXT1:
-    {
-        const size_t blocksWide = std::max<size_t>(1, (width + 3u) / 4u);
-        const size_t blocksHigh = std::max<size_t>(1, (height + 3u) / 4u);
-        return blocksWide * blocksHigh * 8u;
-    }
-    case TextureFormat::DXT3:
-    case TextureFormat::DXT5:
-    {
-        const size_t blocksWide = std::max<size_t>(1, (width + 3u) / 4u);
-        const size_t blocksHigh = std::max<size_t>(1, (height + 3u) / 4u);
-        return blocksWide * blocksHigh * 16u;
-    }
-    default:
-        return 0;
+        case TextureFormat::RGBA8:
+            return width * height * 4u;
+        case TextureFormat::DXT1:
+        {
+            const size_t blocksWide = std::max<size_t>(1, (width + 3u) / 4u);
+            const size_t blocksHigh = std::max<size_t>(1, (height + 3u) / 4u);
+            return blocksWide * blocksHigh * 8u;
+        }
+        case TextureFormat::DXT3:
+        case TextureFormat::DXT5:
+        {
+            const size_t blocksWide = std::max<size_t>(1, (width + 3u) / 4u);
+            const size_t blocksHigh = std::max<size_t>(1, (height + 3u) / 4u);
+            return blocksWide * blocksHigh * 16u;
+        }
+        default:
+            return 0;
     }
 }
 
@@ -81,38 +81,38 @@ std::string KeyToString(Key key)
 
     switch (key)
     {
-    case Key::Up:
-        return "Up";
-    case Key::Down:
-        return "Down";
-    case Key::Left:
-        return "Left";
-    case Key::Right:
-        return "Right";
-    case Key::Escape:
-        return "Escape";
-    case Key::Enter:
-        return "Enter";
-    case Key::Space:
-        return "Space";
-    case Key::Tab:
-        return "Tab";
-    case Key::Backspace:
-        return "Backspace";
-    case Key::LShift:
-        return "LShift";
-    case Key::RShift:
-        return "RShift";
-    case Key::LControl:
-        return "LCtrl";
-    case Key::RControl:
-        return "RCtrl";
-    case Key::LAlt:
-        return "LAlt";
-    case Key::RAlt:
-        return "RAlt";
-    default:
-        return "Other";
+        case Key::Up:
+            return "Up";
+        case Key::Down:
+            return "Down";
+        case Key::Left:
+            return "Left";
+        case Key::Right:
+            return "Right";
+        case Key::Escape:
+            return "Escape";
+        case Key::Enter:
+            return "Enter";
+        case Key::Space:
+            return "Space";
+        case Key::Tab:
+            return "Tab";
+        case Key::Backspace:
+            return "Backspace";
+        case Key::LShift:
+            return "LShift";
+        case Key::RShift:
+            return "RShift";
+        case Key::LControl:
+            return "LCtrl";
+        case Key::RControl:
+            return "RCtrl";
+        case Key::LAlt:
+            return "LAlt";
+        case Key::RAlt:
+            return "RAlt";
+        default:
+            return "Other";
     }
 }
 
@@ -166,7 +166,12 @@ void DebugUI::UpdateViewModels(Engine& engine)
             vm.MemoryBytes = EstimateTextureMemoryBytes(texture);
             m_Textures.push_back(std::move(vm));
         });
-    std::sort(m_Textures.begin(), m_Textures.end(), [](const TextureInfoViewModel& lhs, const TextureInfoViewModel& rhs) { return lhs.TextureName < rhs.TextureName; });
+    std::sort(m_Textures.begin(),
+              m_Textures.end(),
+              [](const TextureInfoViewModel& lhs, const TextureInfoViewModel& rhs)
+              {
+                  return lhs.TextureName < rhs.TextureName;
+              });
 
     Camera& camera = scene.GetActiveCamera();
     m_CameraState.Position[0] = camera.GetPosition().x;
