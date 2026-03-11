@@ -16,7 +16,7 @@ namespace LongXi
 // Constructor / Destructor
 // ============================================================================
 
-Application::Application() : m_WindowHandle(nullptr), m_ShouldShutdown(false), m_Initialized(false) {}
+Application::Application() : m_WindowHandle(nullptr), m_Initialized(false) {}
 
 Application::~Application()
 {

@@ -32,7 +32,6 @@ class Application
 
   private:
     HWND m_WindowHandle;
-    bool m_ShouldShutdown;
     bool m_Initialized;
     std::unique_ptr<Win32Window> m_Window;
     std::unique_ptr<Engine> m_Engine;
