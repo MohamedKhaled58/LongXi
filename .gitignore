@@ -82,3 +82,8 @@ node_modules/
 out/
 .idea/
 .env*
+
+# Added by Spec 014 task automation
+build/
+bin/
+obj/

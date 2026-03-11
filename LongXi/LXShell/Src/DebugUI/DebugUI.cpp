@@ -207,7 +207,7 @@ void DebugUI::RenderPanels(Engine& engine)
     {
         if (!loggedEnginePanelOpen)
         {
-            LX_ENGINE_INFO("[DebugUI] Engine panel opened");
+            LX_INFO("[DebugUI] Engine panel opened");
             loggedEnginePanelOpen = true;
         }
         EnginePanel::Render(m_EngineMetrics);
@@ -217,7 +217,7 @@ void DebugUI::RenderPanels(Engine& engine)
     {
         if (!loggedSceneInspectorOpen)
         {
-            LX_ENGINE_INFO("[DebugUI] Scene inspector opened");
+            LX_INFO("[DebugUI] Scene inspector opened");
             loggedSceneInspectorOpen = true;
         }
         SceneInspector::Render(m_SceneNodes, engine.GetScene());
@@ -227,7 +227,7 @@ void DebugUI::RenderPanels(Engine& engine)
     {
         if (!loggedTextureViewerOpen)
         {
-            LX_ENGINE_INFO("[DebugUI] Texture viewer opened");
+            LX_INFO("[DebugUI] Texture viewer opened");
             loggedTextureViewerOpen = true;
         }
         TextureViewer::Render(m_Textures);
@@ -242,7 +242,7 @@ void DebugUI::RenderPanels(Engine& engine)
     {
         if (!loggedInputMonitorOpen)
         {
-            LX_ENGINE_INFO("[DebugUI] Input monitor opened");
+            LX_INFO("[DebugUI] Input monitor opened");
             loggedInputMonitorOpen = true;
         }
         InputMonitor::Render(m_InputState);

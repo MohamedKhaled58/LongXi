@@ -1,6 +1,9 @@
 #pragma once
 
 #include <Windows.h>
+
+#include "Renderer/Renderer.h"
+
 #include <chrono>
 #include <memory>
 #include <string>
@@ -8,7 +11,6 @@
 namespace LongXi
 {
 
-// Forward declarations
 class DX11Renderer;
 class InputSystem;
 class CVirtualFileSystem;
@@ -16,80 +18,44 @@ class TextureManager;
 class SpriteRenderer;
 class Scene;
 
-// =============================================================================
-// Engine — Central runtime coordinator class
-// Owns and manages all engine subsystems (Renderer, Input, VFS, TextureManager)
-// =============================================================================
-
 class Engine
 {
   public:
     Engine();
     ~Engine();
 
-    // Disable copy and move
     Engine(const Engine&) = delete;
     Engine& operator=(const Engine&) = delete;
     Engine(Engine&&) = delete;
     Engine& operator=(Engine&&) = delete;
 
-    // =========================================================================
-    // Lifecycle
-    // =========================================================================
-
-    // Initialize all engine subsystems in dependency order
-    // Order: Renderer -> InputSystem -> VFS -> TextureManager -> SpriteRenderer -> Scene
     bool Initialize(HWND windowHandle, int width, int height);
-
-    // Shutdown all engine subsystems in reverse dependency order
     void Shutdown();
-
-    // Check if Engine is initialized
     bool IsInitialized() const;
 
-    // =========================================================================
-    // Runtime Loop
-    // =========================================================================
-
-    // Advance one frame of engine runtime (input, game logic, etc.)
     void Update();
-
-    // Render one frame (scene, sprites - does NOT Present)
     void Render();
-
-    // Present the rendered frame (must be called after Render())
     void Present();
-
-    // Handle window resize event
     void OnResize(int width, int height);
 
-    // =========================================================================
-    // VFS Configuration (called by Application before runtime loop)
-    // =========================================================================
+    void ExecuteExternalRenderPass(const ExternalPassCallback& callback);
 
     void MountDirectory(const std::string& path);
     void MountWdf(const std::string& path);
 
-    // =========================================================================
-    // Subsystem Accessors
-    // =========================================================================
-
-    DX11Renderer& GetRenderer();
+    Renderer& GetRenderer();
     InputSystem& GetInput();
     CVirtualFileSystem& GetVFS();
     TextureManager& GetTextureManager();
     SpriteRenderer& GetSpriteRenderer();
     Scene& GetScene();
 
-    // Opaque renderer-native handles for shell-side integrations (e.g. ImGui).
-    // Keeps D3D types out of LXShell public headers.
     void* GetRendererDeviceHandle() const;
     void* GetRendererContextHandle() const;
     int GetRendererViewportWidth() const;
     int GetRendererViewportHeight() const;
 
   private:
-    // Subsystem ownership
     std::unique_ptr<DX11Renderer> m_Renderer;
     std::unique_ptr<InputSystem> m_Input;
     std::unique_ptr<CVirtualFileSystem> m_VFS;
@@ -97,8 +63,7 @@ class Engine
     std::unique_ptr<SpriteRenderer> m_SpriteRenderer;
     std::unique_ptr<Scene> m_Scene;
 
-    // State
-    bool m_Initialized;
+    bool m_Initialized = false;
     std::chrono::time_point<std::chrono::steady_clock> m_LastFrameTime;
     bool m_FirstFrame = true;
 };

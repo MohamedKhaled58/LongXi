@@ -1,28 +1,27 @@
 #include "Renderer/DX11Renderer.h"
+
 #include "Core/Logging/LogMacros.h"
 
-#include <stdint.h>
+#include <cassert>
 #include <cstring>
 
 namespace LongXi
 {
 
-// Debug configuration
 #ifdef LX_DEBUG
 #define LX_DX11_ENABLE_DEBUG_LAYER 1
 #else
 #define LX_DX11_ENABLE_DEBUG_LAYER 0
 #endif
 
-// Cornflower blue clear color (traditional DX bootstrap color)
-static const float CLEAR_COLOR[4] = {0.392f, 0.584f, 0.929f, 1.0f};
+static const float CLEAR_COLOR[4] = {0.5f, 0.5f, 0.9f, 1.0f};
 
 static bool IsDeviceLost(HRESULT hr)
 {
     return hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET;
 }
 
-Matrix4 MakeIdentityMatrix()
+static Matrix4 MakeIdentityMatrix()
 {
     Matrix4 matrix = {};
     matrix.m[0] = 1.0f;
@@ -32,44 +31,33 @@ Matrix4 MakeIdentityMatrix()
     return matrix;
 }
 
-// ============================================================================
-// Constructor / Destructor
-// ============================================================================
-
-DX11Renderer::DX11Renderer() : m_IsInitialized(false), m_ViewportWidth(0), m_ViewportHeight(0), m_CurrentViewMatrix(MakeIdentityMatrix()), m_CurrentProjectionMatrix(MakeIdentityMatrix()) {}
+DX11Renderer::DX11Renderer() : m_CurrentViewMatrix(MakeIdentityMatrix()), m_CurrentProjectionMatrix(MakeIdentityMatrix()) {}
 
 DX11Renderer::~DX11Renderer()
 {
     Shutdown();
 }
 
-// ============================================================================
-// Initialize
-// ============================================================================
-
 bool DX11Renderer::Initialize(HWND hwnd, int width, int height)
 {
     if (m_IsInitialized)
     {
-        LX_ENGINE_ERROR("DX11Renderer already initialized");
+        LX_ENGINE_ERROR("[Renderer] Initialize called more than once");
         return false;
     }
 
     if (!hwnd)
     {
-        LX_ENGINE_ERROR("Invalid window handle passed to DX11Renderer::Initialize");
+        LX_ENGINE_ERROR("[Renderer] Initialize failed: invalid window handle");
         return false;
     }
 
     if (width <= 0 || height <= 0)
     {
-        LX_ENGINE_ERROR("Invalid window dimensions: {}x{}", width, height);
+        LX_ENGINE_ERROR("[Renderer] Initialize failed: invalid dimensions {}x{}", width, height);
         return false;
     }
 
-    LX_ENGINE_INFO("Initializing DX11 renderer...");
-
-    // Configure swap chain descriptor
     DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
     swapChainDesc.BufferCount = 1;
     swapChainDesc.BufferDesc.Width = width;
@@ -84,51 +72,26 @@ bool DX11Renderer::Initialize(HWND hwnd, int width, int height)
     swapChainDesc.Windowed = TRUE;
     swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
-    // Set device creation flags
     UINT createFlags = 0;
 #if LX_DX11_ENABLE_DEBUG_LAYER
     createFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
-    // Request feature level 11_0 only
     D3D_FEATURE_LEVEL featureLevels[] = {D3D_FEATURE_LEVEL_11_0};
-    UINT featureLevelCount = 1;
-
     D3D_FEATURE_LEVEL createdFeatureLevel = D3D_FEATURE_LEVEL_11_0;
 
-    // Create device and swap chain in one call
-    HRESULT hr = D3D11CreateDeviceAndSwapChain(nullptr,                  // Default adapter
-                                               D3D_DRIVER_TYPE_HARDWARE, // Hardware rendering
-                                               nullptr,                  // No software rasterizer
-                                               createFlags,              // Creation flags
-                                               featureLevels,            // Requested feature levels
-                                               featureLevelCount,        // Number of feature levels
-                                               D3D11_SDK_VERSION,        // SDK version
-                                               &swapChainDesc,           // Swap chain descriptor
-                                               &m_SwapChain,             // Output swap chain
-                                               &m_Device,                // Output device
-                                               &createdFeatureLevel,     // Actual feature level created
-                                               &m_Context                // Output device context
-    );
+    const HRESULT hr = D3D11CreateDeviceAndSwapChain(
+        nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, createFlags, featureLevels, 1, D3D11_SDK_VERSION, &swapChainDesc, &m_SwapChain, &m_Device, &createdFeatureLevel, &m_Context);
 
     if (FAILED(hr))
     {
-        LX_ENGINE_ERROR("D3D11CreateDeviceAndSwapChain failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
+        LX_ENGINE_ERROR("[Renderer] D3D11CreateDeviceAndSwapChain failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
         return false;
     }
 
-    // Verify we got at least feature level 11_0
     if (createdFeatureLevel < D3D_FEATURE_LEVEL_11_0)
     {
-        LX_ENGINE_ERROR("Insufficient DX11 feature level: {}", static_cast<int>(createdFeatureLevel));
-        Shutdown();
-        return false;
-    }
-
-    // Create render target view from back buffer
-    if (!CreateRenderTarget())
-    {
-        LX_ENGINE_ERROR("Failed to create render target view");
+        LX_ENGINE_ERROR("[Renderer] Insufficient feature level: {}", static_cast<int>(createdFeatureLevel));
         Shutdown();
         return false;
     }
@@ -136,72 +99,173 @@ bool DX11Renderer::Initialize(HWND hwnd, int width, int height)
     m_WindowHandle = hwnd;
     m_ViewportWidth = width;
     m_ViewportHeight = height;
+
+    if (!CreateRenderTarget() || !CreateDepthBuffer() || !CreateDefaultStates())
+    {
+        LX_ENGINE_ERROR("[Renderer] Failed to create baseline resources/state");
+        Shutdown();
+        return false;
+    }
+
     m_IsInitialized = true;
-    LX_ENGINE_INFO("DX11 renderer initialized (Feature Level: 11_0)");
+    m_LifecyclePhase = FrameLifecyclePhase::NotStarted;
+    m_ActivePass = RenderPassType::None;
+    m_RecoveryMode = RendererRecoveryMode::Normal;
+
+    LX_ENGINE_INFO("[Renderer] Device initialized");
     return true;
 }
 
-// ============================================================================
-// CreateRenderTarget
-// ============================================================================
-
 bool DX11Renderer::CreateRenderTarget()
 {
-    // Get back buffer from swap chain
     Microsoft::WRL::ComPtr<ID3D11Texture2D> backBuffer;
     HRESULT hr = m_SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), &backBuffer);
     if (FAILED(hr))
     {
-        LX_ENGINE_ERROR("Failed to get back buffer from swap chain (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
+        LX_ENGINE_ERROR("[Renderer] GetBuffer failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
         return false;
     }
 
-    // Create render target view
     hr = m_Device->CreateRenderTargetView(backBuffer.Get(), nullptr, &m_RenderTargetView);
     if (FAILED(hr))
     {
-        LX_ENGINE_ERROR("Failed to create render target view (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
+        LX_ENGINE_ERROR("[Renderer] CreateRenderTargetView failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
         return false;
     }
 
     return true;
 }
-// ============================================================================
-// ReleaseRenderTarget
-// ============================================================================
+
+bool DX11Renderer::CreateDepthBuffer()
+{
+    if (m_ViewportWidth <= 0 || m_ViewportHeight <= 0)
+    {
+        return false;
+    }
+
+    D3D11_TEXTURE2D_DESC depthDesc = {};
+    depthDesc.Width = static_cast<UINT>(m_ViewportWidth);
+    depthDesc.Height = static_cast<UINT>(m_ViewportHeight);
+    depthDesc.MipLevels = 1;
+    depthDesc.ArraySize = 1;
+    depthDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    depthDesc.SampleDesc.Count = 1;
+    depthDesc.SampleDesc.Quality = 0;
+    depthDesc.Usage = D3D11_USAGE_DEFAULT;
+    depthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+
+    HRESULT hr = m_Device->CreateTexture2D(&depthDesc, nullptr, &m_DepthStencilBuffer);
+    if (FAILED(hr))
+    {
+        LX_ENGINE_ERROR("[Renderer] Create depth buffer failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
+        return false;
+    }
+
+    hr = m_Device->CreateDepthStencilView(m_DepthStencilBuffer.Get(), nullptr, &m_DepthStencilView);
+    if (FAILED(hr))
+    {
+        LX_ENGINE_ERROR("[Renderer] CreateDepthStencilView failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
+        return false;
+    }
+
+    return true;
+}
+
+bool DX11Renderer::CreateDefaultStates()
+{
+    D3D11_RASTERIZER_DESC rasterDesc = {};
+    rasterDesc.FillMode = D3D11_FILL_SOLID;
+    rasterDesc.CullMode = D3D11_CULL_BACK;
+    rasterDesc.DepthClipEnable = TRUE;
+
+    HRESULT hr = m_Device->CreateRasterizerState(&rasterDesc, &m_DefaultRasterizerState);
+    if (FAILED(hr))
+    {
+        LX_ENGINE_ERROR("[Renderer] Create default rasterizer state failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
+        return false;
+    }
+
+    D3D11_BLEND_DESC blendDesc = {};
+    blendDesc.RenderTarget[0].BlendEnable = FALSE;
+    blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+    hr = m_Device->CreateBlendState(&blendDesc, &m_DefaultBlendState);
+    if (FAILED(hr))
+    {
+        LX_ENGINE_ERROR("[Renderer] Create default blend state failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
+        return false;
+    }
+
+    D3D11_DEPTH_STENCIL_DESC depthDesc = {};
+    depthDesc.DepthEnable = TRUE;
+    depthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+    depthDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+    depthDesc.StencilEnable = FALSE;
+
+    hr = m_Device->CreateDepthStencilState(&depthDesc, &m_DefaultDepthState);
+    if (FAILED(hr))
+    {
+        LX_ENGINE_ERROR("[Renderer] Create default depth state failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
+        return false;
+    }
+
+    depthDesc.DepthEnable = FALSE;
+    depthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+    depthDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
+    hr = m_Device->CreateDepthStencilState(&depthDesc, &m_NoDepthState);
+    if (FAILED(hr))
+    {
+        LX_ENGINE_ERROR("[Renderer] Create no-depth state failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
+        return false;
+    }
+
+    return true;
+}
 
 void DX11Renderer::ReleaseRenderTarget()
 {
-    // Unbind from pipeline before releasing — DXGI requires all references
-    // to back buffer resources be released before ResizeBuffers
     if (m_Context)
     {
         ID3D11RenderTargetView* nullRTV = nullptr;
         m_Context->OMSetRenderTargets(1, &nullRTV, nullptr);
     }
+
+    m_DepthStencilView.Reset();
+    m_DepthStencilBuffer.Reset();
     m_RenderTargetView.Reset();
 }
 
-// ============================================================================
-// BeginFrame
-// ============================================================================
-
-void DX11Renderer::BeginFrame()
+void DX11Renderer::QueueResize(int width, int height)
 {
-    if (!m_IsInitialized)
+    m_HasPendingResize = true;
+    m_PendingResizeWidth = width;
+    m_PendingResizeHeight = height;
+}
+
+bool DX11Renderer::ApplyResizeNow(int width, int height)
+{
+    if (width <= 0 || height <= 0)
     {
-        return;
-    }
-    if (!m_RenderTargetView)
-    {
-        LX_ENGINE_ERROR("BeginFrame skipped: render target view is null");
-        return;
+        return false;
     }
 
-    // Bind render target
-    m_Context->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), nullptr);
+    ReleaseRenderTarget();
 
-    // Ensure viewport is always valid for all engine render passes.
+    const HRESULT hr = m_SwapChain->ResizeBuffers(0, static_cast<UINT>(width), static_cast<UINT>(height), DXGI_FORMAT_UNKNOWN, 0);
+    if (FAILED(hr))
+    {
+        LX_ENGINE_ERROR("[Renderer] ResizeBuffers failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
+        return false;
+    }
+
+    m_ViewportWidth = width;
+    m_ViewportHeight = height;
+
+    if (!CreateRenderTarget() || !CreateDepthBuffer())
+    {
+        return false;
+    }
+
     D3D11_VIEWPORT viewport = {};
     viewport.TopLeftX = 0.0f;
     viewport.TopLeftY = 0.0f;
@@ -211,13 +275,190 @@ void DX11Renderer::BeginFrame()
     viewport.MaxDepth = 1.0f;
     m_Context->RSSetViewports(1, &viewport);
 
-    // Clear to cornflower blue
-    m_Context->ClearRenderTargetView(m_RenderTargetView.Get(), CLEAR_COLOR);
+    LX_ENGINE_INFO("[Renderer] Swapchain resized: {}x{}", width, height);
+    LX_ENGINE_INFO("[Renderer] Viewport updated: {}x{}", width, height);
+    return true;
 }
 
-// ============================================================================
-// EndFrame
-// ============================================================================
+void DX11Renderer::ApplyPendingResizeIfNeeded()
+{
+    if (!m_HasPendingResize)
+    {
+        return;
+    }
+
+    if (m_PendingResizeWidth <= 0 || m_PendingResizeHeight <= 0)
+    {
+        return;
+    }
+
+    if (ApplyResizeNow(m_PendingResizeWidth, m_PendingResizeHeight))
+    {
+        m_HasPendingResize = false;
+        m_PendingResizeWidth = 0;
+        m_PendingResizeHeight = 0;
+    }
+}
+
+void DX11Renderer::HandleContractViolation(const char* operation, const char* expectedState)
+{
+    LX_ENGINE_ERROR("[Renderer] Contract violation in {} (expected: {})", operation, expectedState);
+#if defined(LX_DEBUG) || defined(LX_DEV)
+    assert(false && "Renderer contract violation");
+#endif
+}
+
+void DX11Renderer::EnterRecoveryMode(const char* reason, HRESULT hr)
+{
+    LX_ENGINE_ERROR("[Renderer] Entering recovery mode: {} (HRESULT: 0x{:08X})", reason, static_cast<uint32_t>(hr));
+    m_RecoveryMode = RendererRecoveryMode::SafeNoRender;
+    m_LifecyclePhase = FrameLifecyclePhase::NotStarted;
+    m_ActivePass = RenderPassType::None;
+}
+
+void DX11Renderer::BeginFrame()
+{
+    if (!m_IsInitialized)
+    {
+        return;
+    }
+
+    if (m_LifecyclePhase != FrameLifecyclePhase::NotStarted && m_LifecyclePhase != FrameLifecyclePhase::FrameEnded)
+    {
+        HandleContractViolation("BeginFrame", "NotStarted or FrameEnded");
+        return;
+    }
+
+    if (m_RecoveryMode == RendererRecoveryMode::SafeNoRender)
+    {
+        if (m_HasPendingResize && m_PendingResizeWidth > 0 && m_PendingResizeHeight > 0)
+        {
+            m_RecoveryMode = RendererRecoveryMode::RecoveryPending;
+        }
+        else
+        {
+            return;
+        }
+    }
+
+    if (m_RecoveryMode == RendererRecoveryMode::RecoveryPending)
+    {
+        m_RecoveryMode = RendererRecoveryMode::Reinitializing;
+        if (!ApplyResizeNow(m_PendingResizeWidth, m_PendingResizeHeight))
+        {
+            m_RecoveryMode = RendererRecoveryMode::SafeNoRender;
+            return;
+        }
+
+        m_HasPendingResize = false;
+        m_PendingResizeWidth = 0;
+        m_PendingResizeHeight = 0;
+        m_RecoveryMode = RendererRecoveryMode::Normal;
+        LX_ENGINE_INFO("[Renderer] Recovery completed");
+    }
+
+    ApplyPendingResizeIfNeeded();
+
+    if (!m_RenderTargetView || !m_DepthStencilView)
+    {
+        HandleContractViolation("BeginFrame", "Valid render/depth targets");
+        return;
+    }
+
+    m_Context->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), m_DepthStencilView.Get());
+
+    D3D11_VIEWPORT viewport = {};
+    viewport.TopLeftX = 0.0f;
+    viewport.TopLeftY = 0.0f;
+    viewport.Width = static_cast<float>(m_ViewportWidth);
+    viewport.Height = static_cast<float>(m_ViewportHeight);
+    viewport.MinDepth = 0.0f;
+    viewport.MaxDepth = 1.0f;
+    m_Context->RSSetViewports(1, &viewport);
+
+    m_Context->RSSetState(m_DefaultRasterizerState.Get());
+    m_Context->OMSetBlendState(m_DefaultBlendState.Get(), nullptr, 0xFFFFFFFF);
+    m_Context->OMSetDepthStencilState(m_DefaultDepthState.Get(), 0);
+
+    m_Context->ClearRenderTargetView(m_RenderTargetView.Get(), CLEAR_COLOR);
+    m_Context->ClearDepthStencilView(m_DepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+    m_LifecyclePhase = FrameLifecyclePhase::InFrame;
+    m_ActivePass = RenderPassType::None;
+}
+
+void DX11Renderer::ApplyPassState(RenderPassType passType)
+{
+    switch (passType)
+    {
+    case RenderPassType::Scene:
+        m_Context->OMSetDepthStencilState(m_DefaultDepthState.Get(), 0);
+        break;
+    case RenderPassType::Sprite:
+    case RenderPassType::DebugUI:
+    case RenderPassType::External:
+        m_Context->OMSetDepthStencilState(m_NoDepthState.Get(), 0);
+        break;
+    case RenderPassType::None:
+    default:
+        break;
+    }
+}
+
+bool DX11Renderer::BeginPass(RenderPassType passType)
+{
+    if (!m_IsInitialized)
+    {
+        return false;
+    }
+
+    if (m_LifecyclePhase != FrameLifecyclePhase::InFrame || m_ActivePass != RenderPassType::None)
+    {
+        HandleContractViolation("BeginPass", "InFrame with no active pass");
+        return false;
+    }
+
+    ApplyPassState(passType);
+    m_ActivePass = passType;
+    m_LifecyclePhase = FrameLifecyclePhase::InPass;
+    return true;
+}
+
+void DX11Renderer::EndPass()
+{
+    if (!m_IsInitialized)
+    {
+        return;
+    }
+
+    if (m_LifecyclePhase != FrameLifecyclePhase::InPass)
+    {
+        HandleContractViolation("EndPass", "InPass");
+        return;
+    }
+
+    m_ActivePass = RenderPassType::None;
+    m_LifecyclePhase = FrameLifecyclePhase::InFrame;
+
+    // Restore baseline depth state between passes.
+    m_Context->OMSetDepthStencilState(m_DefaultDepthState.Get(), 0);
+}
+
+void DX11Renderer::ExecuteExternalPass(const ExternalPassCallback& callback)
+{
+    if (!callback)
+    {
+        return;
+    }
+
+    if (!BeginPass(RenderPassType::External))
+    {
+        return;
+    }
+
+    callback();
+    EndPass();
+}
 
 void DX11Renderer::EndFrame()
 {
@@ -226,25 +467,57 @@ void DX11Renderer::EndFrame()
         return;
     }
 
-    // Present with VSync (SyncInterval = 1)
-    HRESULT hr = m_SwapChain->Present(1, 0);
+    if (m_LifecyclePhase == FrameLifecyclePhase::InPass)
+    {
+        HandleContractViolation("EndFrame", "InFrame with no active pass");
+        return;
+    }
+
+    if (m_LifecyclePhase != FrameLifecyclePhase::InFrame)
+    {
+        HandleContractViolation("EndFrame", "InFrame");
+        return;
+    }
+
+    m_LifecyclePhase = FrameLifecyclePhase::FrameEnded;
+}
+
+void DX11Renderer::Present()
+{
+    if (!m_IsInitialized)
+    {
+        return;
+    }
+
+    if (m_LifecyclePhase != FrameLifecyclePhase::FrameEnded)
+    {
+        HandleContractViolation("Present", "FrameEnded");
+        return;
+    }
+
+    if (m_RecoveryMode != RendererRecoveryMode::Normal)
+    {
+        m_LifecyclePhase = FrameLifecyclePhase::NotStarted;
+        return;
+    }
+
+    const HRESULT hr = m_SwapChain->Present(1, 0);
     if (FAILED(hr))
     {
         if (IsDeviceLost(hr))
         {
-            HRESULT reason = m_Device ? m_Device->GetDeviceRemovedReason() : hr;
-            LX_ENGINE_ERROR("Present failed: device lost/reset (HRESULT: 0x{:08X}, reason: 0x{:08X})", static_cast<uint32_t>(hr), static_cast<uint32_t>(reason));
-            Shutdown();
+            const HRESULT reason = m_Device ? m_Device->GetDeviceRemovedReason() : hr;
+            EnterRecoveryMode("Present device lost/reset", reason);
             return;
         }
 
-        LX_ENGINE_ERROR("Present failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
+        EnterRecoveryMode("Present failed", hr);
+        return;
     }
-}
 
-// ============================================================================
-// OnResize
-// ============================================================================
+    m_LifecyclePhase = FrameLifecyclePhase::NotStarted;
+    m_ActivePass = RenderPassType::None;
+}
 
 void DX11Renderer::OnResize(int width, int height)
 {
@@ -253,63 +526,29 @@ void DX11Renderer::OnResize(int width, int height)
         return;
     }
 
-    // Skip zero-area resize (minimized window)
     if (width <= 0 || height <= 0)
     {
+        QueueResize(width, height);
         return;
     }
 
-    // Release existing render target
-    ReleaseRenderTarget();
-
-    // Resize swap chain buffers
-    HRESULT hr = m_SwapChain->ResizeBuffers(0,                   // Preserve buffer count
-                                            width,               // New width
-                                            height,              // New height
-                                            DXGI_FORMAT_UNKNOWN, // Preserve format
-                                            0                    // No flags
-    );
-
-    if (FAILED(hr))
+    if (m_LifecyclePhase == FrameLifecyclePhase::InFrame || m_LifecyclePhase == FrameLifecyclePhase::InPass)
     {
-        LX_ENGINE_ERROR("ResizeBuffers failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
-        if (IsDeviceLost(hr))
-        {
-            HRESULT reason = m_Device ? m_Device->GetDeviceRemovedReason() : hr;
-            LX_ENGINE_ERROR("ResizeBuffers device lost/reset reason: 0x{:08X}", static_cast<uint32_t>(reason));
-            Shutdown();
-        }
+        QueueResize(width, height);
         return;
     }
 
-    // Recreate render target view
-    if (!CreateRenderTarget())
+    if (!ApplyResizeNow(width, height))
     {
-        LX_ENGINE_ERROR("Failed to recreate render target after resize");
-        Shutdown();
+        EnterRecoveryMode("OnResize failed", E_FAIL);
+        QueueResize(width, height);
         return;
     }
 
-    m_ViewportWidth = width;
-    m_ViewportHeight = height;
-
-    // Apply new viewport immediately.
-    if (m_Context)
-    {
-        D3D11_VIEWPORT viewport = {};
-        viewport.TopLeftX = 0.0f;
-        viewport.TopLeftY = 0.0f;
-        viewport.Width = static_cast<float>(m_ViewportWidth);
-        viewport.Height = static_cast<float>(m_ViewportHeight);
-        viewport.MinDepth = 0.0f;
-        viewport.MaxDepth = 1.0f;
-        m_Context->RSSetViewports(1, &viewport);
-    }
+    m_HasPendingResize = false;
+    m_PendingResizeWidth = 0;
+    m_PendingResizeHeight = 0;
 }
-
-// ============================================================================
-// CreateTexture
-// ============================================================================
 
 RendererTextureHandle DX11Renderer::CreateTexture(uint32_t width, uint32_t height, TextureFormat format, const void* pixels)
 {
@@ -319,19 +558,12 @@ RendererTextureHandle DX11Renderer::CreateTexture(uint32_t width, uint32_t heigh
         return RendererTextureHandle();
     }
 
-    if (width == 0 || height == 0)
+    if (width == 0 || height == 0 || !pixels)
     {
-        LX_ENGINE_ERROR("[Texture] Invalid texture dimensions: {}x{}", width, height);
+        LX_ENGINE_ERROR("[Texture] Invalid texture creation parameters");
         return RendererTextureHandle();
     }
 
-    if (!pixels)
-    {
-        LX_ENGINE_ERROR("[Texture] Null pixel data pointer");
-        return RendererTextureHandle();
-    }
-
-    // Map TextureFormat to DXGI_FORMAT
     DXGI_FORMAT dxgiFormat;
     switch (format)
     {
@@ -348,37 +580,25 @@ RendererTextureHandle DX11Renderer::CreateTexture(uint32_t width, uint32_t heigh
         dxgiFormat = DXGI_FORMAT_BC3_UNORM;
         break;
     default:
-        LX_ENGINE_ERROR("[Texture] Unknown texture format: {}", static_cast<uint32_t>(format));
+        LX_ENGINE_ERROR("[Texture] Unsupported texture format: {}", static_cast<uint32_t>(format));
         return RendererTextureHandle();
     }
 
-    // Compute row pitch
-    UINT rowPitch;
+    UINT rowPitch = 0;
     if (format == TextureFormat::RGBA8)
     {
-        // Uncompressed: width * 4 bytes
         rowPitch = width * 4;
     }
     else
     {
-        // Compressed (DXT): block-row formula
-        // blockCols = max(1, (width + 3) / 4)
-        // rowPitch = blockCols * blockSize
         UINT blockCols = (width + 3) / 4;
         if (blockCols == 0)
+        {
             blockCols = 1;
-
-        if (format == TextureFormat::DXT1)
-        {
-            rowPitch = blockCols * 8;
         }
-        else // DXT3 or DXT5
-        {
-            rowPitch = blockCols * 16;
-        }
+        rowPitch = (format == TextureFormat::DXT1) ? (blockCols * 8) : (blockCols * 16);
     }
 
-    // Create texture description
     D3D11_TEXTURE2D_DESC texDesc = {};
     texDesc.Width = width;
     texDesc.Height = height;
@@ -386,43 +606,30 @@ RendererTextureHandle DX11Renderer::CreateTexture(uint32_t width, uint32_t heigh
     texDesc.ArraySize = 1;
     texDesc.Format = dxgiFormat;
     texDesc.SampleDesc.Count = 1;
-    texDesc.SampleDesc.Quality = 0;
     texDesc.Usage = D3D11_USAGE_IMMUTABLE;
     texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-    texDesc.CPUAccessFlags = 0;
-    texDesc.MiscFlags = 0;
 
-    // Initialize subresource data
     D3D11_SUBRESOURCE_DATA initData = {};
     initData.pSysMem = pixels;
     initData.SysMemPitch = rowPitch;
-    initData.SysMemSlicePitch = 0; // Not used for 2D textures
 
-    // Create texture
-    Microsoft::WRL::ComPtr<ID3D11Texture2D> pTex;
-    HRESULT hr = m_Device->CreateTexture2D(&texDesc, &initData, &pTex);
-
+    Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
+    HRESULT hr = m_Device->CreateTexture2D(&texDesc, &initData, &texture);
     if (FAILED(hr))
     {
         LX_ENGINE_ERROR("[Texture] CreateTexture2D failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
         return RendererTextureHandle();
     }
 
-    // Create shader resource view
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> pSRV;
-    hr = m_Device->CreateShaderResourceView(pTex.Get(), nullptr, &pSRV);
-
+    RendererTextureHandle srv;
+    hr = m_Device->CreateShaderResourceView(texture.Get(), nullptr, &srv);
     if (FAILED(hr))
     {
         LX_ENGINE_ERROR("[Texture] CreateShaderResourceView failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
         return RendererTextureHandle();
     }
 
-    // Release Texture2D immediately — SRV holds the sole reference
-    // When SRV is destroyed, Texture2D will be freed automatically
-    pTex.Reset();
-
-    return pSRV;
+    return srv;
 }
 
 void DX11Renderer::SetViewProjection(const Matrix4& view, const Matrix4& projection)
@@ -431,10 +638,6 @@ void DX11Renderer::SetViewProjection(const Matrix4& view, const Matrix4& project
     std::memcpy(m_CurrentProjectionMatrix.m, projection.m, sizeof(m_CurrentProjectionMatrix.m));
 }
 
-// ============================================================================
-// Shutdown
-// ============================================================================
-
 void DX11Renderer::Shutdown()
 {
     if (!m_IsInitialized)
@@ -442,10 +645,13 @@ void DX11Renderer::Shutdown()
         return;
     }
 
-    LX_ENGINE_INFO("DX11 renderer shutting down...");
-
-    // Release in reverse-creation order
     ReleaseRenderTarget();
+
+    m_NoDepthState.Reset();
+    m_DefaultDepthState.Reset();
+    m_DefaultBlendState.Reset();
+    m_DefaultRasterizerState.Reset();
+
     m_SwapChain.Reset();
     m_Context.Reset();
     m_Device.Reset();
@@ -454,8 +660,16 @@ void DX11Renderer::Shutdown()
     m_ViewportHeight = 0;
     m_CurrentViewMatrix = MakeIdentityMatrix();
     m_CurrentProjectionMatrix = MakeIdentityMatrix();
+
+    m_LifecyclePhase = FrameLifecyclePhase::NotStarted;
+    m_ActivePass = RenderPassType::None;
+    m_RecoveryMode = RendererRecoveryMode::Normal;
+    m_HasPendingResize = false;
+    m_PendingResizeWidth = 0;
+    m_PendingResizeHeight = 0;
+
     m_IsInitialized = false;
-    LX_ENGINE_INFO("DX11 renderer shutdown complete");
+    LX_ENGINE_INFO("[Renderer] Shutdown complete");
 }
 
 } // namespace LongXi
