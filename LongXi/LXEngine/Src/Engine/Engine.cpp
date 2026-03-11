@@ -197,6 +197,17 @@ void Engine::Render()
         m_SpriteRenderer->End();
     }
 
+    // Note: EndFrame/Present is now called separately by Present()
+}
+
+void Engine::Present()
+{
+    if (!m_Initialized)
+    {
+        LX_ENGINE_ERROR("[Engine] Present() called before Initialize()");
+        return;
+    }
+
     m_Renderer->EndFrame();
 }
 
@@ -286,6 +297,42 @@ SpriteRenderer& Engine::GetSpriteRenderer()
 Scene& Engine::GetScene()
 {
     return *m_Scene;
+}
+
+void* Engine::GetRendererDeviceHandle() const
+{
+    if (!m_Renderer)
+    {
+        return nullptr;
+    }
+    return m_Renderer->GetDevice();
+}
+
+void* Engine::GetRendererContextHandle() const
+{
+    if (!m_Renderer)
+    {
+        return nullptr;
+    }
+    return m_Renderer->GetContext();
+}
+
+int Engine::GetRendererViewportWidth() const
+{
+    if (!m_Renderer)
+    {
+        return 0;
+    }
+    return m_Renderer->GetViewportWidth();
+}
+
+int Engine::GetRendererViewportHeight() const
+{
+    if (!m_Renderer)
+    {
+        return 0;
+    }
+    return m_Renderer->GetViewportHeight();
 }
 
 } // namespace LongXi

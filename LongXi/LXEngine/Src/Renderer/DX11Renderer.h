@@ -61,6 +61,11 @@ class DX11Renderer
         return m_ViewportHeight;
     }
 
+    HWND GetWindowHandle() const
+    {
+        return m_WindowHandle;
+    }
+
     // Create GPU texture from CPU pixel data
     // Returns non-empty ComPtr on success, empty ComPtr on failure
     RendererTextureHandle CreateTexture(uint32_t width, uint32_t height, TextureFormat format, const void* pixels);
@@ -78,6 +83,7 @@ class DX11Renderer
 
     // State tracking
     bool m_IsInitialized;
+    HWND m_WindowHandle = nullptr;
     int m_ViewportWidth = 0;
     int m_ViewportHeight = 0;
     Matrix4 m_CurrentViewMatrix = {};

@@ -25,6 +25,7 @@ Intermediate/
 *.pdb
 *.pgc
 *.pgd
+*.ini
 
 # Visual Studio
 .vs/
@@ -33,6 +34,7 @@ Intermediate/
 *.sln
 *.sln.docstates
 *.vcxproj
+*.user
 *.vcxproj.filters
 *.slnx
 *.VC.db

@@ -133,6 +133,7 @@ bool DX11Renderer::Initialize(HWND hwnd, int width, int height)
         return false;
     }
 
+    m_WindowHandle = hwnd;
     m_ViewportWidth = width;
     m_ViewportHeight = height;
     m_IsInitialized = true;

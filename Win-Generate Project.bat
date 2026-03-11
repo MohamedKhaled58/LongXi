@@ -18,8 +18,28 @@ if errorlevel 1 (
     exit /b 1
 )
 
-:: Long Xi solution generator — uses vs2026 action (Premake5 beta8+)
-:: Validated toolchain: Visual Studio with vs2026 action.
-:: One Long Xi.slnx at root; each .vcxproj in its own project folder.
-Vendor\Bin\premake5.exe vs2026
+set "PREMAKE_EXE=%~dp0Vendor\Bin\premake5.exe"
+if not exist "%PREMAKE_EXE%" (
+    for /f "delims=" %%I in ('where premake5.exe 2^>nul') do (
+        if not defined PREMAKE_FROM_PATH set "PREMAKE_FROM_PATH=%%~fI"
+    )
+    if defined PREMAKE_FROM_PATH set "PREMAKE_EXE=%PREMAKE_FROM_PATH%"
+)
+
+if not exist "%PREMAKE_EXE%" (
+    echo ERROR: premake5.exe was not found.
+    echo Place it at Vendor\Bin\premake5.exe or add premake5.exe to PATH.
+    pause
+    exit /b 1
+)
+
+:: Long Xi solution generator (Visual Studio 2026 action).
+"%PREMAKE_EXE%" vs2026
+if errorlevel 1 (
+    echo.
+    echo Premake generation failed.
+    pause
+    exit /b 1
+)
+
 pause

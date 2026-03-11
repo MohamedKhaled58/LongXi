@@ -247,6 +247,23 @@ bool InputSystem::IsKeyReleased(Key key) const
     return vk < 256 && !m_KeyCurrent[vk] && m_KeyPrevious[vk];
 }
 
+std::vector<Key> InputSystem::GetPressedKeys() const
+{
+    std::vector<Key> pressedKeys;
+    pressedKeys.reserve(8);
+
+    for (size_t index = 1; index < static_cast<size_t>(Key::Count); ++index)
+    {
+        const Key key = static_cast<Key>(index);
+        if (IsKeyDown(key))
+        {
+            pressedKeys.push_back(key);
+        }
+    }
+
+    return pressedKeys;
+}
+
 // ============================================================================
 // Mouse message handlers
 // ============================================================================

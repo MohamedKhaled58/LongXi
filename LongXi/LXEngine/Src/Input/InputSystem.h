@@ -2,6 +2,7 @@
 
 #include <Windows.h>
 #include <cstdint>
+#include <vector>
 
 // =============================================================================
 // InputSystem — Centralized Win32 keyboard and mouse input foundation
@@ -188,6 +189,7 @@ class InputSystem
     bool IsKeyDown(Key key) const;
     bool IsKeyPressed(Key key) const;
     bool IsKeyReleased(Key key) const;
+    std::vector<Key> GetPressedKeys() const;
 
     // Mouse button queries
     bool IsMouseButtonDown(MouseButton button) const;

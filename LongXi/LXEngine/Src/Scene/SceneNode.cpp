@@ -3,6 +3,7 @@
 #include "Core/Logging/LogMacros.h"
 
 #include <algorithm>
+#include <utility>
 
 namespace LongXi
 {
@@ -95,6 +96,21 @@ const Vector3& SceneNode::GetScale() const
     return m_Scale;
 }
 
+void SceneNode::SetName(std::string name)
+{
+    if (name.empty())
+    {
+        m_Name = "SceneNode";
+        return;
+    }
+    m_Name = std::move(name);
+}
+
+const std::string& SceneNode::GetName() const
+{
+    return m_Name;
+}
+
 // ============================================================================
 // World Transform Getters (read-only — computed during traversal)
 // ============================================================================
@@ -112,6 +128,16 @@ const Vector3& SceneNode::GetWorldRotation() const
 const Vector3& SceneNode::GetWorldScale() const
 {
     return m_WorldScale;
+}
+
+SceneNode* SceneNode::GetParent()
+{
+    return m_Parent;
+}
+
+const SceneNode* SceneNode::GetParent() const
+{
+    return m_Parent;
 }
 
 // ============================================================================

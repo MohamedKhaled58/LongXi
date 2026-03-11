@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Texture/Texture.h"
+#include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -32,6 +33,9 @@ class TextureManager
 
     // Get cached texture without loading (returns nullptr if not cached)
     std::shared_ptr<Texture> GetTexture(const std::string& path);
+
+    // Iterate all currently cached textures.
+    void ForEachLoadedTexture(const std::function<void(const std::string& path, const Texture& texture)>& visitor) const;
 
     // Clear all cached textures (callers holding shared_ptr retain their instances)
     void ClearCache();

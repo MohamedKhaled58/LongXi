@@ -13,26 +13,49 @@ function Fail([string]$Message) {
     exit 1
 }
 
-$msbuildCommand = Get-Command msbuild.exe -ErrorAction SilentlyContinue
-if (-not $msbuildCommand) {
-    Fail "msbuild.exe was not found on PATH. Open a Visual Studio 2026 Developer Command Prompt/PowerShell and try again."
+# Prefer an explicit VS2026 installation discovered via vswhere.
+$vsInstallPath = $null
+$programFilesX86 = ${env:ProgramFiles(x86)}
+$vswherePath = if ($programFilesX86) {
+    Join-Path $programFilesX86 "Microsoft Visual Studio\Installer\vswhere.exe"
+} else {
+    $null
 }
 
-$msbuildPath = $msbuildCommand.Source
+if ($vswherePath -and (Test-Path -LiteralPath $vswherePath -PathType Leaf)) {
+    $vsInstallPath = (& $vswherePath -latest -products * -version "[18.0,19.0)" -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath 2>$null | Select-Object -First 1)
+}
 
-# VS2026 ships MSBuild major version 18.x.
+$msbuildPath = $null
+if ($vsInstallPath) {
+    $msbuildCandidate = Join-Path $vsInstallPath "MSBuild\Current\Bin\MSBuild.exe"
+    if (Test-Path -LiteralPath $msbuildCandidate -PathType Leaf) {
+        $msbuildPath = $msbuildCandidate
+    }
+}
+
+if (-not $msbuildPath) {
+    $msbuildCommand = Get-Command msbuild.exe -ErrorAction SilentlyContinue
+    if (-not $msbuildCommand) {
+        Fail "msbuild.exe was not found on PATH and no VS2026 installation was discovered. Open a VS2026 Developer Command Prompt/PowerShell and try again."
+    }
+
+    $msbuildPath = $msbuildCommand.Source
+}
+
 $msbuildVersionRaw = & $msbuildPath -version -nologo 2>$null | Select-Object -First 1
 if (-not $msbuildVersionRaw -or $msbuildVersionRaw -notmatch "^$RequiredMsbuildMajor\.") {
     $actual = if ($msbuildVersionRaw) { $msbuildVersionRaw } else { "<unknown>" }
     Fail "msbuild.exe resolves to '$msbuildPath' (version $actual). Expected Visual Studio $ExpectedYear MSBuild major version $RequiredMsbuildMajor.x."
 }
 
-$vsInstallPath = $null
-if ($msbuildPath -match "^(?<root>.+)\\MSBuild\\Current\\Bin(?:\\amd64)?\\MSBuild\.exe$") {
-    $vsInstallPath = $Matches["root"]
-} else {
-    $msbuildBinPath = Split-Path -Parent $msbuildPath
-    $vsInstallPath = [System.IO.Path]::GetFullPath((Join-Path $msbuildBinPath "..\..\.."))
+if (-not $vsInstallPath) {
+    if ($msbuildPath -match "^(?<root>.+)\\MSBuild\\Current\\Bin(?:\\amd64)?\\MSBuild\.exe$") {
+        $vsInstallPath = $Matches["root"]
+    } else {
+        $msbuildBinPath = Split-Path -Parent $msbuildPath
+        $vsInstallPath = [System.IO.Path]::GetFullPath((Join-Path $msbuildBinPath "..\..\.."))
+    }
 }
 
 if (-not $vsInstallPath -or -not (Test-Path -LiteralPath $vsInstallPath -PathType Container)) {
