@@ -16,6 +16,11 @@ namespace LongXi
 // Cornflower blue clear color (traditional DX bootstrap color)
 static const float CLEAR_COLOR[4] = {0.392f, 0.584f, 0.929f, 1.0f};
 
+static bool IsDeviceLost(HRESULT hr)
+{
+    return hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET;
+}
+
 // ============================================================================
 // Constructor / Destructor
 // ============================================================================
@@ -173,6 +178,11 @@ void DX11Renderer::BeginFrame()
     {
         return;
     }
+    if (!m_RenderTargetView)
+    {
+        LX_ENGINE_ERROR("BeginFrame skipped: render target view is null");
+        return;
+    }
 
     // Bind render target
     m_Context->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), nullptr);
@@ -193,7 +203,19 @@ void DX11Renderer::EndFrame()
     }
 
     // Present with VSync (SyncInterval = 1)
-    m_SwapChain->Present(1, 0);
+    HRESULT hr = m_SwapChain->Present(1, 0);
+    if (FAILED(hr))
+    {
+        if (IsDeviceLost(hr))
+        {
+            HRESULT reason = m_Device ? m_Device->GetDeviceRemovedReason() : hr;
+            LX_ENGINE_ERROR("Present failed: device lost/reset (HRESULT: 0x{:08X}, reason: 0x{:08X})", static_cast<uint32_t>(hr), static_cast<uint32_t>(reason));
+            Shutdown();
+            return;
+        }
+
+        LX_ENGINE_ERROR("Present failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
+    }
 }
 
 // ============================================================================
@@ -227,6 +249,12 @@ void DX11Renderer::OnResize(int width, int height)
     if (FAILED(hr))
     {
         LX_ENGINE_ERROR("ResizeBuffers failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
+        if (IsDeviceLost(hr))
+        {
+            HRESULT reason = m_Device ? m_Device->GetDeviceRemovedReason() : hr;
+            LX_ENGINE_ERROR("ResizeBuffers device lost/reset reason: 0x{:08X}", static_cast<uint32_t>(reason));
+            Shutdown();
+        }
         return;
     }
 
@@ -234,6 +262,7 @@ void DX11Renderer::OnResize(int width, int height)
     if (!CreateRenderTarget())
     {
         LX_ENGINE_ERROR("Failed to recreate render target after resize");
+        Shutdown();
     }
 }
 
