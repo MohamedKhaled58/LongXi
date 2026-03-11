@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace LongXi::PathUtils
+namespace LongXi
 {
 
 // Normalize a virtual resource path.
@@ -14,6 +14,6 @@ namespace LongXi::PathUtils
 // - Collapses '.' segments
 // - Rejects '..' traversal segments
 // Returns empty string when invalid or empty after normalization.
-std::string NormalizeResourcePath(const std::string& path, bool lowercase);
+std::string NormalizeVirtualResourcePath(const std::string& path, bool lowercase);
 
-} // namespace LongXi::PathUtils
+} // namespace LongXi

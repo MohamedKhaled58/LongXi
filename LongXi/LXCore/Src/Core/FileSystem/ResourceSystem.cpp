@@ -66,7 +66,7 @@ std::string ResourceSystem::GetExecutableDirectory()
 
 std::string ResourceSystem::Normalize(const std::string& path) const
 {
-    std::string normalized = PathUtils::NormalizeResourcePath(path, false);
+    std::string normalized = NormalizeVirtualResourcePath(path, false);
     if (normalized.empty() && !path.empty())
         LX_CORE_WARN("ResourceSystem: rejected invalid path: '{}'", path);
     return normalized;

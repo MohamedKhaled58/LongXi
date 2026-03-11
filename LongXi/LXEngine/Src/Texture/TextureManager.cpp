@@ -30,7 +30,7 @@ TextureManager::~TextureManager()
 
 std::string TextureManager::Normalize(const std::string& path) const
 {
-    std::string normalized = PathUtils::NormalizeResourcePath(path, true);
+    std::string normalized = NormalizeVirtualResourcePath(path, true);
     if (normalized.empty() && !path.empty())
         LX_ENGINE_WARN("[Texture] Path rejected during normalization: {}", path);
     return normalized;

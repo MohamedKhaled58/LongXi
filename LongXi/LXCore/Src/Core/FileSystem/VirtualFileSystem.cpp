@@ -39,7 +39,7 @@ CVirtualFileSystem::~CVirtualFileSystem() = default;
 
 std::string CVirtualFileSystem::Normalize(const std::string& path) const
 {
-    std::string normalized = PathUtils::NormalizeResourcePath(path, true);
+    std::string normalized = NormalizeVirtualResourcePath(path, true);
     if (normalized.empty() && !path.empty())
         LX_CORE_WARN("CVirtualFileSystem: rejected invalid path: '{}'", path);
     return normalized;

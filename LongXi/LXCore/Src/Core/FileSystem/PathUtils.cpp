@@ -3,10 +3,10 @@
 #include <cctype>
 #include <vector>
 
-namespace LongXi::PathUtils
+namespace LongXi
 {
 
-std::string NormalizeResourcePath(const std::string& path, bool lowercase)
+std::string NormalizeVirtualResourcePath(const std::string& path, bool lowercase)
 {
     if (path.empty())
         return {};
@@ -87,4 +87,4 @@ std::string NormalizeResourcePath(const std::string& path, bool lowercase)
     return result;
 }
 
-} // namespace LongXi::PathUtils
+} // namespace LongXi
