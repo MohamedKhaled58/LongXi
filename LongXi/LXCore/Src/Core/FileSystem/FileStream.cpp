@@ -78,6 +78,8 @@ bool CFileDiskStream::Seek(size_t offset)
     if (offset > m_Size)
         return false;
 
+    // Clear EOF/fail flags so seek works after prior full reads.
+    m_File.clear();
     m_File.seekg(static_cast<std::streamoff>(offset), std::ios::beg);
     if (!m_File)
         return false;
