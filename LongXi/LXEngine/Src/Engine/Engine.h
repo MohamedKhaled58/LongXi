@@ -11,7 +11,6 @@
 namespace LongXi
 {
 
-class DX11Renderer;
 class InputSystem;
 class CVirtualFileSystem;
 class TextureManager;
@@ -56,7 +55,7 @@ class Engine
     int GetRendererViewportHeight() const;
 
   private:
-    std::unique_ptr<DX11Renderer> m_Renderer;
+    std::unique_ptr<Renderer> m_Renderer;
     std::unique_ptr<InputSystem> m_Input;
     std::unique_ptr<CVirtualFileSystem> m_VFS;
     std::unique_ptr<TextureManager> m_TextureManager;

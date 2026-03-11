@@ -1,7 +1,7 @@
 #include "Renderer/Backend/DX11/DX11SpritePipeline.h"
 
 #include "Core/Logging/LogMacros.h"
-#include "Renderer/DX11Renderer.h"
+#include "Renderer/Renderer.h"
 #include "Renderer/SpriteRenderer.h"
 #include "Texture/Texture.h"
 
@@ -13,17 +13,18 @@
 namespace LongXi
 {
 
-bool DX11SpritePipeline::Initialize(DX11Renderer& renderer, int maxSpritesPerBatch, const char* vertexShaderSource, const char* pixelShaderSource)
+bool DX11SpritePipeline::Initialize(Renderer& renderer, int maxSpritesPerBatch, const char* vertexShaderSource, const char* pixelShaderSource)
 {
     Shutdown();
 
-    if (!renderer.IsInitialized() || renderer.GetContext() == nullptr || maxSpritesPerBatch <= 0 || !vertexShaderSource || !pixelShaderSource)
+    if (!renderer.IsInitialized() || maxSpritesPerBatch <= 0 || !vertexShaderSource || !pixelShaderSource)
     {
         return false;
     }
 
-    ID3D11Device* device = renderer.GetDevice();
-    if (!device)
+    ID3D11Device* device = static_cast<ID3D11Device*>(renderer.GetNativeDeviceHandle());
+    ID3D11DeviceContext* context = static_cast<ID3D11DeviceContext*>(renderer.GetNativeContextHandle());
+    if (!device || !context)
     {
         return false;
     }
@@ -238,19 +239,19 @@ bool DX11SpritePipeline::IsInitialized() const
     return m_Initialized;
 }
 
-bool DX11SpritePipeline::ValidateRendererState(DX11Renderer& renderer) const
+bool DX11SpritePipeline::ValidateRendererState(Renderer& renderer) const
 {
-    return m_Initialized && renderer.IsInitialized() && renderer.GetContext() != nullptr;
+    return m_Initialized && renderer.IsInitialized() && renderer.GetNativeContextHandle() != nullptr;
 }
 
-void DX11SpritePipeline::BindBatchPipeline(DX11Renderer& renderer) const
+void DX11SpritePipeline::BindBatchPipeline(Renderer& renderer) const
 {
     if (!ValidateRendererState(renderer))
     {
         return;
     }
 
-    ID3D11DeviceContext* context = renderer.GetContext();
+    ID3D11DeviceContext* context = static_cast<ID3D11DeviceContext*>(renderer.GetNativeContextHandle());
 
     UINT stride = sizeof(SpriteVertex);
     UINT offset = 0;
@@ -269,14 +270,14 @@ void DX11SpritePipeline::BindBatchPipeline(DX11Renderer& renderer) const
     context->RSSetState(m_RasterizerState.Get());
 }
 
-void DX11SpritePipeline::UploadProjectionMatrix(DX11Renderer& renderer, const float* matrixData, std::size_t matrixBytes)
+void DX11SpritePipeline::UploadProjectionMatrix(Renderer& renderer, const float* matrixData, std::size_t matrixBytes)
 {
     if (!ValidateRendererState(renderer) || !matrixData || matrixBytes == 0)
     {
         return;
     }
 
-    ID3D11DeviceContext* context = renderer.GetContext();
+    ID3D11DeviceContext* context = static_cast<ID3D11DeviceContext*>(renderer.GetNativeContextHandle());
     D3D11_MAPPED_SUBRESOURCE mapped = {};
     if (SUCCEEDED(context->Map(m_ConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
     {
@@ -285,14 +286,14 @@ void DX11SpritePipeline::UploadProjectionMatrix(DX11Renderer& renderer, const fl
     }
 }
 
-void DX11SpritePipeline::FlushBatch(DX11Renderer& renderer, const SpriteVertex* vertices, int spriteCount, const Texture& texture) const
+void DX11SpritePipeline::FlushBatch(Renderer& renderer, const SpriteVertex* vertices, int spriteCount, const Texture& texture) const
 {
     if (!ValidateRendererState(renderer) || !vertices || spriteCount <= 0)
     {
         return;
     }
 
-    ID3D11DeviceContext* context = renderer.GetContext();
+    ID3D11DeviceContext* context = static_cast<ID3D11DeviceContext*>(renderer.GetNativeContextHandle());
 
     D3D11_MAPPED_SUBRESOURCE mapped = {};
     if (SUCCEEDED(context->Map(m_VertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
@@ -302,7 +303,13 @@ void DX11SpritePipeline::FlushBatch(DX11Renderer& renderer, const SpriteVertex* 
         context->Unmap(m_VertexBuffer.Get(), 0);
     }
 
-    ID3D11ShaderResourceView* textureView = texture.GetHandle().Get();
+    ID3D11ShaderResourceView* textureView = static_cast<ID3D11ShaderResourceView*>(texture.GetHandle().NativeResource.get());
+    if (!textureView)
+    {
+        LX_ENGINE_ERROR("[SpriteRenderer] Missing texture view in renderer handle");
+        return;
+    }
+
     context->PSSetShaderResources(0, 1, &textureView);
     context->DrawIndexed(static_cast<UINT>(spriteCount) * 6, 0, 0);
 }

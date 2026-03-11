@@ -62,7 +62,13 @@ float4 PS(PSInput input) : SV_TARGET
 namespace LongXi
 {
 
-SpriteRenderer::SpriteRenderer() : m_Renderer(nullptr), m_DX11Pipeline(std::make_unique<DX11SpritePipeline>()), m_SpriteCount(0), m_CurrentTexture(nullptr), m_Initialized(false), m_InBatch(false)
+class SpriteRenderer::Impl
+{
+  public:
+    std::unique_ptr<DX11SpritePipeline> DX11Pipeline = std::make_unique<DX11SpritePipeline>();
+};
+
+SpriteRenderer::SpriteRenderer() : m_Renderer(nullptr), m_Impl(std::make_unique<Impl>()), m_SpriteCount(0), m_CurrentTexture(nullptr), m_Initialized(false), m_InBatch(false)
 {
     memset(m_ProjectionMatrix, 0, sizeof(m_ProjectionMatrix));
 }
@@ -75,12 +81,12 @@ SpriteRenderer::~SpriteRenderer()
 bool SpriteRenderer::Initialize(Renderer& renderer, int width, int height)
 {
     m_Renderer = &renderer;
-    if (!m_DX11Pipeline)
+    if (!m_Impl)
     {
-        m_DX11Pipeline = std::make_unique<DX11SpritePipeline>();
+        m_Impl = std::make_unique<Impl>();
     }
 
-    if (!m_DX11Pipeline->Initialize(renderer, MAX_SPRITES_PER_BATCH, s_VertexShaderSrc, s_PixelShaderSrc))
+    if (!m_Impl->DX11Pipeline || !m_Impl->DX11Pipeline->Initialize(renderer, MAX_SPRITES_PER_BATCH, s_VertexShaderSrc, s_PixelShaderSrc))
     {
         LX_ENGINE_ERROR("[SpriteRenderer] Initialization failed - sprite rendering disabled");
         m_Initialized = false;
@@ -101,9 +107,9 @@ void SpriteRenderer::Shutdown()
         return;
     }
 
-    if (m_DX11Pipeline)
+    if (m_Impl && m_Impl->DX11Pipeline)
     {
-        m_DX11Pipeline->Shutdown();
+        m_Impl->DX11Pipeline->Shutdown();
     }
 
     m_Initialized = false;
@@ -153,20 +159,20 @@ void SpriteRenderer::UpdateProjection(int width, int height)
     };
     memcpy(m_ProjectionMatrix, proj, sizeof(proj));
 
-    if (m_DX11Pipeline && m_Renderer)
+    if (m_Impl && m_Impl->DX11Pipeline && m_Renderer)
     {
-        m_DX11Pipeline->UploadProjectionMatrix(*m_Renderer, m_ProjectionMatrix, sizeof(m_ProjectionMatrix));
+        m_Impl->DX11Pipeline->UploadProjectionMatrix(*m_Renderer, m_ProjectionMatrix, sizeof(m_ProjectionMatrix));
     }
 }
 
 void SpriteRenderer::FlushBatch()
 {
-    if (m_SpriteCount == 0 || !m_CurrentTexture || !m_DX11Pipeline || !m_Renderer)
+    if (m_SpriteCount == 0 || !m_CurrentTexture || !m_Impl || !m_Impl->DX11Pipeline || !m_Renderer)
     {
         return;
     }
 
-    m_DX11Pipeline->FlushBatch(*m_Renderer, m_VertexData, m_SpriteCount, *m_CurrentTexture);
+    m_Impl->DX11Pipeline->FlushBatch(*m_Renderer, m_VertexData, m_SpriteCount, *m_CurrentTexture);
 
     m_SpriteCount = 0;
     m_CurrentTexture = nullptr;
@@ -174,7 +180,7 @@ void SpriteRenderer::FlushBatch()
 
 void SpriteRenderer::Begin()
 {
-    if (!m_Initialized || m_InBatch || !m_DX11Pipeline || !m_Renderer)
+    if (!m_Initialized || m_InBatch || !m_Impl || !m_Impl->DX11Pipeline || !m_Renderer)
     {
         return;
     }
@@ -183,7 +189,7 @@ void SpriteRenderer::Begin()
     m_SpriteCount = 0;
     m_CurrentTexture = nullptr;
 
-    m_DX11Pipeline->BindBatchPipeline(*m_Renderer);
+    m_Impl->DX11Pipeline->BindBatchPipeline(*m_Renderer);
 }
 
 void SpriteRenderer::End()

@@ -1,60 +1,61 @@
-# Quickstart: Spec 014 - Renderer API and GPU State Contract
+# Quickstart: Spec 014 - Renderer API and Backend Architecture
 
 ## Goal
-Validate renderer lifecycle ordering, GPU state determinism, resize robustness, and renderer-boundary compliance.
+Validate backend-agnostic renderer API behavior, deterministic GPU state ownership, and boundary compliance.
 
 ## Prerequisites
-- Windows with VS2026 toolchain.
-- Solution generated from repository root.
+- Windows development environment with Visual Studio 2026 toolchain.
+- Project generated from repository root.
 - Development logging enabled.
 
-## Commands
-1. Build:
+## Build and Run
+1. Build project:
    - `Win-Build Project.bat`
-2. Run boundary audit:
-   - `powershell -ExecutionPolicy Bypass -File Scripts/Audit-RendererBoundaries.ps1 -Json`
-3. Run executable:
+2. Launch runtime:
    - `Build\Debug\Executables\LXShell.exe`
+3. Run boundary audit:
+   - `powershell -ExecutionPolicy Bypass -File Scripts/Audit-RendererBoundaries.ps1 -Json`
 
-## Validation Scenarios and Results
+## Validation Scenarios
 
-### Scenario 1: Deterministic frame lifecycle (P1)
-Target: Scene + Sprite + Debug UI with stable rendering and no lifecycle-order errors.
+### Scenario 1: Deterministic frame lifecycle
+- Run Scene + Sprite + DebugUI paths simultaneously.
+- Keep runtime active for long-run validation.
+- Verify no lifecycle-order contract violations.
 
-Result: PASS (runtime logs show renderer, scene, sprite, camera, and Debug UI startup/usage without contract-violation errors).
+### Scenario 2: GPU state ownership and reset
+- Exercise scene and sprite rendering across repeated frames.
+- Verify engine rendering remains stable regardless of external pass activity.
+- Verify no subsystem relies on implicit previous-frame state.
 
-### Scenario 2: External pass boundary integrity (P1/P3)
-Target: Debug UI rendered via renderer-owned external pass while engine rendering remains stable.
+### Scenario 3: Resize robustness
+- Execute repeated resize/minimize/restore operations.
+- Include active-frame resize events.
+- Verify renderer recovers viewport/render-target correctness after valid size restoration.
 
-Result: PASS (Debug UI panels open and rendering path remains stable in runtime logs).
+### Scenario 4: Boundary compliance
+- Run `Audit-RendererBoundaries.ps1`.
+- Verify no DirectX include/type leakage outside renderer backend implementation modules.
 
-### Scenario 3: Resize stress and recovery (P2)
-Target: Repeated resize/minimize/restore with correct surface/viewport behavior.
+### Scenario 5: Failure-path handling
+- Trigger or simulate present/device/swapchain failure path where feasible.
+- Verify logging + safe-mode transition + controlled recovery behavior.
 
-Result: PASS (manual resize testing confirmed stable behavior and correct recovery; no rendering breakage observed).
+## Expected Outcome
+- Stable rendering without blank-frame regressions.
+- No lifecycle-order violations during normal operation.
+- Reliable resize handling and recovery.
+- No backend leakage in engine system boundaries.
+- Diagnosable logs for lifecycle, resize, and recovery events.
 
-### Scenario 4: Boundary audit (P3)
-Target: No backend leakage outside renderer module.
+## Validation Evidence (2026-03-11)
+- Boundary audit: PASS (`{"scanned":"LongXi/LXEngine/Src","violations":[],"ok":true}`).
+- Runtime evidence: validation scene and Debug UI panel logs were observed in local runs provided during implementation (`[ValidationScene] Test sprite node attached`, `[DebugUI] Engine panel opened`, `[DebugUI] Scene inspector opened`).
+- Resize evidence: runtime logs indicated resize callbacks and stable renderer viewport updates after active-window resize operations.
+- Build caveat in this automation environment: `Win-Build Project.bat` failed with `MSB4018` (MSBuild FileTracker `IndexOutOfRangeException`) before project compilation completed; this appears environment/tooling-related rather than a code compile diagnostic.
 
-Result: PASS (`Scripts/Audit-RendererBoundaries.ps1 -Json` returned `ok=true`, no violations).
-
-### Scenario 5: Build and integration verification
-Target: Full debug build success with current implementation.
-
-Result: PASS (Debug x64 build completed: `LXCore`, `LXEngine`, `LXShell` all succeeded).
-
-## Observed Runtime Evidence (2026-03-11)
-- `[Renderer] Device initialized`
-- `[SpriteRenderer] Initialized`
-- `[Scene] Initialized`
-- `[Camera] View matrix updated`
-- `[Camera] Projection updated`
-- `[ImGuiLayer] Initialized`
-- `[DebugUI] Engine/Scene/Texture/Input panels opened`
-- Validation scene texture load success (`data/texture/1.dds`, 256x256, DXT3)
-
-## Pass Criteria
-- No lifecycle contract violations during normal rendering.
-- No backend API leakage outside renderer module.
-- No blank-frame regressions after external/debug passes.
-- Resize path recovers rendering deterministically.
+## Recommended Local Verification (Developer Machine)
+1. Run `Win-Build Project.bat` from repository root.
+2. Run `Build\Debug\Executables\LXShell.exe` and exercise Scene + Sprite + DebugUI for long-run rendering.
+3. Perform repeated resize/minimize/restore operations and verify recovery behavior.
+4. Run `powershell -ExecutionPolicy Bypass -File Scripts/Audit-RendererBoundaries.ps1 -Json` and confirm `ok=true`.

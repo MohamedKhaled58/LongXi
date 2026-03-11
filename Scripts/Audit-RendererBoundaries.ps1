@@ -5,22 +5,42 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $targetRoot = "LongXi/LXEngine/Src"
-$allowRegex = "LongXi[\\/]LXEngine[\\/]Src[\\/]Renderer[\\/]"
-$pattern = "#\s*include\s*<d3d11\.h>|#\s*include\s*<dxgi\.h>|\bID3D11|\bIDXGI"
+$allowedDirectXRegex = @(
+    "LongXi[\\/]LXEngine[\\/]Src[\\/]Renderer[\\/]DX11Renderer\.h$",
+    "LongXi[\\/]LXEngine[\\/]Src[\\/]Renderer[\\/]DX11Renderer\.cpp$",
+    "LongXi[\\/]LXEngine[\\/]Src[\\/]Renderer[\\/]RendererFactory\.cpp$",
+    "LongXi[\\/]LXEngine[\\/]Src[\\/]Renderer[\\/]Backend[\\/]DX11[\\/].+"
+)
+
+$directXPattern = '#\s*include\s*<d3d11\.h>|#\s*include\s*<dxgi\.h>|\bID3D11|\bIDXGI|\bD3D11_|\bDXGI_'
+$backendIncludePattern = '#\s*include\s*["<]Renderer[\\/]DX11Renderer\.h[">]'
 
 $rawMatches = @()
 try {
-    $rawMatches = & rg --no-heading --line-number --color never $pattern $targetRoot
+    $rawMatches = & rg --no-heading --line-number --color never $directXPattern $targetRoot
 } catch {
     $rawMatches = @()
 }
 
-$violations = @()
+try {
+    $rawMatches += (& rg --no-heading --line-number --color never $backendIncludePattern $targetRoot)
+} catch {
+}
+
+$violations = New-Object System.Collections.Generic.List[string]
 foreach ($line in $rawMatches) {
     if ($line -match '^([^:]+):') {
         $file = $matches[1]
-        if ($file -notmatch $allowRegex) {
-            $violations += $line
+        $isAllowed = $false
+        foreach ($regex in $allowedDirectXRegex) {
+            if ($file -match $regex) {
+                $isAllowed = $true
+                break
+            }
+        }
+
+        if (-not $isAllowed) {
+            $violations.Add($line)
         }
     }
 }
@@ -28,7 +48,7 @@ foreach ($line in $rawMatches) {
 if ($Json) {
     $result = [PSCustomObject]@{
         scanned = $targetRoot
-        violations = $violations
+        violations = @($violations)
         ok = ($violations.Count -eq 0)
     }
     $result | ConvertTo-Json -Compress

@@ -9,7 +9,6 @@ namespace LongXi
 {
 
 class Texture;
-class DX11SpritePipeline;
 
 static constexpr int MAX_SPRITES_PER_BATCH = 1024;
 
@@ -44,9 +43,11 @@ class SpriteRenderer
     void FlushBatch();
     void UpdateProjection(int width, int height);
 
+    class Impl;
+
   private:
     Renderer* m_Renderer = nullptr;
-    std::unique_ptr<DX11SpritePipeline> m_DX11Pipeline;
+    std::unique_ptr<Impl> m_Impl;
 
     SpriteVertex m_VertexData[MAX_SPRITES_PER_BATCH * 4];
 
