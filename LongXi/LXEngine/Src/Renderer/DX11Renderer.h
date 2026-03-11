@@ -38,6 +38,17 @@ class DX11Renderer
         return m_IsInitialized;
     }
 
+    // Raw device/context accessors for subsystems (e.g. SpriteRenderer)
+    // Callers do NOT own the returned pointers — lifetime managed by DX11Renderer
+    ID3D11Device* GetDevice() const
+    {
+        return m_Device.Get();
+    }
+    ID3D11DeviceContext* GetContext() const
+    {
+        return m_Context.Get();
+    }
+
     // Create GPU texture from CPU pixel data
     // Returns non-empty ComPtr on success, empty ComPtr on failure
     RendererTextureHandle CreateTexture(uint32_t width, uint32_t height, TextureFormat format, const void* pixels);

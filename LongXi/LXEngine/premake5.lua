@@ -22,5 +22,6 @@ project "LXEngine"
 		"LXCore",
 		"d3d11",
 		"dxgi",
-		"dxguid"
+		"dxguid",
+		"d3dcompiler"
 	}

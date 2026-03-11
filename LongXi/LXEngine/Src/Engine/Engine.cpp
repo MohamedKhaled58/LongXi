@@ -1,5 +1,6 @@
 #include "Engine/Engine.h"
 #include "Renderer/DX11Renderer.h"
+#include "Renderer/SpriteRenderer.h"
 #include "Input/InputSystem.h"
 #include "Core/FileSystem/VirtualFileSystem.h"
 #include "Texture/TextureManager.h"
@@ -63,6 +64,14 @@ bool Engine::Initialize(HWND windowHandle, int width, int height)
     LX_ENGINE_INFO("[Engine] Initializing texture manager");
     m_TextureManager = std::make_unique<TextureManager>(*this);
 
+    // Step 5: Initialize SpriteRenderer (non-fatal — engine continues if it fails)
+    LX_ENGINE_INFO("[Engine] Initializing sprite renderer");
+    m_SpriteRenderer = std::make_unique<SpriteRenderer>();
+    if (!m_SpriteRenderer->Initialize(*m_Renderer, width, height))
+    {
+        LX_ENGINE_WARN("[Engine] SpriteRenderer initialization failed — sprite rendering disabled");
+    }
+
     m_Initialized = true;
     LX_ENGINE_INFO("[Engine] Engine initialization complete");
     return true;
@@ -78,7 +87,14 @@ void Engine::Shutdown()
     LX_ENGINE_INFO("[Engine] Shutting down");
 
     // Shutdown in reverse dependency order
-    // TextureManager FIRST - releases GPU textures while device is alive
+    // SpriteRenderer FIRST — releases GPU sprite resources before device
+    if (m_SpriteRenderer)
+    {
+        m_SpriteRenderer->Shutdown();
+        m_SpriteRenderer.reset();
+    }
+
+    // TextureManager — releases GPU textures while device is alive
     if (m_TextureManager)
     {
         m_TextureManager.reset();
@@ -142,6 +158,14 @@ void Engine::Render()
 
     // TODO: Scene.Render() (future spec)
 
+    // Sprite rendering pass — runs after scene, before EndFrame (screen-space overlay)
+    if (m_SpriteRenderer && m_SpriteRenderer->IsInitialized())
+    {
+        m_SpriteRenderer->Begin();
+        // DrawSprite calls from game/test code go here (future: virtual OnRender hook)
+        m_SpriteRenderer->End();
+    }
+
     m_Renderer->EndFrame();
 }
 
@@ -163,6 +187,12 @@ void Engine::OnResize(int width, int height)
 
     // Forward to renderer
     m_Renderer->OnResize(width, height);
+
+    // Forward to sprite renderer (updates orthographic projection matrix)
+    if (m_SpriteRenderer && m_SpriteRenderer->IsInitialized())
+    {
+        m_SpriteRenderer->OnResize(width, height);
+    }
 }
 
 // ============================================================================
@@ -209,6 +239,11 @@ CVirtualFileSystem& Engine::GetVFS()
 TextureManager& Engine::GetTextureManager()
 {
     return *m_TextureManager;
+}
+
+SpriteRenderer& Engine::GetSpriteRenderer()
+{
+    return *m_SpriteRenderer;
 }
 
 } // namespace LongXi

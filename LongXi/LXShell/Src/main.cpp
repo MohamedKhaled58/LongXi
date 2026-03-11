@@ -27,10 +27,36 @@ class TestApplication : public Application
         // Test texture loading after all systems are ready
         TestTextureSystem();
 
+        // Test sprite renderer initialization
+        TestSpriteSystem();
+
         return true;
     }
 
   private:
+    void TestSpriteSystem()
+    {
+        LX_ENGINE_INFO("==============================================");
+        LX_ENGINE_INFO("SPRITE SYSTEM TEST");
+        LX_ENGINE_INFO("==============================================");
+
+        Engine& engine = GetEngine();
+
+        if (engine.GetSpriteRenderer().IsInitialized())
+        {
+            LX_ENGINE_INFO("✓ SUCCESS: SpriteRenderer initialized");
+            LX_ENGINE_INFO("SpriteRenderer ready — draw calls execute in Engine::Render() Begin/End block");
+        }
+        else
+        {
+            LX_ENGINE_ERROR("✗ FAILED: SpriteRenderer not initialized");
+        }
+
+        LX_ENGINE_INFO("==============================================");
+        LX_ENGINE_INFO("SPRITE SYSTEM TEST COMPLETE");
+        LX_ENGINE_INFO("==============================================");
+    }
+
     void TestTextureSystem()
     {
         LX_ENGINE_INFO("==============================================");
