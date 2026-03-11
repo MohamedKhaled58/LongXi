@@ -116,6 +116,7 @@ WdfArchive::~WdfArchive()
 
 bool WdfArchive::Open(const std::string& absolutePath)
 {
+    std::lock_guard<std::mutex> lock(m_Mutex);
     m_Path = absolutePath;
 
     m_File.open(ToWide(absolutePath), std::ios::binary);
@@ -184,6 +185,7 @@ bool WdfArchive::Open(const std::string& absolutePath)
 
 void WdfArchive::Close()
 {
+    std::lock_guard<std::mutex> lock(m_Mutex);
     if (m_File.is_open())
         m_File.close();
     m_Index.clear();
@@ -210,6 +212,7 @@ uint32_t WdfArchive::ComputeUid(const std::string& path) const
 
 bool WdfArchive::HasEntry(const std::string& normalizedPath) const
 {
+    std::lock_guard<std::mutex> lock(m_Mutex);
     if (!m_IsOpen)
         return false;
     uint32_t uid = ComputeUid(normalizedPath);
@@ -219,6 +222,7 @@ bool WdfArchive::HasEntry(const std::string& normalizedPath) const
 
 std::optional<std::vector<uint8_t>> WdfArchive::ReadEntry(const std::string& normalizedPath) const
 {
+    std::lock_guard<std::mutex> lock(m_Mutex);
     if (!m_IsOpen)
         return std::nullopt;
 
@@ -233,6 +237,7 @@ std::optional<std::vector<uint8_t>> WdfArchive::ReadEntry(const std::string& nor
 
     const WdfIndexEntry& entry = *it;
 
+    m_File.clear();
     m_File.seekg(static_cast<std::streamoff>(entry.Offset), std::ios::beg);
     if (!m_File)
     {

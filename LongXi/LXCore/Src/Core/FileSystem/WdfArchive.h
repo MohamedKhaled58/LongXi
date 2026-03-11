@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <fstream>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <vector>
@@ -75,6 +76,7 @@ class WdfArchive
     mutable std::ifstream m_File;       // mutable — seekg/read are non-const
     std::vector<WdfIndexEntry> m_Index; // sorted by Uid after Open()
     bool m_IsOpen;
+    mutable std::mutex m_Mutex;
 };
 
 } // namespace LongXi
