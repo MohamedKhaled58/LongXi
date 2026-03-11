@@ -3,7 +3,6 @@
 #include "Input/InputSystem.h"
 #include "Core/FileSystem/VirtualFileSystem.h"
 #include "Texture/TextureManager.h"
-#include "Core/FileSystem/ResourceSystem.h"
 #include "Core/Logging/LogMacros.h"
 
 #include <windows.h>
@@ -15,10 +14,7 @@ namespace LongXi
 // Constructor / Destructor
 // ============================================================================
 
-Engine::Engine()
-    : m_Initialized(false)
-{
-}
+Engine::Engine() : m_Initialized(false) {}
 
 Engine::~Engine()
 {
@@ -59,22 +55,9 @@ bool Engine::Initialize(HWND windowHandle, int width, int height)
     m_Input = std::make_unique<InputSystem>();
     m_Input->Initialize();
 
-    // Step 3: Initialize VFS
+    // Step 3: Initialize VFS (empty — Application owns mount configuration)
     LX_ENGINE_INFO("[Engine] Initializing VFS");
     m_VFS = std::make_unique<CVirtualFileSystem>();
-
-    std::string exeDir = ResourceSystem::GetExecutableDirectory();
-    if (!exeDir.empty())
-    {
-        // Mount directories first (highest priority)
-        m_VFS->MountDirectory(exeDir + "/Data/Patch");
-        m_VFS->MountDirectory(exeDir + "/Data");
-        m_VFS->MountDirectory(exeDir);
-
-        // Mount WDF archives after directories (lower priority)
-        m_VFS->MountWdf(exeDir + "/Data/C3.wdf");
-        m_VFS->MountWdf(exeDir + "/Data/data.wdf");
-    }
 
     // Step 4: Initialize TextureManager (depends on Renderer + VFS)
     LX_ENGINE_INFO("[Engine] Initializing texture manager");
@@ -89,7 +72,7 @@ void Engine::Shutdown()
 {
     if (!m_Initialized)
     {
-        return;  // Idempotent - safe to call multiple times
+        return; // Idempotent - safe to call multiple times
     }
 
     LX_ENGINE_INFO("[Engine] Shutting down");
@@ -176,8 +159,30 @@ void Engine::OnResize(int width, int height)
         return;
     }
 
+    LX_ENGINE_INFO("[Engine] Resize forwarded to renderer: {}x{}", width, height);
+
     // Forward to renderer
     m_Renderer->OnResize(width, height);
+}
+
+// ============================================================================
+// VFS Configuration
+// ============================================================================
+
+void Engine::MountDirectory(const std::string& path)
+{
+    if (m_VFS)
+    {
+        m_VFS->MountDirectory(path);
+    }
+}
+
+void Engine::MountWdf(const std::string& path)
+{
+    if (m_VFS)
+    {
+        m_VFS->MountWdf(path);
+    }
 }
 
 // ============================================================================

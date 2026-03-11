@@ -39,7 +39,7 @@ class TestApplication : public Application
 
         // Access Engine through base class (need to add protected accessor or use Engine directly)
         // For now, we'll use Engine directly - this is temporary until we add proper accessor
-        Engine& engine = GetEngine();  // TODO: Add protected accessor to Application
+        Engine& engine = GetEngine(); // TODO: Add protected accessor to Application
 
         TextureManager& textureManager = engine.GetTextureManager();
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+#include <functional>
 #include <string>
 #include <Windows.h>
 
@@ -10,6 +12,9 @@
 
 namespace LongXi
 {
+
+// Forward declaration — defined in Input/InputSystem.h
+enum class MouseButton : uint8_t;
 
 class Win32Window
 {
@@ -48,6 +53,18 @@ class Win32Window
         m_Width = width;
         m_Height = height;
     }
+
+    // Window event callbacks — wired by Application after engine initialization
+    std::function<void(int, int)> OnResize;
+    std::function<void(UINT, bool)> OnKeyDown;
+    std::function<void(UINT)> OnKeyUp;
+    std::function<void(int, int)> OnMouseMove;
+    std::function<void(MouseButton)> OnMouseButtonDown;
+    std::function<void(MouseButton)> OnMouseButtonUp;
+    std::function<void(int)> OnMouseWheel;
+
+    // Win32 message dispatcher — retrieves Win32Window* via GWLP_USERDATA to route callbacks
+    static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
   private:
     std::wstring m_Title;
