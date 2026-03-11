@@ -3,6 +3,7 @@
 #include <wrl/client.h>
 #include <d3d11.h>
 #include <dxgi.h>
+#include "Math/Math.h"
 #include "Texture/TextureFormat.h"
 
 // =============================================================================
@@ -32,6 +33,7 @@ class DX11Renderer
     void EndFrame();
     void OnResize(int width, int height);
     void Shutdown();
+    void SetViewProjection(const Matrix4& view, const Matrix4& projection);
 
     bool IsInitialized() const
     {
@@ -47,6 +49,16 @@ class DX11Renderer
     ID3D11DeviceContext* GetContext() const
     {
         return m_Context.Get();
+    }
+
+    int GetViewportWidth() const
+    {
+        return m_ViewportWidth;
+    }
+
+    int GetViewportHeight() const
+    {
+        return m_ViewportHeight;
     }
 
     // Create GPU texture from CPU pixel data
@@ -66,6 +78,10 @@ class DX11Renderer
 
     // State tracking
     bool m_IsInitialized;
+    int m_ViewportWidth = 0;
+    int m_ViewportHeight = 0;
+    Matrix4 m_CurrentViewMatrix = {};
+    Matrix4 m_CurrentProjectionMatrix = {};
 };
 
 } // namespace LongXi

@@ -38,7 +38,7 @@ class Engine
     // =========================================================================
 
     // Initialize all engine subsystems in dependency order
-    // Order: Renderer → InputSystem → VFS → TextureManager
+    // Order: Renderer -> InputSystem -> VFS -> TextureManager -> SpriteRenderer -> Scene
     bool Initialize(HWND windowHandle, int width, int height);
 
     // Shutdown all engine subsystems in reverse dependency order

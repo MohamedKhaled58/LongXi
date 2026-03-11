@@ -78,7 +78,7 @@ bool Engine::Initialize(HWND windowHandle, int width, int height)
     m_LastFrameTime = std::chrono::steady_clock::now();
     m_FirstFrame = true;
     m_Scene = std::make_unique<Scene>();
-    if (!m_Scene->Initialize())
+    if (!m_Scene->Initialize(*m_Renderer))
     {
         LX_ENGINE_WARN("[Engine] Scene initialization failed");
     }

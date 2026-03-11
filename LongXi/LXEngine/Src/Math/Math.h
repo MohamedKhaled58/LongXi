@@ -30,4 +30,10 @@ struct Vector3
     float z;
 };
 
+// Row-major 4x4 matrix used for camera and render transforms.
+struct Matrix4
+{
+    float m[16];
+};
+
 } // namespace LongXi

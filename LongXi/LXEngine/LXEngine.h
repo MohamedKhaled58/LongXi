@@ -12,6 +12,7 @@
 #include "Renderer/SpriteRenderer.h"
 #include "Scene/Scene.h"
 #include "Scene/SceneNode.h"
+#include "Scene/Camera.h"
 #include "Math/Math.h"
 #include "Core/Logging/LogMacros.h"
 

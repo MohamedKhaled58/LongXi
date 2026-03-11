@@ -93,6 +93,14 @@ class TestApplication : public Application
 
         engine.GetScene().RemoveNode(parentRaw); // also destroys child
 
+        // Developer hook for manual camera runtime validation.
+        Camera& camera = engine.GetScene().GetActiveCamera();
+        camera.SetPosition({2.0f, 1.0f, -12.0f});
+        camera.SetRotation({5.0f, 15.0f, 0.0f});
+        camera.SetFOV(60.0f);
+        camera.SetNearFar(0.5f, 8000.0f);
+        LX_ENGINE_INFO("✓ Camera runtime hook applied (position/rotation/FOV/near-far updated)");
+
         LX_ENGINE_INFO("==============================================");
         LX_ENGINE_INFO("SCENE SYSTEM TEST COMPLETE");
         LX_ENGINE_INFO("==============================================");

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Scene/Camera.h"
 #include "Scene/SceneNode.h"
 
 // =============================================================================
@@ -33,7 +34,7 @@ class Scene
     // Lifecycle
     // =========================================================================
 
-    bool Initialize();
+    bool Initialize(DX11Renderer& renderer);
     void Shutdown();
     bool IsInitialized() const;
 
@@ -52,8 +53,12 @@ class Scene
     void Render(DX11Renderer& renderer);
     void OnResize(int width, int height);
 
+    Camera& GetActiveCamera();
+    const Camera& GetActiveCamera() const;
+
   private:
     SceneNode m_Root;
+    Camera m_Camera;
     bool m_Initialized = false;
 };
 

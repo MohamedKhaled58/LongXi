@@ -2,6 +2,7 @@
 #include "Core/Logging/LogMacros.h"
 
 #include <stdint.h>
+#include <cstring>
 
 namespace LongXi
 {
@@ -21,11 +22,21 @@ static bool IsDeviceLost(HRESULT hr)
     return hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET;
 }
 
+Matrix4 MakeIdentityMatrix()
+{
+    Matrix4 matrix = {};
+    matrix.m[0] = 1.0f;
+    matrix.m[5] = 1.0f;
+    matrix.m[10] = 1.0f;
+    matrix.m[15] = 1.0f;
+    return matrix;
+}
+
 // ============================================================================
 // Constructor / Destructor
 // ============================================================================
 
-DX11Renderer::DX11Renderer() : m_IsInitialized(false) {}
+DX11Renderer::DX11Renderer() : m_IsInitialized(false), m_ViewportWidth(0), m_ViewportHeight(0), m_CurrentViewMatrix(MakeIdentityMatrix()), m_CurrentProjectionMatrix(MakeIdentityMatrix()) {}
 
 DX11Renderer::~DX11Renderer()
 {
@@ -122,6 +133,8 @@ bool DX11Renderer::Initialize(HWND hwnd, int width, int height)
         return false;
     }
 
+    m_ViewportWidth = width;
+    m_ViewportHeight = height;
     m_IsInitialized = true;
     LX_ENGINE_INFO("DX11 renderer initialized (Feature Level: 11_0)");
     return true;
@@ -263,7 +276,11 @@ void DX11Renderer::OnResize(int width, int height)
     {
         LX_ENGINE_ERROR("Failed to recreate render target after resize");
         Shutdown();
+        return;
     }
+
+    m_ViewportWidth = width;
+    m_ViewportHeight = height;
 }
 
 // ============================================================================
@@ -384,6 +401,12 @@ RendererTextureHandle DX11Renderer::CreateTexture(uint32_t width, uint32_t heigh
     return pSRV;
 }
 
+void DX11Renderer::SetViewProjection(const Matrix4& view, const Matrix4& projection)
+{
+    std::memcpy(m_CurrentViewMatrix.m, view.m, sizeof(m_CurrentViewMatrix.m));
+    std::memcpy(m_CurrentProjectionMatrix.m, projection.m, sizeof(m_CurrentProjectionMatrix.m));
+}
+
 // ============================================================================
 // Shutdown
 // ============================================================================
@@ -403,6 +426,10 @@ void DX11Renderer::Shutdown()
     m_Context.Reset();
     m_Device.Reset();
 
+    m_ViewportWidth = 0;
+    m_ViewportHeight = 0;
+    m_CurrentViewMatrix = MakeIdentityMatrix();
+    m_CurrentProjectionMatrix = MakeIdentityMatrix();
     m_IsInitialized = false;
     LX_ENGINE_INFO("DX11 renderer shutdown complete");
 }

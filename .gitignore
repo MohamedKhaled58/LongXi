@@ -4,6 +4,7 @@
 .gemini/
 .agent/
 .vs/
+.specify/
 CLAUDE.md
 
 # Build Artifacts
@@ -74,3 +75,8 @@ node_modules/
 *.swo
 *~
 .DS_Store
+
+# Additional universal/C++ ignores
+out/
+.idea/
+.env*
