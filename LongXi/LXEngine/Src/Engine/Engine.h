@@ -2,6 +2,7 @@
 
 #include <Windows.h>
 #include <memory>
+#include <string>
 
 namespace LongXi
 {
@@ -55,6 +56,13 @@ class Engine
 
     // Handle window resize event
     void OnResize(int width, int height);
+
+    // =========================================================================
+    // VFS Configuration (called by Application before runtime loop)
+    // =========================================================================
+
+    void MountDirectory(const std::string& path);
+    void MountWdf(const std::string& path);
 
     // =========================================================================
     // Subsystem Accessors

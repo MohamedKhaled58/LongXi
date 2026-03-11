@@ -37,12 +37,11 @@ class Application
     std::unique_ptr<Win32Window> m_Window;
     std::unique_ptr<Engine> m_Engine;
 
-    static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
     bool CreateMainWindow();
     void DestroyMainWindow();
     bool CreateEngine();
-    void OnResize(int width, int height);
+    void ConfigureVirtualFileSystem();
+    void WireWindowCallbacks();
 };
 
 } // namespace LongXi

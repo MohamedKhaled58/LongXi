@@ -2,10 +2,10 @@
 #include "Window/Win32Window.h"
 #include "Engine/Engine.h"
 #include "Input/InputSystem.h"
+#include "Core/FileSystem/ResourceSystem.h"
 #include "Core/Logging/LogMacros.h"
 
 #include <windows.h>
-#include <windowsx.h>
 #include <memory>
 
 
@@ -34,16 +34,13 @@ bool Application::CreateMainWindow()
 {
     m_Window = std::make_unique<Win32Window>(L"LongXi", 1024, 768);
 
-    if (!m_Window->Create(Application::WindowProc))
+    if (!m_Window->Create(Win32Window::WindowProc))
     {
         LX_ENGINE_ERROR("Failed to create main window");
         return false;
     }
 
     m_WindowHandle = m_Window->GetHandle();
-
-    // Store Application pointer in window user data for WindowProc access
-    SetWindowLongPtr(m_WindowHandle, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
     m_Window->Show(SW_SHOW);
 
@@ -77,22 +74,105 @@ bool Application::CreateEngine()
         return false;
     }
 
+    WireWindowCallbacks();
+    ConfigureVirtualFileSystem();
+
     return true;
 }
 
-void Application::OnResize(int width, int height)
-{
-    // Guard against zero-area (minimized window)
-    if (width <= 0 || height <= 0)
-    {
-        return;
-    }
+// ============================================================================
+// VFS Configuration
+// ============================================================================
 
-    // Forward to Engine
-    if (m_Engine && m_Engine->IsInitialized())
+void Application::ConfigureVirtualFileSystem()
+{
+    std::string exeDir = ResourceSystem::GetExecutableDirectory();
+
+    if (!exeDir.empty())
     {
-        m_Engine->OnResize(width, height);
+        LX_ENGINE_INFO("[Application] Configuring VFS mounts");
+
+        // Mount directories first (highest priority)
+        m_Engine->MountDirectory(exeDir + "/Data/Patch");
+        m_Engine->MountDirectory(exeDir + "/Data");
+        m_Engine->MountDirectory(exeDir);
+
+        // Mount WDF archives after directories (lower priority)
+        m_Engine->MountWdf(exeDir + "/Data/C3.wdf");
+        m_Engine->MountWdf(exeDir + "/Data/data.wdf");
+
+        LX_ENGINE_INFO("[Application] VFS configuration complete");
     }
+    else
+    {
+        LX_ENGINE_WARN("[Application] Failed to get executable directory for VFS configuration");
+    }
+}
+
+// ============================================================================
+// Callback Wiring
+// ============================================================================
+
+void Application::WireWindowCallbacks()
+{
+    LX_ENGINE_INFO("[Application] Wiring window event callbacks");
+
+    m_Window->OnResize = [this](int w, int h)
+    {
+        if (m_Engine && m_Engine->IsInitialized())
+        {
+            LX_ENGINE_INFO("[Application] Resize forwarded to engine: {}x{}", w, h);
+            m_Engine->OnResize(w, h);
+        }
+    };
+
+    m_Window->OnKeyDown = [this](UINT key, bool repeat)
+    {
+        if (m_Engine && m_Engine->IsInitialized())
+        {
+            m_Engine->GetInput().OnKeyDown(key, repeat);
+        }
+    };
+
+    m_Window->OnKeyUp = [this](UINT key)
+    {
+        if (m_Engine && m_Engine->IsInitialized())
+        {
+            m_Engine->GetInput().OnKeyUp(key);
+        }
+    };
+
+    m_Window->OnMouseMove = [this](int x, int y)
+    {
+        if (m_Engine && m_Engine->IsInitialized())
+        {
+            m_Engine->GetInput().OnMouseMove(x, y);
+        }
+    };
+
+    m_Window->OnMouseButtonDown = [this](MouseButton button)
+    {
+        if (m_Engine && m_Engine->IsInitialized())
+        {
+            m_Engine->GetInput().OnMouseButtonDown(button);
+        }
+    };
+
+    m_Window->OnMouseButtonUp = [this](MouseButton button)
+    {
+        if (m_Engine && m_Engine->IsInitialized())
+        {
+            m_Engine->GetInput().OnMouseButtonUp(button);
+        }
+    };
+
+    m_Window->OnMouseWheel = [this](int delta)
+    {
+        if (m_Engine && m_Engine->IsInitialized())
+        {
+            m_Engine->GetInput().OnMouseWheel(delta);
+        }
+    };
 }
 
 // ============================================================================
@@ -119,146 +199,6 @@ bool Application::Initialize()
     m_Initialized = true;
     LX_ENGINE_INFO("Application initialized successfully");
     return true;
-}
-
-// ============================================================================
-// WindowProc
-// ============================================================================
-
-LRESULT CALLBACK Application::WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-    Application* app = reinterpret_cast<Application*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-
-    switch (msg)
-    {
-    case WM_CLOSE:
-        LX_ENGINE_INFO("WM_CLOSE received — destroying window");
-        DestroyWindow(hwnd);
-        return 0;
-
-    case WM_DESTROY:
-        LX_ENGINE_INFO("WM_DESTROY received — posting quit message");
-        PostQuitMessage(0);
-        return 0;
-
-    case WM_SIZE:
-        if (app)
-        {
-            int width = static_cast<int>(LOWORD(lParam));
-            int height = static_cast<int>(HIWORD(lParam));
-            if (app->m_Window)
-            {
-                app->m_Window->SetSize(width, height);
-            }
-            app->OnResize(width, height);
-        }
-        return 0;
-
-        // ---- Keyboard ----
-
-    case WM_KEYDOWN:
-    case WM_SYSKEYDOWN:
-        if (app && app->m_Engine && app->m_Engine->IsInitialized())
-        {
-            UINT vk = static_cast<UINT>(wParam);
-            bool isRepeat = (lParam & 0x40000000) != 0;
-            app->m_Engine->GetInput().OnKeyDown(vk, isRepeat);
-        }
-        return 0;
-
-    case WM_KEYUP:
-    case WM_SYSKEYUP:
-        if (app && app->m_Engine && app->m_Engine->IsInitialized())
-        {
-            app->m_Engine->GetInput().OnKeyUp(static_cast<UINT>(wParam));
-        }
-        return 0;
-
-    case WM_KILLFOCUS:
-        if (app && app->m_Engine && app->m_Engine->IsInitialized())
-        {
-            app->m_Engine->GetInput().OnFocusLost();
-        }
-        return 0;
-
-    case WM_ACTIVATEAPP:
-        if (app && app->m_Engine && app->m_Engine->IsInitialized() && wParam == FALSE)
-        {
-            app->m_Engine->GetInput().OnFocusLost();
-        }
-        return 0;
-
-        // ---- Mouse movement ----
-
-    case WM_MOUSEMOVE:
-        if (app && app->m_Engine && app->m_Engine->IsInitialized())
-        {
-            app->m_Engine->GetInput().OnMouseMove(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-        }
-        return 0;
-
-        // ---- Mouse buttons ----
-
-    case WM_LBUTTONDOWN:
-        if (app && app->m_Engine && app->m_Engine->IsInitialized())
-        {
-            SetCapture(hwnd);
-            app->m_Engine->GetInput().OnMouseButtonDown(MouseButton::Left);
-        }
-        return 0;
-
-    case WM_LBUTTONUP:
-        if (app && app->m_Engine && app->m_Engine->IsInitialized())
-        {
-            app->m_Engine->GetInput().OnMouseButtonUp(MouseButton::Left);
-            ReleaseCapture();
-        }
-        return 0;
-
-    case WM_RBUTTONDOWN:
-        if (app && app->m_Engine && app->m_Engine->IsInitialized())
-        {
-            SetCapture(hwnd);
-            app->m_Engine->GetInput().OnMouseButtonDown(MouseButton::Right);
-        }
-        return 0;
-
-    case WM_RBUTTONUP:
-        if (app && app->m_Engine && app->m_Engine->IsInitialized())
-        {
-            app->m_Engine->GetInput().OnMouseButtonUp(MouseButton::Right);
-            ReleaseCapture();
-        }
-        return 0;
-
-    case WM_MBUTTONDOWN:
-        if (app && app->m_Engine && app->m_Engine->IsInitialized())
-        {
-            SetCapture(hwnd);
-            app->m_Engine->GetInput().OnMouseButtonDown(MouseButton::Middle);
-        }
-        return 0;
-
-    case WM_MBUTTONUP:
-        if (app && app->m_Engine && app->m_Engine->IsInitialized())
-        {
-            app->m_Engine->GetInput().OnMouseButtonUp(MouseButton::Middle);
-            ReleaseCapture();
-        }
-        return 0;
-
-        // ---- Mouse wheel ----
-
-    case WM_MOUSEWHEEL:
-        if (app && app->m_Engine && app->m_Engine->IsInitialized())
-        {
-            app->m_Engine->GetInput().OnMouseWheel(GET_WHEEL_DELTA_WPARAM(wParam));
-        }
-        return 0;
-
-    default:
-        return DefWindowProc(hwnd, msg, wParam, lParam);
-    }
 }
 
 // ============================================================================
@@ -294,8 +234,8 @@ int Application::Run()
         // Engine frame
         if (m_Engine && m_Engine->IsInitialized())
         {
-            m_Engine->Update();   // Advance input frame boundary
-            m_Engine->Render();   // Render and present frame
+            m_Engine->Update(); // Advance input frame boundary
+            m_Engine->Render(); // Render and present frame
         }
     }
 }
