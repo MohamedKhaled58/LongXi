@@ -3,9 +3,12 @@
 #include "Core/FileSystem/VirtualFileSystem.h"
 #include "Core/Logging/LogMacros.h"
 #include "Input/InputSystem.h"
+#include "Profiling/ProfileScope.h"
 #include "Renderer/SpriteRenderer.h"
 #include "Scene/Scene.h"
 #include "Texture/TextureManager.h"
+
+#include <chrono>
 
 namespace LongXi
 {
@@ -30,6 +33,8 @@ bool Engine::Initialize(HWND windowHandle, int width, int height)
         LX_ENGINE_ERROR("[Engine] Invalid window handle");
         return false;
     }
+
+    const std::chrono::steady_clock::time_point startupStart = std::chrono::steady_clock::now();
 
     LX_ENGINE_INFO("[Engine] Initializing renderer");
     m_Renderer = CreateRenderer();
@@ -70,10 +75,15 @@ bool Engine::Initialize(HWND windowHandle, int width, int height)
         LX_ENGINE_WARN("[Engine] Scene initialization failed");
     }
 
-    m_LastFrameTime = std::chrono::steady_clock::now();
-    m_FirstFrame = true;
+    m_TimingService.Initialize();
+    m_ProfilerCollector.Initialize();
+    ProfilerCollector::SetActiveCollector(IsProfilingEnabled() ? &m_ProfilerCollector : nullptr);
+
     m_Initialized = true;
-    LX_ENGINE_INFO("[Engine] Engine initialization complete");
+
+    const double startupMs = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - startupStart).count();
+    LX_ENGINE_INFO("[Engine] Engine initialization complete ({:.2f} ms)", startupMs);
+
     return true;
 }
 
@@ -120,6 +130,10 @@ void Engine::Shutdown()
         m_Renderer.reset();
     }
 
+    ProfilerCollector::SetActiveCollector(nullptr);
+    m_ProfilerCollector.Shutdown();
+    m_TimingService.Shutdown();
+
     m_Initialized = false;
 }
 
@@ -136,13 +150,22 @@ void Engine::Update()
         return;
     }
 
-    const auto now = std::chrono::steady_clock::now();
-    const float deltaTime = m_FirstFrame ? 0.0f : std::chrono::duration<float>(now - m_LastFrameTime).count();
-    m_LastFrameTime = now;
-    m_FirstFrame = false;
+    if (!m_TimingService.IsFrameActive())
+    {
+        m_TimingService.BeginFrame();
+        if (IsProfilingEnabled())
+        {
+            m_ProfilerCollector.BeginFrame(m_TimingService.GetSnapshot().FrameIndex);
+        }
+    }
+
+    LX_PROFILE_SCOPE("Engine.Update");
+
+    const float deltaTime = static_cast<float>(m_TimingService.GetSnapshot().DeltaTimeSeconds);
 
     if (m_Scene && m_Scene->IsInitialized())
     {
+        LX_PROFILE_SCOPE("Engine.SceneUpdate");
         m_Scene->Update(deltaTime);
     }
 }
@@ -155,16 +178,20 @@ void Engine::Render()
         return;
     }
 
+    LX_PROFILE_SCOPE("Engine.Render");
+
     m_Renderer->BeginFrame();
 
     if (m_Scene && m_Scene->IsInitialized() && m_Renderer->BeginPass(RenderPassType::Scene))
     {
+        LX_PROFILE_SCOPE("Engine.ScenePass");
         m_Scene->Render(*m_Renderer);
         m_Renderer->EndPass();
     }
 
     if (m_SpriteRenderer && m_SpriteRenderer->IsInitialized() && m_Renderer->BeginPass(RenderPassType::Sprite))
     {
+        LX_PROFILE_SCOPE("Engine.SpritePass");
         m_SpriteRenderer->Begin();
         m_SpriteRenderer->End();
         m_Renderer->EndPass();
@@ -178,6 +205,7 @@ void Engine::ExecuteExternalRenderPass(const ExternalPassCallback& callback)
         return;
     }
 
+    LX_PROFILE_SCOPE("Engine.ExternalPass");
     m_Renderer->ExecuteExternalPass(callback);
 }
 
@@ -187,6 +215,8 @@ void Engine::ExecuteSpritePass(const std::function<void(SpriteRenderer&)>& callb
     {
         return;
     }
+
+    LX_PROFILE_SCOPE("Engine.SpritePass.External");
 
     if (m_Renderer->GetLifecyclePhase() != FrameLifecyclePhase::InFrame || m_Renderer->GetActivePass() != RenderPassType::None)
     {
@@ -211,13 +241,37 @@ void Engine::Present()
         LX_ENGINE_ERROR("[Engine] Present() called before Initialize()");
         return;
     }
-
-    m_Renderer->EndFrame();
-    m_Renderer->Present();
-
-    if (m_Input)
     {
-        m_Input->Update();
+        LX_PROFILE_SCOPE("Engine.PresentCommands");
+
+        m_Renderer->EndFrame();
+        m_Renderer->Present();
+
+        if (m_Input)
+        {
+            m_Input->Update();
+        }
+    }
+
+    if (m_TimingService.IsFrameActive())
+    {
+        m_TimingService.EndFrame();
+
+        const TimingSnapshot& timingSnapshot = m_TimingService.GetSnapshot();
+        if (IsProfilingEnabled())
+        {
+            m_ProfilerCollector.EndFrame(timingSnapshot.FrameIndex, timingSnapshot.FrameTimeSeconds);
+        }
+
+        // Optional periodic diagnostics without per-frame log spam.
+        if (timingSnapshot.FrameIndex > 0 && (timingSnapshot.FrameIndex % 600) == 0)
+        {
+            LX_ENGINE_INFO("[Timing] frame={} delta={:.3f} ms frame={:.3f} ms total={:.2f} s",
+                           timingSnapshot.FrameIndex,
+                           timingSnapshot.DeltaTimeSeconds * 1000.0,
+                           timingSnapshot.FrameTimeSeconds * 1000.0,
+                           timingSnapshot.TotalTimeSeconds);
+        }
     }
 }
 
@@ -312,6 +366,25 @@ int Engine::GetRendererViewportWidth() const
 int Engine::GetRendererViewportHeight() const
 {
     return m_Renderer ? m_Renderer->GetViewportHeight() : 0;
+}
+
+const TimingSnapshot& Engine::GetTimingSnapshot() const
+{
+    return m_TimingService.GetSnapshot();
+}
+
+const FrameProfileSnapshot& Engine::GetLastFrameProfileSnapshot() const
+{
+    return m_ProfilerCollector.GetLastFrameSnapshot();
+}
+
+bool Engine::IsProfilingEnabled() const
+{
+#if defined(LX_DEBUG) || defined(LX_DEV)
+    return true;
+#else
+    return false;
+#endif
 }
 
 } // namespace LongXi

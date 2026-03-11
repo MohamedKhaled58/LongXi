@@ -14,6 +14,9 @@
 #include "Scene/SceneNode.h"
 #include "Scene/Camera.h"
 #include "Math/Math.h"
+#include "Timing/TimingService.h"
+#include "Profiling/ProfilerCollector.h"
+#include "Profiling/ProfileScope.h"
 #include "Core/Logging/LogMacros.h"
 
 // Entry point: include Application/EntryPoint.h ONCE in the client executable

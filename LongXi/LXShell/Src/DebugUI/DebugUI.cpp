@@ -5,6 +5,7 @@
 #include "Panels/CameraPanel.h"
 #include "Panels/EnginePanel.h"
 #include "Panels/InputMonitor.h"
+#include "Panels/ProfilerPanel.h"
 #include "Panels/SceneInspector.h"
 #include "Panels/TextureViewer.h"
 
@@ -120,19 +121,19 @@ std::string KeyToString(Key key)
 
 void DebugUI::UpdateViewModels(Engine& engine)
 {
-    const auto now = std::chrono::steady_clock::now();
-    if (m_LastMetricsSampleTime.time_since_epoch().count() != 0)
-    {
-        const float deltaSeconds = std::chrono::duration<float>(now - m_LastMetricsSampleTime).count();
-        if (deltaSeconds > 0.0f)
-        {
-            m_EngineMetrics.FrameTimeMs = deltaSeconds * 1000.0f;
-            m_EngineMetrics.FramesPerSecond = 1.0f / deltaSeconds;
-        }
-    }
-    m_LastMetricsSampleTime = now;
-    m_EngineMetrics.GpuDeviceName = "Direct3D 11";
+    const TimingSnapshot& timingSnapshot = engine.GetTimingSnapshot();
+    m_EngineMetrics.FrameIndex = timingSnapshot.FrameIndex;
+    m_EngineMetrics.DeltaTimeMs = static_cast<float>(timingSnapshot.DeltaTimeSeconds * 1000.0);
+    m_EngineMetrics.FrameTimeMs = static_cast<float>(timingSnapshot.FrameTimeSeconds * 1000.0);
+    m_EngineMetrics.FramesPerSecond = timingSnapshot.DeltaTimeSeconds > 0.0 ? static_cast<float>(1.0 / timingSnapshot.DeltaTimeSeconds) : 0.0f;
     m_EngineMetrics.DrawCallCount = 0;
+    m_EngineMetrics.GpuDeviceName = "Renderer API (DX11 backend)";
+
+    m_ProfilerPanel.ProfilingEnabled = engine.IsProfilingEnabled();
+    m_ProfilerPanel.TimingFrameIndex = timingSnapshot.FrameIndex;
+    m_ProfilerPanel.DeltaTimeMs = static_cast<float>(timingSnapshot.DeltaTimeSeconds * 1000.0);
+    m_ProfilerPanel.FrameTimeMs = static_cast<float>(timingSnapshot.FrameTimeSeconds * 1000.0);
+    m_ProfilerPanel.TotalTimeSeconds = static_cast<float>(timingSnapshot.TotalTimeSeconds);
 
     m_SceneNodes.clear();
     Scene& scene = engine.GetScene();
@@ -199,6 +200,33 @@ void DebugUI::UpdateViewModels(Engine& engine)
     {
         m_InputState.PressedKeys.push_back(KeyToString(key));
     }
+
+    const FrameProfileSnapshot& profileSnapshot = engine.GetLastFrameProfileSnapshot();
+    const bool frameMismatch = profileSnapshot.FrameIndex > timingSnapshot.FrameIndex && profileSnapshot.FrameIndex != 0;
+    if (frameMismatch)
+    {
+        LX_WARN("[DebugUI] Profile snapshot frame mismatch (profile={} timing={})", profileSnapshot.FrameIndex, timingSnapshot.FrameIndex);
+        m_ProfilerPanel.IsDataStale = true;
+        m_ProfilerPanel.ProfileFrameIndex = 0;
+        m_ProfilerPanel.Entries.clear();
+    }
+    else
+    {
+        m_ProfilerPanel.IsDataStale = false;
+        m_ProfilerPanel.ProfileFrameIndex = profileSnapshot.FrameIndex;
+        m_ProfilerPanel.Entries.clear();
+        m_ProfilerPanel.Entries.reserve(profileSnapshot.Entries.size());
+        for (const FrameProfileEntry& entry : profileSnapshot.Entries)
+        {
+            ProfilerEntryViewModel vm;
+            vm.ScopeName = entry.ScopeName;
+            vm.DurationMs = static_cast<float>(entry.TotalDurationMicroseconds / 1000.0);
+            vm.CallCount = entry.CallCount;
+            m_ProfilerPanel.Entries.push_back(std::move(vm));
+        }
+    }
+
+    m_EngineMetrics.ProfileScopeCount = static_cast<int>(m_ProfilerPanel.Entries.size());
 }
 
 void DebugUI::RenderPanels(Engine& engine)
@@ -207,6 +235,7 @@ void DebugUI::RenderPanels(Engine& engine)
     static bool loggedSceneInspectorOpen = false;
     static bool loggedTextureViewerOpen = false;
     static bool loggedInputMonitorOpen = false;
+    static bool loggedProfilerPanelOpen = false;
 
     if (m_ShowEnginePanel)
     {
@@ -252,11 +281,31 @@ void DebugUI::RenderPanels(Engine& engine)
         }
         InputMonitor::Render(m_InputState);
     }
+
+    if (m_ShowProfilerPanel)
+    {
+        if (!loggedProfilerPanelOpen)
+        {
+            LX_INFO("[DebugUI] Profiler panel opened");
+            loggedProfilerPanelOpen = true;
+        }
+        ProfilerPanel::Render(m_ProfilerPanel);
+    }
 }
 
 void DebugUI::SetLastInputConsumedByDebugUI(bool consumed)
 {
     m_LastInputConsumedByDebugUI = consumed;
+}
+
+void DebugUI::SetProfilerPanelVisible(bool visible)
+{
+    m_ShowProfilerPanel = visible;
+}
+
+void DebugUI::ToggleProfilerPanel()
+{
+    m_ShowProfilerPanel = !m_ShowProfilerPanel;
 }
 
 } // namespace LongXi

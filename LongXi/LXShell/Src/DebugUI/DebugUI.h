@@ -2,7 +2,7 @@
 
 #if defined(LX_DEBUG) || defined(LX_DEV)
 
-#include <chrono>
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -15,8 +15,11 @@ class SceneNode;
 
 struct EngineMetricsSnapshot
 {
+    uint64_t FrameIndex = 0;
     float FramesPerSecond = 0.0f;
+    float DeltaTimeMs = 0.0f;
     float FrameTimeMs = 0.0f;
+    int ProfileScopeCount = 0;
     int DrawCallCount = 0;
     std::string GpuDeviceName = "Unknown";
 };
@@ -60,12 +63,33 @@ struct InputStateViewModel
     std::vector<std::string> PressedKeys;
 };
 
+struct ProfilerEntryViewModel
+{
+    std::string ScopeName;
+    float DurationMs = 0.0f;
+    uint32_t CallCount = 0;
+};
+
+struct ProfilerPanelViewModel
+{
+    bool ProfilingEnabled = false;
+    bool IsDataStale = false;
+    uint64_t TimingFrameIndex = 0;
+    uint64_t ProfileFrameIndex = 0;
+    float DeltaTimeMs = 0.0f;
+    float FrameTimeMs = 0.0f;
+    float TotalTimeSeconds = 0.0f;
+    std::vector<ProfilerEntryViewModel> Entries;
+};
+
 class DebugUI
 {
 public:
     void UpdateViewModels(Engine& engine);
     void RenderPanels(Engine& engine);
     void SetLastInputConsumedByDebugUI(bool consumed);
+    void SetProfilerPanelVisible(bool visible);
+    void ToggleProfilerPanel();
 
 private:
     EngineMetricsSnapshot m_EngineMetrics;
@@ -73,14 +97,15 @@ private:
     std::vector<TextureInfoViewModel> m_Textures;
     CameraStateViewModel m_CameraState;
     InputStateViewModel m_InputState;
+    ProfilerPanelViewModel m_ProfilerPanel;
 
     bool m_ShowEnginePanel = true;
     bool m_ShowSceneInspector = true;
     bool m_ShowTextureViewer = true;
     bool m_ShowCameraPanel = true;
     bool m_ShowInputMonitor = true;
+    bool m_ShowProfilerPanel = true;
     bool m_LastInputConsumedByDebugUI = false;
-    std::chrono::steady_clock::time_point m_LastMetricsSampleTime = {};
 };
 
 } // namespace LongXi
