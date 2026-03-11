@@ -36,6 +36,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     // Client creates the application
     auto* app = CreateApplication();
+    if (!app)
+    {
+        LX_ENGINE_ERROR("CreateApplication() returned nullptr");
+        LongXi::Log::Shutdown();
+        return 1;
+    }
 
     if (!app->Initialize())
     {
