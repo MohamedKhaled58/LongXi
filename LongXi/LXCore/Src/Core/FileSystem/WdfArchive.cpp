@@ -55,12 +55,12 @@ static uint32_t stringtoid(const char* str)
         v                = (v << 1) | (v >> 31);
         const uint32_t w = 0x267B0B11u ^ v;
 
-        const uint32_t value = m[index];
-        x ^= value;
-        y ^= value;
+        const uint32_t value  = m[index];
+        const uint32_t mixedX = x ^ value;
+        const uint32_t mixedY = y ^ value;
 
-        const uint32_t multX    = ((w + y) | 0x02040801u) & 0xBFEF7FDFu;
-        const uint64_t productX = static_cast<uint64_t>(x) * static_cast<uint64_t>(multX);
+        const uint32_t multX    = ((w + mixedY) | 0x02040801u) & 0xBFEF7FDFu;
+        const uint64_t productX = static_cast<uint64_t>(mixedX) * static_cast<uint64_t>(multX);
         const uint32_t lowX     = static_cast<uint32_t>(productX);
         const uint32_t highX    = static_cast<uint32_t>(productX >> 32);
         const uint64_t sumX     = static_cast<uint64_t>(lowX) + static_cast<uint64_t>(highX) + (highX != 0 ? 1u : 0u);
@@ -69,10 +69,9 @@ static uint32_t stringtoid(const char* str)
         {
             ++nextX;
         }
-        x = nextX;
 
-        const uint32_t multY           = ((w + x) | 0x00804021u) & 0x7DFEFBFFu;
-        const uint64_t productY        = static_cast<uint64_t>(y) * static_cast<uint64_t>(multY);
+        const uint32_t multY           = ((w + mixedX) | 0x00804021u) & 0x7DFEFBFFu;
+        const uint64_t productY        = static_cast<uint64_t>(mixedY) * static_cast<uint64_t>(multY);
         const uint32_t lowY            = static_cast<uint32_t>(productY);
         const uint32_t highY           = static_cast<uint32_t>(productY >> 32);
         const uint64_t doubledHighY    = static_cast<uint64_t>(highY) + static_cast<uint64_t>(highY);
@@ -85,6 +84,7 @@ static uint32_t stringtoid(const char* str)
             nextY += 2;
         }
 
+        x = nextX;
         y = nextY;
     }
 

@@ -1,0 +1,44 @@
+# C++ files
+*.cpp diff=cpp
+*.h diff=cpp
+*.hpp diff=cpp
+*.cc diff=cpp
+*.cxx diff=cpp
+*.inl diff=cpp
+
+# C# files
+*.cs diff=csharp
+
+# Python files
+*.py diff=python
+
+# Text files
+*.txt diff
+*.md diff
+*.cmake diff
+*.lua diff
+
+# Shell scripts
+*.sh diff
+*.bat diff
+*.ps1 diff
+
+# XML/JSON/YAML
+*.xml diff
+*.json diff
+*.yaml diff
+*.yml diff
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.cur binary
+*.ani binary
+*.tga binary
+*.dds binary
+*.wdf binary
+*.dmap binary
+*.pul binary
