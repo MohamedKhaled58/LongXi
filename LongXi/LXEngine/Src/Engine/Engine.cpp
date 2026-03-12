@@ -3,12 +3,14 @@
 #include "Core/FileSystem/VirtualFileSystem.h"
 #include "Core/Logging/LogMacros.h"
 #include "Input/InputSystem.h"
+#include "Map/MapSystem.h"
 #include "Profiling/ProfileScope.h"
 #include "Renderer/SpriteRenderer.h"
 #include "Scene/Scene.h"
 #include "Texture/TextureManager.h"
 
 #include <chrono>
+#include <cmath>
 
 namespace LongXi
 {
@@ -74,6 +76,22 @@ bool Engine::Initialize(HWND windowHandle, int width, int height)
     {
         LX_ENGINE_WARN("[Engine] Scene initialization failed");
     }
+    else
+    {
+        const Vector3 cameraPosition = m_Scene->GetActiveCamera().GetPosition();
+        m_LastSceneCameraX = cameraPosition.x;
+        m_LastSceneCameraY = cameraPosition.y;
+        m_LastSceneCameraZ = cameraPosition.z;
+        m_HasLastSceneCameraState = true;
+    }
+
+    LX_ENGINE_INFO("[Engine] Initializing map system");
+    m_MapSystem = std::make_unique<MapSystem>();
+    if (!m_MapSystem->Initialize(*m_Renderer, *m_VFS, *m_TextureManager))
+    {
+        LX_ENGINE_WARN("[Engine] MapSystem initialization failed — map rendering disabled");
+        m_MapSystem.reset();
+    }
 
     m_TimingService.Initialize();
     m_TimingService.SetFrameLimiterEnabled(true);
@@ -110,6 +128,12 @@ void Engine::Shutdown()
         m_Scene.reset();
     }
 
+    if (m_MapSystem)
+    {
+        m_MapSystem->Shutdown();
+        m_MapSystem.reset();
+    }
+
     if (m_SpriteRenderer)
     {
         m_SpriteRenderer->Shutdown();
@@ -143,6 +167,10 @@ void Engine::Shutdown()
     m_TimingService.Shutdown();
 
     m_Initialized = false;
+    m_HasLastSceneCameraState = false;
+    m_LastSceneCameraX = 0.0f;
+    m_LastSceneCameraY = 0.0f;
+    m_LastSceneCameraZ = 0.0f;
 }
 
 bool Engine::IsInitialized() const
@@ -165,6 +193,11 @@ void Engine::Update()
         {
             m_ProfilerCollector.BeginFrame(m_TimingService.GetSnapshot().FrameIndex);
         }
+
+        if (m_MapSystem && m_MapSystem->IsInitialized())
+        {
+            m_MapSystem->BeginFrame(m_TimingService.GetSnapshot());
+        }
     }
 
     LX_PROFILE_SCOPE("Engine.Update");
@@ -175,6 +208,83 @@ void Engine::Update()
     {
         LX_PROFILE_SCOPE("Engine.SceneUpdate");
         m_Scene->Update(deltaTime);
+    }
+
+    if (m_MapSystem && m_MapSystem->IsInitialized() && m_MapSystem->IsMapReady())
+    {
+        float mapPanX = 0.0f;
+        float mapPanY = 0.0f;
+
+        if (m_Scene && m_Scene->IsInitialized())
+        {
+            const Vector3 sceneCameraPosition = m_Scene->GetActiveCamera().GetPosition();
+            if (!m_HasLastSceneCameraState)
+            {
+                m_LastSceneCameraX = sceneCameraPosition.x;
+                m_LastSceneCameraY = sceneCameraPosition.y;
+                m_LastSceneCameraZ = sceneCameraPosition.z;
+                m_HasLastSceneCameraState = true;
+            }
+
+            mapPanX += sceneCameraPosition.x - m_LastSceneCameraX;
+            mapPanY += sceneCameraPosition.y - m_LastSceneCameraY;
+
+            const float deltaSceneZ = sceneCameraPosition.z - m_LastSceneCameraZ;
+            if (std::fabs(deltaSceneZ) > 0.0001f)
+            {
+                m_MapSystem->AdjustCameraZoom(-deltaSceneZ * 0.02f);
+            }
+
+            m_LastSceneCameraX = sceneCameraPosition.x;
+            m_LastSceneCameraY = sceneCameraPosition.y;
+            m_LastSceneCameraZ = sceneCameraPosition.z;
+        }
+
+        if (m_Input)
+        {
+            float panSpeed = 800.0f * deltaTime;
+            if (m_Input->IsKeyDown(Key::LShift) || m_Input->IsKeyDown(Key::RShift))
+            {
+                panSpeed *= 2.0f;
+            }
+
+            if (m_Input->IsKeyDown(Key::A) || m_Input->IsKeyDown(Key::Left))
+            {
+                mapPanX -= panSpeed;
+            }
+            if (m_Input->IsKeyDown(Key::D) || m_Input->IsKeyDown(Key::Right))
+            {
+                mapPanX += panSpeed;
+            }
+            if (m_Input->IsKeyDown(Key::W) || m_Input->IsKeyDown(Key::Up))
+            {
+                mapPanY -= panSpeed;
+            }
+            if (m_Input->IsKeyDown(Key::S) || m_Input->IsKeyDown(Key::Down))
+            {
+                mapPanY += panSpeed;
+            }
+
+            if (m_Input->IsKeyDown(Key::Q))
+            {
+                m_MapSystem->AdjustCameraZoom(1.0f * deltaTime);
+            }
+            if (m_Input->IsKeyDown(Key::E))
+            {
+                m_MapSystem->AdjustCameraZoom(-1.0f * deltaTime);
+            }
+
+            const int wheelDelta = m_Input->GetWheelDelta();
+            if (wheelDelta != 0)
+            {
+                m_MapSystem->AdjustCameraZoom(static_cast<float>(wheelDelta) / 120.0f * 0.08f);
+            }
+        }
+
+        if (std::fabs(mapPanX) > 0.0001f || std::fabs(mapPanY) > 0.0001f)
+        {
+            m_MapSystem->PanCamera(mapPanX, mapPanY);
+        }
     }
 }
 
@@ -189,10 +299,16 @@ void Engine::Render()
     LX_PROFILE_SCOPE("Engine.Render");
 
     m_Renderer->BeginFrame();
+    if (m_Renderer->GetLifecyclePhase() != FrameLifecyclePhase::InFrame || m_Renderer->GetActivePass() != RenderPassType::None)
+    {
+        // Renderer can intentionally skip frame work while in recovery mode.
+        return;
+    }
 
     if (m_Scene && m_Scene->IsInitialized() && m_Renderer->BeginPass(RenderPassType::Scene))
     {
         LX_PROFILE_SCOPE("Engine.ScenePass");
+
         m_Scene->Render(*m_Renderer);
         m_Renderer->EndPass();
     }
@@ -201,6 +317,13 @@ void Engine::Render()
     {
         LX_PROFILE_SCOPE("Engine.SpritePass");
         m_SpriteRenderer->Begin();
+
+        if (m_MapSystem && m_MapSystem->IsInitialized())
+        {
+            LX_PROFILE_SCOPE("Engine.MapPass");
+            m_MapSystem->Render(*m_SpriteRenderer, m_TimingService.GetSnapshot());
+        }
+
         m_SpriteRenderer->End();
         m_Renderer->EndPass();
     }
@@ -209,6 +332,11 @@ void Engine::Render()
 void Engine::ExecuteExternalRenderPass(const ExternalPassCallback& callback)
 {
     if (!m_Initialized || !callback)
+    {
+        return;
+    }
+
+    if (m_Renderer->GetLifecyclePhase() != FrameLifecyclePhase::InFrame || m_Renderer->GetActivePass() != RenderPassType::None)
     {
         return;
     }
@@ -249,11 +377,15 @@ void Engine::Present()
         LX_ENGINE_ERROR("[Engine] Present() called before Initialize()");
         return;
     }
+    const bool canPresentFrame = m_Renderer->GetLifecyclePhase() == FrameLifecyclePhase::InFrame && m_Renderer->GetActivePass() == RenderPassType::None;
     {
         LX_PROFILE_SCOPE("Engine.PresentCommands");
 
-        m_Renderer->EndFrame();
-        m_Renderer->Present();
+        if (canPresentFrame)
+        {
+            m_Renderer->EndFrame();
+            m_Renderer->Present();
+        }
 
         if (m_Input)
         {
@@ -308,6 +440,11 @@ void Engine::OnResize(int width, int height)
     {
         m_Scene->OnResize(width, height);
     }
+
+    if (m_MapSystem && m_MapSystem->IsInitialized())
+    {
+        m_MapSystem->OnResize(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
+    }
 }
 
 void Engine::MountDirectory(const std::string& path)
@@ -354,6 +491,45 @@ SpriteRenderer& Engine::GetSpriteRenderer()
 Scene& Engine::GetScene()
 {
     return *m_Scene;
+}
+
+MapSystem& Engine::GetMapSystem()
+{
+    static MapSystem s_FallbackMapSystem;
+    if (!m_MapSystem)
+    {
+        LX_ENGINE_WARN("[Engine] GetMapSystem requested while map system is unavailable");
+        return s_FallbackMapSystem;
+    }
+
+    return *m_MapSystem;
+}
+
+bool Engine::LoadMap(const std::string& mapPath)
+{
+    if (!m_MapSystem || !m_MapSystem->IsInitialized())
+    {
+        LX_ENGINE_WARN("[Engine] LoadMap requested but MapSystem is unavailable");
+        return false;
+    }
+
+    return m_MapSystem->LoadMap(mapPath);
+}
+
+bool Engine::IsMapReady() const
+{
+    return m_MapSystem && m_MapSystem->IsMapReady();
+}
+
+const MapRenderSnapshot& Engine::GetMapRenderSnapshot() const
+{
+    static const MapRenderSnapshot kEmptySnapshot = {};
+    if (!m_MapSystem)
+    {
+        return kEmptySnapshot;
+    }
+
+    return m_MapSystem->GetRenderSnapshot();
 }
 
 void* Engine::GetRendererDeviceHandle() const

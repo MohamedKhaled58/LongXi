@@ -4,6 +4,7 @@
 
 #include "Profiling/ProfilerCollector.h"
 #include "Renderer/Renderer.h"
+#include "LXGameMap.h"
 #include "Timing/TimingService.h"
 
 #include <functional>
@@ -18,6 +19,7 @@ class CVirtualFileSystem;
 class TextureManager;
 class SpriteRenderer;
 class Scene;
+class MapSystem;
 
 class Engine
 {
@@ -51,6 +53,10 @@ public:
     TextureManager& GetTextureManager();
     SpriteRenderer& GetSpriteRenderer();
     Scene& GetScene();
+    MapSystem& GetMapSystem();
+    bool LoadMap(const std::string& mapPath);
+    bool IsMapReady() const;
+    const MapRenderSnapshot& GetMapRenderSnapshot() const;
 
     void* GetRendererDeviceHandle() const;
     void* GetRendererContextHandle() const;
@@ -75,8 +81,13 @@ private:
     std::unique_ptr<TextureManager> m_TextureManager;
     std::unique_ptr<SpriteRenderer> m_SpriteRenderer;
     std::unique_ptr<Scene> m_Scene;
+    std::unique_ptr<MapSystem> m_MapSystem;
     TimingService m_TimingService;
     ProfilerCollector m_ProfilerCollector;
+    bool m_HasLastSceneCameraState = false;
+    float m_LastSceneCameraX = 0.0f;
+    float m_LastSceneCameraY = 0.0f;
+    float m_LastSceneCameraZ = 0.0f;
 
     bool m_Initialized = false;
 };

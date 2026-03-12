@@ -88,10 +88,28 @@ std::shared_ptr<Texture> TextureManager::LoadTexture(const std::string& path)
     if (ext == ".dds")
     {
         decodeSuccess = TextureLoader::LoadDDS(fileData, texData);
+        if (!decodeSuccess)
+        {
+            // Legacy assets may be mislabeled; attempt TGA decode before failing.
+            decodeSuccess = TextureLoader::LoadTGA(fileData, texData);
+            if (decodeSuccess)
+            {
+                LX_ENGINE_WARN("[Texture] Decoded mislabeled texture as TGA: {}", normalized);
+            }
+        }
     }
     else if (ext == ".tga")
     {
         decodeSuccess = TextureLoader::LoadTGA(fileData, texData);
+        if (!decodeSuccess)
+        {
+            // Legacy assets may be mislabeled; attempt DDS decode before failing.
+            decodeSuccess = TextureLoader::LoadDDS(fileData, texData);
+            if (decodeSuccess)
+            {
+                LX_ENGINE_WARN("[Texture] Decoded mislabeled texture as DDS: {}", normalized);
+            }
+        }
     }
     else
     {

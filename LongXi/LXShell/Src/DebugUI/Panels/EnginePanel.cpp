@@ -19,6 +19,9 @@ void EnginePanel::Render(const EngineMetricsSnapshot& metrics)
     ImGui::Text("Frame Time: %.2f ms", metrics.FrameTimeMs);
     ImGui::Text("Profile Scopes: %d", metrics.ProfileScopeCount);
     ImGui::Text("Draw Calls: %d", metrics.DrawCallCount);
+    ImGui::Text("Map Visible Tiles: %d", metrics.MapVisibleTiles);
+    ImGui::Text("Map Visible Objects: %d", metrics.MapVisibleObjects);
+    ImGui::Text("Map Animated Tiles: %d", metrics.MapAnimatedTiles);
     ImGui::Separator();
     ImGui::Text("GPU: %s", metrics.GpuDeviceName.c_str());
 

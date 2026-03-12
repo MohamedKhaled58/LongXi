@@ -21,7 +21,9 @@ project "LXEngine"
 		".",
 		"Src",
 		"%{IncludeDir.LXCore}",
-		"%{IncludeDir.LXCoreSrc}"
+		"%{IncludeDir.LXCoreSrc}",
+		"%{IncludeDir.LXGameMap}",
+		"%{IncludeDir.LXGameMapSrc}"
 	}
 
 	links

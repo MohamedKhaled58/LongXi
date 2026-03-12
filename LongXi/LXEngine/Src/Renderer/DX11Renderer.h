@@ -133,6 +133,7 @@ private:
     void HandleContractViolation(const char* operation, const char* expectedState);
     void ApplyPassState(RenderPassType passType);
     void SetResourceResult(RendererResultCode code);
+    bool ValidateDrawState() const;
 
 private:
     Microsoft::WRL::ComPtr<ID3D11Device> m_Device;
@@ -170,6 +171,7 @@ private:
 
     RendererResult m_LastResourceResult = {};
     uint64_t m_FrameIndex = 0;
+    mutable bool m_HasLoggedInvalidDrawStateThisFrame = false;
 };
 
 } // namespace LongXi

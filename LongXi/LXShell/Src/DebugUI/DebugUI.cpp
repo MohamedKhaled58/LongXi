@@ -127,7 +127,19 @@ void DebugUI::UpdateViewModels(Engine& engine)
     m_EngineMetrics.FrameTimeMs = static_cast<float>(timingSnapshot.FrameTimeSeconds * 1000.0);
     m_EngineMetrics.FramesPerSecond = timingSnapshot.DeltaTimeSeconds > 0.0 ? static_cast<float>(1.0 / timingSnapshot.DeltaTimeSeconds) : 0.0f;
     m_EngineMetrics.DrawCallCount = 0;
+    m_EngineMetrics.MapVisibleTiles = 0;
+    m_EngineMetrics.MapVisibleObjects = 0;
+    m_EngineMetrics.MapAnimatedTiles = 0;
     m_EngineMetrics.GpuDeviceName = "Renderer API (DX11 backend)";
+
+    if (engine.IsMapReady())
+    {
+        const MapRenderSnapshot& mapSnapshot = engine.GetMapRenderSnapshot();
+        m_EngineMetrics.DrawCallCount = static_cast<int>(mapSnapshot.DrawCalls);
+        m_EngineMetrics.MapVisibleTiles = static_cast<int>(mapSnapshot.VisibleTiles);
+        m_EngineMetrics.MapVisibleObjects = static_cast<int>(mapSnapshot.VisibleObjects);
+        m_EngineMetrics.MapAnimatedTiles = static_cast<int>(mapSnapshot.AnimatedTiles);
+    }
 
     m_ProfilerPanel.ProfilingEnabled = engine.IsProfilingEnabled();
     m_ProfilerPanel.TimingFrameIndex = timingSnapshot.FrameIndex;
