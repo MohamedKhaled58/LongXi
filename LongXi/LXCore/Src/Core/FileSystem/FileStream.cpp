@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include "Core/FileSystem/FileStream.h"
 
 #include <Windows.h>
