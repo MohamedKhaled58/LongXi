@@ -74,7 +74,11 @@ public:
     std::unique_ptr<IFileStream> Open(const std::string& normalizedPath) const override;
 
 private:
+    bool HandlesPath(const std::string& normalizedPath) const;
+
+private:
     std::unique_ptr<WdfArchive> m_Archive;
+    std::string                 m_ArchiveRoot;
 };
 
 } // namespace LongXi

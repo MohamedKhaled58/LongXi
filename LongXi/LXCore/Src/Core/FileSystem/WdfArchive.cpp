@@ -35,76 +35,108 @@ static std::wstring ToWide(const std::string& utf8)
 // ============================================================================
 static uint32_t stringtoid(const char* str)
 {
-    uint32_t m[70] = {};
-    strncpy_s(reinterpret_cast<char*>(m), sizeof(m), str, 256);
-
-    int count = 0;
-    for (; count < 64 && m[count] != 0; ++count)
+    if (str == nullptr || *str == '\0')
     {
+        return 0;
     }
 
-    m[count++] = 0x9BE74448u;
-    m[count++] = 0x66F42C48u;
-
-    uint32_t v = 0xF4FA8928u;
-    uint32_t x = 0x37A8470Eu;
-    uint32_t y = 0x7758B42Bu;
-
-    for (int index = 0; index < count; ++index)
+    char   buffer[256] = {};
+    size_t len         = strlen(str);
+    if (len >= sizeof(buffer))
     {
-        v                = (v << 1) | (v >> 31);
-        const uint32_t w = 0x267B0B11u ^ v;
-
-        const uint32_t value  = m[index];
-        const uint32_t mixedX = x ^ value;
-        const uint32_t mixedY = y ^ value;
-
-        const uint32_t multX    = ((w + mixedY) | 0x02040801u) & 0xBFEF7FDFu;
-        const uint64_t productX = static_cast<uint64_t>(mixedX) * static_cast<uint64_t>(multX);
-        const uint32_t lowX     = static_cast<uint32_t>(productX);
-        const uint32_t highX    = static_cast<uint32_t>(productX >> 32);
-        const uint64_t sumX     = static_cast<uint64_t>(lowX) + static_cast<uint64_t>(highX) + (highX != 0 ? 1u : 0u);
-        uint32_t       nextX    = static_cast<uint32_t>(sumX);
-        if (sumX > 0xFFFFFFFFull)
-        {
-            ++nextX;
-        }
-
-        const uint32_t multY           = ((w + mixedX) | 0x00804021u) & 0x7DFEFBFFu;
-        const uint64_t productY        = static_cast<uint64_t>(mixedY) * static_cast<uint64_t>(multY);
-        const uint32_t lowY            = static_cast<uint32_t>(productY);
-        const uint32_t highY           = static_cast<uint32_t>(productY >> 32);
-        const uint64_t doubledHighY    = static_cast<uint64_t>(highY) + static_cast<uint64_t>(highY);
-        const uint32_t doubledHighYLow = static_cast<uint32_t>(doubledHighY);
-        const uint64_t sumY =
-            static_cast<uint64_t>(lowY) + static_cast<uint64_t>(doubledHighYLow) + (doubledHighY > 0xFFFFFFFFull ? 1u : 0u);
-        uint32_t nextY = static_cast<uint32_t>(sumY);
-        if (sumY > 0xFFFFFFFFull)
-        {
-            nextY += 2;
-        }
-
-        x = nextX;
-        y = nextY;
+        len = sizeof(buffer) - 1;
     }
 
-    return x ^ y;
+    for (size_t index = 0; index < len; ++index)
+    {
+        const char c = str[index];
+        if (c >= 'A' && c <= 'Z')
+        {
+            buffer[index] = static_cast<char>(c + ('a' - 'A'));
+        }
+        else if (c == '\\')
+        {
+            buffer[index] = '/';
+        }
+        else
+        {
+            buffer[index] = c;
+        }
+    }
+    buffer[len] = '\0';
+
+    uint32_t m[0x46] = {};
+    memcpy(m, buffer, (std::min)(sizeof(m) - sizeof(uint32_t) * 2, len + 1));
+
+    size_t wordLen = (len + 3) / 4;
+    m[wordLen++]   = 0x9BE74448u;
+    m[wordLen++]   = 0x66F42C48u;
+
+    uint32_t v   = 0xF4FA8928u;
+    uint32_t esi = 0x37A8470Eu;
+    uint32_t edi = 0x7758B42Bu;
+
+    for (size_t ecx = 0; ecx < wordLen; ++ecx)
+    {
+        uint32_t ebx = 0x267B0B11u;
+        v            = (v << 1) | (v >> 31);
+        ebx ^= v;
+
+        const uint32_t eax0 = m[ecx];
+        esi ^= eax0;
+        edi ^= eax0;
+
+        uint32_t edx = ebx + edi;
+        edx |= 0x02040801u;
+        edx &= 0xBFEF7FDFu;
+
+        uint64_t num = static_cast<uint64_t>(edx) * static_cast<uint64_t>(esi);
+        uint32_t eax = static_cast<uint32_t>(num);
+        edx          = static_cast<uint32_t>(num >> 32);
+        if (edx != 0)
+        {
+            ++eax;
+        }
+
+        num = static_cast<uint64_t>(eax) + static_cast<uint64_t>(edx);
+        eax = static_cast<uint32_t>(num);
+        if ((num >> 32) != 0)
+        {
+            ++eax;
+        }
+
+        edx = ebx + esi;
+        edx |= 0x00804021u;
+        edx &= 0x7DFEFBFFu;
+        esi = eax;
+
+        num = static_cast<uint64_t>(edi) * static_cast<uint64_t>(edx);
+        eax = static_cast<uint32_t>(num);
+        edx = static_cast<uint32_t>(num >> 32);
+
+        num = static_cast<uint64_t>(edx) * 2u;
+        edx = static_cast<uint32_t>(num);
+        if ((num >> 32) != 0)
+        {
+            ++eax;
+        }
+
+        num = static_cast<uint64_t>(eax) + static_cast<uint64_t>(edx);
+        eax = static_cast<uint32_t>(num);
+        if ((num >> 32) != 0)
+        {
+            eax += 2;
+        }
+
+        edi = eax;
+    }
+
+    return esi ^ edi;
 }
 
 static uint32_t NormalizeAndHash(const std::string& path)
 {
-    std::string n;
-    n.reserve(path.size());
-    for (char c : path)
-    {
-        if (c >= 'A' && c <= 'Z')
-            n += static_cast<char>(c + ('a' - 'A'));
-        else if (c == '\\')
-            n += '/';
-        else
-            n += c;
-    }
-    return stringtoid(n.c_str());
+    return stringtoid(path.c_str());
 }
 
 static const WdfIndexEntry* FindByUid(const std::vector<WdfIndexEntry>& index, uint32_t uid)
@@ -275,7 +307,52 @@ bool WdfArchive::HasEntry(const std::string& normalizedPath) const
     if (!m_IsOpen)
         return false;
 
-    return FindEntryWithLegacyAliases(m_Index, normalizedPath) != nullptr;
+    const WdfIndexEntry* entry = FindEntryWithLegacyAliases(m_Index, normalizedPath);
+    if (entry != nullptr)
+    {
+        return true;
+    }
+
+    static uint32_t s_WdfMissLogCount = 0;
+    if (s_WdfMissLogCount < 8)
+    {
+        const uint32_t uid         = NormalizeAndHash(normalizedPath);
+        bool           foundLinear = false;
+        for (const WdfIndexEntry& candidate : m_Index)
+        {
+            if (candidate.Uid == uid)
+            {
+                foundLinear = true;
+                break;
+            }
+        }
+
+        bool     foundAliasLinear = false;
+        uint32_t aliasUid         = 0;
+        if (normalizedPath.size() < 2 || normalizedPath[0] != '.' || normalizedPath[1] != '/')
+        {
+            aliasUid = NormalizeAndHash("./" + normalizedPath);
+            for (const WdfIndexEntry& candidate : m_Index)
+            {
+                if (candidate.Uid == aliasUid)
+                {
+                    foundAliasLinear = true;
+                    break;
+                }
+            }
+        }
+
+        LX_CORE_WARN("WdfArchive: lookup miss archive='{}' path='{}' uid={:08X} linear={} aliasUid={:08X} aliasLinear={}",
+                     m_Path,
+                     normalizedPath,
+                     uid,
+                     foundLinear,
+                     aliasUid,
+                     foundAliasLinear);
+        ++s_WdfMissLogCount;
+    }
+
+    return false;
 }
 
 std::optional<std::vector<uint8_t>> WdfArchive::ReadEntry(const std::string& normalizedPath) const

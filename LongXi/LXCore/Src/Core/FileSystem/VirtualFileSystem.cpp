@@ -26,6 +26,21 @@ static std::wstring ToWide(const std::string& utf8)
     return result;
 }
 
+static std::string GetArchiveRootLabel(const std::string& archivePath)
+{
+    const std::string normalizedPath = NormalizeVirtualResourcePath(archivePath, true);
+    if (normalizedPath.empty())
+    {
+        return {};
+    }
+
+    const size_t slashPos  = normalizedPath.find_last_of('/');
+    const size_t nameStart = (slashPos == std::string::npos) ? 0 : slashPos + 1;
+    const size_t dotPos    = normalizedPath.find_last_of('.');
+    const size_t nameEnd   = (dotPos == std::string::npos || dotPos <= nameStart) ? normalizedPath.size() : dotPos;
+    return normalizedPath.substr(nameStart, nameEnd - nameStart);
+}
+
 // ============================================================================
 // CVirtualFileSystem
 // ============================================================================
@@ -91,7 +106,15 @@ bool CVirtualFileSystem::MountWdf(const std::string& path)
     }
 
     m_MountPoints.push_back(std::make_unique<CWdfMountPoint>(std::move(archive)));
-    LX_CORE_INFO("[VFS] Mounted WDF archive: {}", path);
+    const std::string archiveRoot = GetArchiveRootLabel(path);
+    if (archiveRoot.empty())
+    {
+        LX_CORE_INFO("[VFS] Mounted WDF archive: {}", path);
+    }
+    else
+    {
+        LX_CORE_INFO("[VFS] Mounted WDF archive: {} (root={})", path, archiveRoot);
+    }
     return true;
 }
 

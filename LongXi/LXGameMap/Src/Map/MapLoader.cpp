@@ -303,6 +303,33 @@ bool ParseTerrainPartDescriptors(const std::vector<uint8_t>& bytes, std::vector<
     return !outDescriptors.empty();
 }
 
+std::string NormalizeCatalogDmapPath(const std::string& rawPath)
+{
+    std::string normalizedPath = NormalizeVirtualResourcePath(rawPath, true);
+    if (normalizedPath.empty())
+    {
+        return {};
+    }
+
+    if (!EndsWithInsensitive(normalizedPath, ".dmap"))
+    {
+        normalizedPath += ".dmap";
+    }
+
+    const std::string loweredPath = ToLowerAscii(normalizedPath);
+    if (loweredPath.rfind("map/map/", 0) == 0)
+    {
+        return normalizedPath;
+    }
+
+    if (loweredPath.rfind("map/", 0) == 0)
+    {
+        return "map/" + normalizedPath;
+    }
+
+    return "map/map/" + normalizedPath;
+}
+
 std::string FileNameFromPath(const std::string& path)
 {
     if (path.empty())
@@ -859,13 +886,22 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
     {
         outResolvedTexturePath.clear();
 
+        static uint32_t s_AniResolveFailureLogCount = 0;
+
         const AniSectionFrames* sections = loadAniSections(aniPath);
         if (sections == nullptr || sections->empty())
         {
+            if (s_AniResolveFailureLogCount < 8)
+            {
+                LX_MAP_WARN("[Map] ANI resolve failed: no sections loaded for '{}' (tag='{}')", aniPath, resourceTag);
+                ++s_AniResolveFailureLogCount;
+            }
             return false;
         }
 
         std::vector<std::string> sectionCandidates;
+        bool                     matchedSection = false;
+        std::vector<std::string> sampledFramePaths;
         auto                     pushSectionCandidate = [&sectionCandidates](const std::string& rawValue)
         {
             std::string normalized = ToLowerAscii(Trim(rawValue));
@@ -902,8 +938,15 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
                 continue;
             }
 
+            matchedSection = true;
+
             for (const std::string& framePath : sectionIt->second)
             {
+                if (sampledFramePaths.size() < 3)
+                {
+                    sampledFramePaths.push_back(framePath);
+                }
+
                 std::string resolvedFramePath;
                 if (TryResolveTexturePath(framePath, outDescriptor, vfs, resolvedFramePath))
                 {
@@ -917,6 +960,41 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
                     return true;
                 }
             }
+        }
+
+        if (s_AniResolveFailureLogCount < 8)
+        {
+            std::ostringstream message;
+            message << "ANI resolve failed: ani='" << aniPath << "' tag='" << resourceTag
+                    << "' matchedSection=" << (matchedSection ? "true" : "false");
+            if (!sectionCandidates.empty())
+            {
+                message << " candidates=";
+                for (size_t index = 0; index < sectionCandidates.size(); ++index)
+                {
+                    if (index > 0)
+                    {
+                        message << "|";
+                    }
+                    message << sectionCandidates[index];
+                }
+            }
+
+            if (!sampledFramePaths.empty())
+            {
+                message << " frameSample=";
+                for (size_t index = 0; index < sampledFramePaths.size(); ++index)
+                {
+                    if (index > 0)
+                    {
+                        message << "|";
+                    }
+                    message << sampledFramePaths[index];
+                }
+            }
+
+            LX_MAP_WARN("[Map] {}", message.str());
+            ++s_AniResolveFailureLogCount;
         }
 
         return false;
@@ -1792,15 +1870,6 @@ bool MapLoader::ParsePuzzle(const std::string&                                  
 
     if (resolvedPuzzlePath.empty())
     {
-        const std::string sameDirPul = ReplaceExtension(mapPath, ".pul");
-        if (vfs.Exists(sameDirPul))
-        {
-            resolvedPuzzlePath = sameDirPul;
-        }
-    }
-
-    if (resolvedPuzzlePath.empty())
-    {
         const std::string mapName            = BaseFileNameWithoutExtension(mapPath);
         const std::string standardPuzzlePath = "map/puzzle/" + mapName + ".pul";
         if (vfs.Exists(standardPuzzlePath))
@@ -2186,47 +2255,59 @@ bool MapLoader::ResolveMapPath(const std::string&        dMapPath,
             return false;
         }
 
-        const std::string loweredPath = ToLowerAscii(normalizedPath);
-        if (loweredPath.rfind("map/", 0) == 0)
-        {
-            if (tryResolveExistingPath(normalizedPath))
-            {
-                return true;
-            }
-
-            return tryResolveExistingPath("data/" + normalizedPath);
-        }
-
-        if (loweredPath.rfind("data/map/", 0) == 0)
-        {
-            if (tryResolveExistingPath(normalizedPath))
-            {
-                return true;
-            }
-
-            return tryResolveExistingPath(normalizedPath.substr(5));
-        }
-
         if (normalizedPath.find(':') != std::string::npos || (!normalizedPath.empty() && normalizedPath.front() == '/'))
         {
             return tryResolveExistingPath(normalizedPath);
         }
 
-        if (tryResolveExistingPath("map/map/" + normalizedPath))
+        const std::string loweredPath = ToLowerAscii(normalizedPath);
+        if (loweredPath.rfind("map/map/", 0) == 0)
         {
-            return true;
+            return tryResolveExistingPath(normalizedPath);
         }
 
-        if (tryResolveExistingPath("data/map/map/" + normalizedPath))
+        if (loweredPath.rfind("map/", 0) == 0)
         {
-            return true;
+            return tryResolveExistingPath("map/" + normalizedPath);
         }
 
-        return tryResolveExistingPath("data/map/" + normalizedPath);
+        return tryResolveExistingPath("map/map/" + normalizedPath);
+    };
+
+    auto applyCatalogMetadataForResolvedPath = [&vfs, &outResolvedPath, &outMapId, &outMapFlags, &outWarnings]()
+    {
+        if (outResolvedPath.empty())
+        {
+            return;
+        }
+
+        std::vector<MapCatalogEntry> entries;
+        if (!ParseGameMapDat(vfs, entries, outWarnings))
+        {
+            return;
+        }
+
+        std::vector<std::string> candidatePaths;
+        for (const MapCatalogEntry& entry : entries)
+        {
+            if (entry.Path.empty())
+            {
+                continue;
+            }
+
+            const std::string normalizedCandidate = NormalizeCatalogDmapPath(entry.Path);
+            if (!normalizedCandidate.empty() && normalizedCandidate == outResolvedPath)
+            {
+                outMapId    = entry.MapId;
+                outMapFlags = entry.Flags;
+                return;
+            }
+        }
     };
 
     if (tryResolveMapAssetPath(normalizedRequested))
     {
+        applyCatalogMetadataForResolvedPath();
         return true;
     }
 
@@ -2512,13 +2593,44 @@ bool MapLoader::TryResolveTexturePath(const std::string&   framePath,
 {
     outResolvedPath.clear();
 
+    static uint32_t s_TextureResolveFailureLogCount = 0;
+    auto logTextureResolveFailure = [](const std::string& candidatePath, const char* reason, const std::vector<uint8_t>* bytes = nullptr)
+    {
+        if (s_TextureResolveFailureLogCount >= 8)
+        {
+            return;
+        }
+
+        if (bytes != nullptr && !bytes->empty())
+        {
+            const uint8_t b0 = (*bytes)[0];
+            const uint8_t b1 = (bytes->size() > 1) ? (*bytes)[1] : 0;
+            const uint8_t b2 = (bytes->size() > 2) ? (*bytes)[2] : 0;
+            const uint8_t b3 = (bytes->size() > 3) ? (*bytes)[3] : 0;
+            LX_MAP_WARN("[Map] Texture resolve failed at {} for '{}' (size={}, firstBytes={:02X} {:02X} {:02X} {:02X})",
+                        reason,
+                        candidatePath,
+                        bytes->size(),
+                        b0,
+                        b1,
+                        b2,
+                        b3);
+        }
+        else
+        {
+            LX_MAP_WARN("[Map] Texture resolve failed at {} for '{}'", reason, candidatePath);
+        }
+
+        ++s_TextureResolveFailureLogCount;
+    };
+
     const std::string normalizedFramePath = NormalizeResourcePath(framePath);
     if (normalizedFramePath.empty())
     {
         return false;
     }
 
-    auto tryTexturePath = [&outResolvedPath, &vfs](const std::string& rawCandidate) -> bool
+    auto tryTexturePath = [&outResolvedPath, &vfs, &logTextureResolveFailure](const std::string& rawCandidate) -> bool
     {
         const std::string normalizedCandidate = NormalizeVirtualResourcePath(rawCandidate, true);
         if (normalizedCandidate.empty())
@@ -2539,12 +2651,20 @@ bool MapLoader::TryResolveTexturePath(const std::string&   framePath,
 
         if (!vfs.Exists(normalizedCandidate))
         {
+            logTextureResolveFailure(normalizedCandidate, "vfs.Exists");
             return false;
         }
 
         const std::vector<uint8_t> bytes = vfs.ReadAll(normalizedCandidate);
-        if (bytes.empty() || !LooksLikeTexturePayload(normalizedCandidate, bytes))
+        if (bytes.empty())
         {
+            logTextureResolveFailure(normalizedCandidate, "vfs.ReadAll-empty");
+            return false;
+        }
+
+        if (!LooksLikeTexturePayload(normalizedCandidate, bytes))
+        {
+            logTextureResolveFailure(normalizedCandidate, "payload-check", &bytes);
             return false;
         }
 
