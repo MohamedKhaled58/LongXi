@@ -1,8 +1,10 @@
 #include "Texture/TextureLoader.h"
-#include "Core/Logging/LogMacros.h"
+
 #include <algorithm>
 #include <cstring>
 #include <limits>
+
+#include "Core/Logging/LogMacros.h"
 
 namespace LongXi
 {
@@ -38,20 +40,20 @@ struct DDS_PIXELFORMAT
 
 struct DDS_HEADER
 {
-    uint32_t dwSize;
-    uint32_t dwFlags;
-    uint32_t dwHeight;
-    uint32_t dwWidth;
-    uint32_t dwPitchOrLinearSize;
-    uint32_t dwDepth;
-    uint32_t dwMipMapCount;
-    uint32_t dwReserved1[11];
+    uint32_t        dwSize;
+    uint32_t        dwFlags;
+    uint32_t        dwHeight;
+    uint32_t        dwWidth;
+    uint32_t        dwPitchOrLinearSize;
+    uint32_t        dwDepth;
+    uint32_t        dwMipMapCount;
+    uint32_t        dwReserved1[11];
     DDS_PIXELFORMAT ddspf;
-    uint32_t dwCaps;
-    uint32_t dwCaps2;
-    uint32_t dwCaps3;
-    uint32_t dwCaps4;
-    uint32_t dwReserved2;
+    uint32_t        dwCaps;
+    uint32_t        dwCaps2;
+    uint32_t        dwCaps3;
+    uint32_t        dwCaps4;
+    uint32_t        dwReserved2;
 };
 
 #pragma pack(pop)
@@ -87,18 +89,18 @@ struct DDS_HEADER
 
 struct TGA_HEADER
 {
-    uint8_t idLength;
-    uint8_t colorMapType;
-    uint8_t imageType;
+    uint8_t  idLength;
+    uint8_t  colorMapType;
+    uint8_t  imageType;
     uint16_t colorMapOrigin;
     uint16_t colorMapLength;
-    uint8_t colorMapEntrySize;
+    uint8_t  colorMapEntrySize;
     uint16_t xOrigin;
     uint16_t yOrigin;
     uint16_t width;
     uint16_t height;
-    uint8_t bitDepth;
-    uint8_t imageDescriptor;
+    uint8_t  bitDepth;
+    uint8_t  imageDescriptor;
 };
 
 #pragma pack(pop)
@@ -132,7 +134,7 @@ bool TextureLoader::LoadDDS(const std::vector<uint8_t>& data, TextureData& out)
     std::memcpy(&header, &data[4], sizeof(DDS_HEADER));
 
     // Extract dimensions
-    uint32_t width = header.dwWidth;
+    uint32_t width  = header.dwWidth;
     uint32_t height = header.dwHeight;
 
     if (width == 0 || height == 0)
@@ -143,7 +145,7 @@ bool TextureLoader::LoadDDS(const std::vector<uint8_t>& data, TextureData& out)
 
     // Determine format from pixel format
     TextureFormat format;
-    uint32_t blockSize = 0; // Bytes per block (for compressed formats)
+    uint32_t      blockSize = 0; // Bytes per block (for compressed formats)
 
     if (header.ddspf.dwFlags & DDPF_FOURCC)
     {
@@ -152,17 +154,17 @@ bool TextureLoader::LoadDDS(const std::vector<uint8_t>& data, TextureData& out)
 
         if (fourCC == FOURCC_DXT1)
         {
-            format = TextureFormat::DXT1;
+            format    = TextureFormat::DXT1;
             blockSize = 8;
         }
         else if (fourCC == FOURCC_DXT3)
         {
-            format = TextureFormat::DXT3;
+            format    = TextureFormat::DXT3;
             blockSize = 16;
         }
         else if (fourCC == FOURCC_DXT5)
         {
-            format = TextureFormat::DXT5;
+            format    = TextureFormat::DXT5;
             blockSize = 16;
         }
         else
@@ -189,7 +191,8 @@ bool TextureLoader::LoadDDS(const std::vector<uint8_t>& data, TextureData& out)
     {
         // Uncompressed: width * height * 4 bytes
         size_t texelCount = 0;
-        if (!CheckedMul(static_cast<size_t>(width), static_cast<size_t>(height), texelCount) || !CheckedMul(texelCount, size_t(4), pixelDataSize))
+        if (!CheckedMul(static_cast<size_t>(width), static_cast<size_t>(height), texelCount) ||
+            !CheckedMul(texelCount, size_t(4), pixelDataSize))
         {
             LX_ENGINE_ERROR("[Texture] DDS dimensions overflow size calculation: {}x{}", width, height);
             return false;
@@ -223,7 +226,7 @@ bool TextureLoader::LoadDDS(const std::vector<uint8_t>& data, TextureData& out)
     }
 
     // Copy pixel data from offset 128
-    out.Width = width;
+    out.Width  = width;
     out.Height = height;
     out.Format = format;
     out.Pixels.assign(data.begin() + 128, data.begin() + 128 + pixelDataSize);
@@ -249,9 +252,9 @@ bool TextureLoader::LoadTGA(const std::vector<uint8_t>& data, TextureData& out)
     std::memcpy(&header, data.data(), sizeof(TGA_HEADER));
 
     // Extract dimensions (little-endian)
-    uint32_t width = header.width;
-    uint32_t height = header.height;
-    bool topOrigin = (header.imageDescriptor & 0x20) != 0;
+    uint32_t width     = header.width;
+    uint32_t height    = header.height;
+    bool     topOrigin = (header.imageDescriptor & 0x20) != 0;
 
     if (width == 0 || height == 0)
     {
@@ -284,10 +287,11 @@ bool TextureLoader::LoadTGA(const std::vector<uint8_t>& data, TextureData& out)
     }
 
     // Calculate expected pixel data size
-    uint32_t bytesPerPixel = header.bitDepth / 8;
-    size_t expectedPixelSize = 0;
-    size_t pixelCount = 0;
-    if (!CheckedMul(static_cast<size_t>(width), static_cast<size_t>(height), pixelCount) || !CheckedMul(pixelCount, static_cast<size_t>(bytesPerPixel), expectedPixelSize))
+    uint32_t bytesPerPixel     = header.bitDepth / 8;
+    size_t   expectedPixelSize = 0;
+    size_t   pixelCount        = 0;
+    if (!CheckedMul(static_cast<size_t>(width), static_cast<size_t>(height), pixelCount) ||
+        !CheckedMul(pixelCount, static_cast<size_t>(bytesPerPixel), expectedPixelSize))
     {
         LX_ENGINE_ERROR("[Texture] TGA dimensions overflow size calculation: {}x{}", width, height);
         return false;
@@ -313,7 +317,7 @@ bool TextureLoader::LoadTGA(const std::vector<uint8_t>& data, TextureData& out)
 
     // Decode pixels
     std::vector<uint8_t> rgbaPixels;
-    size_t rgbaSize = 0;
+    size_t               rgbaSize = 0;
     if (!CheckedMul(pixelCount, size_t(4), rgbaSize))
     {
         LX_ENGINE_ERROR("[Texture] TGA dimensions overflow RGBA output size: {}x{}", width, height);
@@ -325,7 +329,7 @@ bool TextureLoader::LoadTGA(const std::vector<uint8_t>& data, TextureData& out)
     {
         // Uncompressed: direct copy/padding
         const uint8_t* src = data.data() + pixelOffset;
-        uint8_t* dst = rgbaPixels.data();
+        uint8_t*       dst = rgbaPixels.data();
 
         for (size_t i = 0; i < pixelCount; ++i)
         {
@@ -352,15 +356,15 @@ bool TextureLoader::LoadTGA(const std::vector<uint8_t>& data, TextureData& out)
     else // TGA_TYPE_RUN_LENGTH_ENCODED
     {
         // RLE decompression
-        const uint8_t* src = data.data() + pixelOffset;
-        const uint8_t* srcEnd = data.data() + data.size();
-        uint8_t* dst = rgbaPixels.data();
-        size_t decodedPixelCount = 0;
+        const uint8_t* src               = data.data() + pixelOffset;
+        const uint8_t* srcEnd            = data.data() + data.size();
+        uint8_t*       dst               = rgbaPixels.data();
+        size_t         decodedPixelCount = 0;
 
         while (decodedPixelCount < pixelCount && src < srcEnd)
         {
             uint8_t packet = *src++;
-            uint8_t count = (packet & 0x7F) + 1; // Low 7 bits + 1
+            uint8_t count  = (packet & 0x7F) + 1; // Low 7 bits + 1
 
             if (packet & 0x80) // Run-length packet
             {
@@ -453,12 +457,12 @@ bool TextureLoader::LoadTGA(const std::vector<uint8_t>& data, TextureData& out)
     // 1 = top-left origin (already correct)
     if (!topOrigin)
     {
-        uint32_t rowBytes = width * 4;
+        uint32_t             rowBytes = width * 4;
         std::vector<uint8_t> tempRow(rowBytes);
 
         for (uint32_t y = 0; y < height / 2; ++y)
         {
-            uint8_t* topRow = rgbaPixels.data() + y * rowBytes;
+            uint8_t* topRow    = rgbaPixels.data() + y * rowBytes;
             uint8_t* bottomRow = rgbaPixels.data() + (height - 1 - y) * rowBytes;
 
             std::memcpy(tempRow.data(), topRow, rowBytes);
@@ -468,7 +472,7 @@ bool TextureLoader::LoadTGA(const std::vector<uint8_t>& data, TextureData& out)
     }
 
     // Output
-    out.Width = width;
+    out.Width  = width;
     out.Height = height;
     out.Format = TextureFormat::RGBA8;
     out.Pixels = std::move(rgbaPixels);

@@ -1,9 +1,9 @@
 #include "Renderer/Backend/DX11/DX11Buffers.h"
 
-#include "Core/Logging/LogMacros.h"
-
 #include <algorithm>
 #include <cstring>
+
+#include "Core/Logging/LogMacros.h"
 
 namespace LongXi
 {
@@ -119,15 +119,15 @@ D3D11_MAP ToD3D11Map(RendererMapMode mode)
 
 void DX11Buffers::Initialize(ID3D11Device* device, ID3D11DeviceContext* context, DX11ResourceTables* resourceTables)
 {
-    m_Device = device;
-    m_Context = context;
+    m_Device         = device;
+    m_Context        = context;
     m_ResourceTables = resourceTables;
 }
 
 void DX11Buffers::Shutdown()
 {
-    m_Device = nullptr;
-    m_Context = nullptr;
+    m_Device         = nullptr;
+    m_Context        = nullptr;
     m_ResourceTables = nullptr;
 }
 
@@ -177,12 +177,12 @@ RendererBufferHandle DX11Buffers::RegisterBuffer(const RendererBufferDesc& desc,
     }
 
     DX11BufferRecord record = {};
-    record.Type = desc.Type;
-    record.ByteSize = desc.ByteSize;
-    record.Usage = desc.Usage;
-    record.CpuAccess = desc.CpuAccess;
-    record.BindFlags = desc.BindFlags;
-    record.Buffer = buffer;
+    record.Type             = desc.Type;
+    record.ByteSize         = desc.ByteSize;
+    record.Usage            = desc.Usage;
+    record.CpuAccess        = desc.CpuAccess;
+    record.BindFlags        = desc.BindFlags;
+    record.Buffer           = buffer;
 
     switch (desc.Type)
     {
@@ -203,8 +203,8 @@ RendererBufferHandle DX11Buffers::RegisterBuffer(const RendererBufferDesc& desc,
 RendererVertexBufferHandle DX11Buffers::CreateVertexBuffer(const RendererBufferDesc& desc, RendererResult& outResult)
 {
     RendererBufferDesc typedDesc = desc;
-    typedDesc.Type = RendererBufferType::Vertex;
-    typedDesc.BindFlags = (typedDesc.BindFlags == RendererBindFlags::None) ? RendererBindFlags::VertexBuffer : typedDesc.BindFlags;
+    typedDesc.Type               = RendererBufferType::Vertex;
+    typedDesc.BindFlags          = (typedDesc.BindFlags == RendererBindFlags::None) ? RendererBindFlags::VertexBuffer : typedDesc.BindFlags;
 
     if (!m_Device || !m_ResourceTables || !ValidateDescriptor(typedDesc, outResult))
     {
@@ -216,21 +216,21 @@ RendererVertexBufferHandle DX11Buffers::CreateVertexBuffer(const RendererBufferD
     }
 
     D3D11_BUFFER_DESC bufferDesc = {};
-    bufferDesc.Usage = ToD3D11Usage(typedDesc.Usage, typedDesc.InitialData != nullptr);
-    bufferDesc.ByteWidth = typedDesc.ByteSize;
-    bufferDesc.BindFlags = ToD3D11Bind(typedDesc.BindFlags);
-    bufferDesc.CPUAccessFlags = ToD3D11CpuAccess(typedDesc.CpuAccess);
+    bufferDesc.Usage             = ToD3D11Usage(typedDesc.Usage, typedDesc.InitialData != nullptr);
+    bufferDesc.ByteWidth         = typedDesc.ByteSize;
+    bufferDesc.BindFlags         = ToD3D11Bind(typedDesc.BindFlags);
+    bufferDesc.CPUAccessFlags    = ToD3D11CpuAccess(typedDesc.CpuAccess);
 
-    D3D11_SUBRESOURCE_DATA initData = {};
+    D3D11_SUBRESOURCE_DATA  initData    = {};
     D3D11_SUBRESOURCE_DATA* initDataPtr = nullptr;
     if (typedDesc.InitialData)
     {
         initData.pSysMem = typedDesc.InitialData;
-        initDataPtr = &initData;
+        initDataPtr      = &initData;
     }
 
     Microsoft::WRL::ComPtr<ID3D11Buffer> buffer;
-    const HRESULT hr = m_Device->CreateBuffer(&bufferDesc, initDataPtr, &buffer);
+    const HRESULT                        hr = m_Device->CreateBuffer(&bufferDesc, initDataPtr, &buffer);
     if (FAILED(hr))
     {
         LX_ENGINE_ERROR("[Renderer] CreateBuffer(Vertex) failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
@@ -255,8 +255,8 @@ RendererVertexBufferHandle DX11Buffers::CreateVertexBuffer(const RendererBufferD
 RendererIndexBufferHandle DX11Buffers::CreateIndexBuffer(const RendererBufferDesc& desc, RendererResult& outResult)
 {
     RendererBufferDesc typedDesc = desc;
-    typedDesc.Type = RendererBufferType::Index;
-    typedDesc.BindFlags = (typedDesc.BindFlags == RendererBindFlags::None) ? RendererBindFlags::IndexBuffer : typedDesc.BindFlags;
+    typedDesc.Type               = RendererBufferType::Index;
+    typedDesc.BindFlags          = (typedDesc.BindFlags == RendererBindFlags::None) ? RendererBindFlags::IndexBuffer : typedDesc.BindFlags;
 
     if (!m_Device || !m_ResourceTables || !ValidateDescriptor(typedDesc, outResult))
     {
@@ -268,21 +268,21 @@ RendererIndexBufferHandle DX11Buffers::CreateIndexBuffer(const RendererBufferDes
     }
 
     D3D11_BUFFER_DESC bufferDesc = {};
-    bufferDesc.Usage = ToD3D11Usage(typedDesc.Usage, typedDesc.InitialData != nullptr);
-    bufferDesc.ByteWidth = typedDesc.ByteSize;
-    bufferDesc.BindFlags = ToD3D11Bind(typedDesc.BindFlags);
-    bufferDesc.CPUAccessFlags = ToD3D11CpuAccess(typedDesc.CpuAccess);
+    bufferDesc.Usage             = ToD3D11Usage(typedDesc.Usage, typedDesc.InitialData != nullptr);
+    bufferDesc.ByteWidth         = typedDesc.ByteSize;
+    bufferDesc.BindFlags         = ToD3D11Bind(typedDesc.BindFlags);
+    bufferDesc.CPUAccessFlags    = ToD3D11CpuAccess(typedDesc.CpuAccess);
 
-    D3D11_SUBRESOURCE_DATA initData = {};
+    D3D11_SUBRESOURCE_DATA  initData    = {};
     D3D11_SUBRESOURCE_DATA* initDataPtr = nullptr;
     if (typedDesc.InitialData)
     {
         initData.pSysMem = typedDesc.InitialData;
-        initDataPtr = &initData;
+        initDataPtr      = &initData;
     }
 
     Microsoft::WRL::ComPtr<ID3D11Buffer> buffer;
-    const HRESULT hr = m_Device->CreateBuffer(&bufferDesc, initDataPtr, &buffer);
+    const HRESULT                        hr = m_Device->CreateBuffer(&bufferDesc, initDataPtr, &buffer);
     if (FAILED(hr))
     {
         LX_ENGINE_ERROR("[Renderer] CreateBuffer(Index) failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
@@ -307,9 +307,9 @@ RendererIndexBufferHandle DX11Buffers::CreateIndexBuffer(const RendererBufferDes
 RendererConstantBufferHandle DX11Buffers::CreateConstantBuffer(const RendererBufferDesc& desc, RendererResult& outResult)
 {
     RendererBufferDesc typedDesc = desc;
-    typedDesc.Type = RendererBufferType::Constant;
+    typedDesc.Type               = RendererBufferType::Constant;
     typedDesc.BindFlags = (typedDesc.BindFlags == RendererBindFlags::None) ? RendererBindFlags::ConstantBuffer : typedDesc.BindFlags;
-    typedDesc.Stride = 16;
+    typedDesc.Stride    = 16;
 
     if (!m_Device || !m_ResourceTables || !ValidateDescriptor(typedDesc, outResult))
     {
@@ -321,21 +321,21 @@ RendererConstantBufferHandle DX11Buffers::CreateConstantBuffer(const RendererBuf
     }
 
     D3D11_BUFFER_DESC bufferDesc = {};
-    bufferDesc.Usage = ToD3D11Usage(typedDesc.Usage, typedDesc.InitialData != nullptr);
-    bufferDesc.ByteWidth = typedDesc.ByteSize;
-    bufferDesc.BindFlags = ToD3D11Bind(typedDesc.BindFlags);
-    bufferDesc.CPUAccessFlags = ToD3D11CpuAccess(typedDesc.CpuAccess);
+    bufferDesc.Usage             = ToD3D11Usage(typedDesc.Usage, typedDesc.InitialData != nullptr);
+    bufferDesc.ByteWidth         = typedDesc.ByteSize;
+    bufferDesc.BindFlags         = ToD3D11Bind(typedDesc.BindFlags);
+    bufferDesc.CPUAccessFlags    = ToD3D11CpuAccess(typedDesc.CpuAccess);
 
-    D3D11_SUBRESOURCE_DATA initData = {};
+    D3D11_SUBRESOURCE_DATA  initData    = {};
     D3D11_SUBRESOURCE_DATA* initDataPtr = nullptr;
     if (typedDesc.InitialData)
     {
         initData.pSysMem = typedDesc.InitialData;
-        initDataPtr = &initData;
+        initDataPtr      = &initData;
     }
 
     Microsoft::WRL::ComPtr<ID3D11Buffer> buffer;
-    const HRESULT hr = m_Device->CreateBuffer(&bufferDesc, initDataPtr, &buffer);
+    const HRESULT                        hr = m_Device->CreateBuffer(&bufferDesc, initDataPtr, &buffer);
     if (FAILED(hr))
     {
         LX_ENGINE_ERROR("[Renderer] CreateBuffer(Constant) failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
@@ -394,7 +394,7 @@ bool DX11Buffers::UpdateBuffer(const RendererBufferUpdateRequest& request, Rende
         return false;
     }
 
-    DX11BufferRecord* record = nullptr;
+    DX11BufferRecord*  record      = nullptr;
     RendererResultCode resolveCode = RendererResultCode::Success;
     if (!m_ResourceTables->ResolveBuffer(request.Handle, record, resolveCode))
     {
@@ -414,8 +414,8 @@ bool DX11Buffers::UpdateBuffer(const RendererBufferUpdateRequest& request, Rende
         return false;
     }
 
-    D3D11_MAPPED_SUBRESOURCE mapped = {};
-    D3D11_MAP mapType = D3D11_MAP_WRITE_DISCARD;
+    D3D11_MAPPED_SUBRESOURCE mapped  = {};
+    D3D11_MAP                mapType = D3D11_MAP_WRITE_DISCARD;
     if (record->Usage == RendererResourceUsage::Staging)
     {
         mapType = D3D11_MAP_WRITE;
@@ -435,7 +435,7 @@ bool DX11Buffers::UpdateBuffer(const RendererBufferUpdateRequest& request, Rende
 
 bool DX11Buffers::MapBuffer(const RendererMapRequest& request, RendererMappedResource& mapped, RendererResult& outResult)
 {
-    mapped = {};
+    mapped         = {};
     outResult.Code = RendererResultCode::Success;
 
     if (!m_Context || !m_ResourceTables)
@@ -444,7 +444,7 @@ bool DX11Buffers::MapBuffer(const RendererMapRequest& request, RendererMappedRes
         return false;
     }
 
-    DX11BufferRecord* record = nullptr;
+    DX11BufferRecord*  record      = nullptr;
     RendererResultCode resolveCode = RendererResultCode::Success;
     if (!m_ResourceTables->ResolveBuffer(request.Handle, record, resolveCode))
     {
@@ -458,7 +458,8 @@ bool DX11Buffers::MapBuffer(const RendererMapRequest& request, RendererMappedRes
         return false;
     }
 
-    if ((request.Mode == RendererMapMode::WriteDiscard || request.Mode == RendererMapMode::WriteNoOverwrite) && !HasAnyCpuAccess(record->CpuAccess, RendererCpuAccessFlags::Write))
+    if ((request.Mode == RendererMapMode::WriteDiscard || request.Mode == RendererMapMode::WriteNoOverwrite) &&
+        !HasAnyCpuAccess(record->CpuAccess, RendererCpuAccessFlags::Write))
     {
         outResult.Code = RendererResultCode::InvalidOperation;
         return false;
@@ -472,7 +473,7 @@ bool DX11Buffers::MapBuffer(const RendererMapRequest& request, RendererMappedRes
     }
 
     D3D11_MAPPED_SUBRESOURCE dxMapped = {};
-    const HRESULT mapHr = m_Context->Map(record->Buffer.Get(), 0, ToD3D11Map(request.Mode), 0, &dxMapped);
+    const HRESULT            mapHr    = m_Context->Map(record->Buffer.Get(), 0, ToD3D11Map(request.Mode), 0, &dxMapped);
     if (FAILED(mapHr))
     {
         RendererResultCode rollbackCode = RendererResultCode::Success;
@@ -481,10 +482,10 @@ bool DX11Buffers::MapBuffer(const RendererMapRequest& request, RendererMappedRes
         return false;
     }
 
-    mapped.Data = dxMapped.pData;
-    mapped.RowPitch = dxMapped.RowPitch;
+    mapped.Data       = dxMapped.pData;
+    mapped.RowPitch   = dxMapped.RowPitch;
     mapped.DepthPitch = dxMapped.DepthPitch;
-    outResult.Code = RendererResultCode::Success;
+    outResult.Code    = RendererResultCode::Success;
     return true;
 }
 
@@ -498,7 +499,7 @@ bool DX11Buffers::UnmapBuffer(RendererBufferHandle handle, RendererResult& outRe
         return false;
     }
 
-    DX11BufferRecord* record = nullptr;
+    DX11BufferRecord*  record      = nullptr;
     RendererResultCode resolveCode = RendererResultCode::Success;
     if (!m_ResourceTables->ResolveBuffer(handle, record, resolveCode))
     {

@@ -1,7 +1,8 @@
 #pragma once
 
-#include "Texture/TextureData.h"
 #include <vector>
+
+#include "Texture/TextureData.h"
 
 // =============================================================================
 // TextureLoader — Static texture decoder
@@ -25,7 +26,7 @@ public:
     static bool LoadTGA(const std::vector<uint8_t>& data, TextureData& out);
 
     // Non-instantiable
-    TextureLoader() = delete;
+    TextureLoader()  = delete;
     ~TextureLoader() = delete;
 };
 

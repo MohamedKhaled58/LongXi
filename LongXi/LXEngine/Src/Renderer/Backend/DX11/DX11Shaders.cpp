@@ -7,13 +7,13 @@ namespace LongXi
 
 void DX11Shaders::Initialize(ID3D11Device* device, DX11ResourceTables* resourceTables)
 {
-    m_Device = device;
+    m_Device         = device;
     m_ResourceTables = resourceTables;
 }
 
 void DX11Shaders::Shutdown()
 {
-    m_Device = nullptr;
+    m_Device         = nullptr;
     m_ResourceTables = nullptr;
 }
 
@@ -34,7 +34,7 @@ RendererShaderHandle DX11Shaders::CreateShaderInternal(const RendererShaderDesc&
     }
 
     DX11ShaderRecord record = {};
-    record.Stage = stage;
+    record.Stage            = stage;
 
     if (stage == RendererShaderStage::Vertex)
     {

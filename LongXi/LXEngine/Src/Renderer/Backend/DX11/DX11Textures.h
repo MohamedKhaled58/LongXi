@@ -12,12 +12,12 @@ public:
     void Shutdown();
 
     RendererTextureHandle CreateTexture(const RendererTextureDesc& desc, RendererResult& outResult);
-    bool DestroyTexture(RendererTextureHandle handle, RendererResult& outResult);
+    bool                  DestroyTexture(RendererTextureHandle handle, RendererResult& outResult);
 
     ID3D11ShaderResourceView* ResolveShaderResourceView(RendererTextureHandle handle, RendererResultCode& outError) const;
 
 private:
-    ID3D11Device* m_Device = nullptr;
+    ID3D11Device*       m_Device         = nullptr;
     DX11ResourceTables* m_ResourceTables = nullptr;
 };
 

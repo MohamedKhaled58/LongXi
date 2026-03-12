@@ -116,13 +116,13 @@ UINT ToD3D11BindFlags(RendererBindFlags bindFlags)
 
 void DX11Textures::Initialize(ID3D11Device* device, DX11ResourceTables* resourceTables)
 {
-    m_Device = device;
+    m_Device         = device;
     m_ResourceTables = resourceTables;
 }
 
 void DX11Textures::Shutdown()
 {
-    m_Device = nullptr;
+    m_Device         = nullptr;
     m_ResourceTables = nullptr;
 }
 
@@ -162,28 +162,28 @@ RendererTextureHandle DX11Textures::CreateTexture(const RendererTextureDesc& des
     }
 
     D3D11_TEXTURE2D_DESC textureDesc = {};
-    textureDesc.Width = desc.Width;
-    textureDesc.Height = desc.Height;
-    textureDesc.MipLevels = 1;
-    textureDesc.ArraySize = 1;
-    textureDesc.Format = dxgiFormat;
-    textureDesc.SampleDesc.Count = 1;
-    textureDesc.Usage = ToD3D11Usage(desc);
-    textureDesc.BindFlags = (desc.Usage == RendererResourceUsage::Staging) ? 0 : ToD3D11BindFlags(desc.BindFlags);
-    textureDesc.CPUAccessFlags = ToD3D11CpuAccess(desc.CpuAccess);
+    textureDesc.Width                = desc.Width;
+    textureDesc.Height               = desc.Height;
+    textureDesc.MipLevels            = 1;
+    textureDesc.ArraySize            = 1;
+    textureDesc.Format               = dxgiFormat;
+    textureDesc.SampleDesc.Count     = 1;
+    textureDesc.Usage                = ToD3D11Usage(desc);
+    textureDesc.BindFlags            = (desc.Usage == RendererResourceUsage::Staging) ? 0 : ToD3D11BindFlags(desc.BindFlags);
+    textureDesc.CPUAccessFlags       = ToD3D11CpuAccess(desc.CpuAccess);
 
-    D3D11_SUBRESOURCE_DATA initData = {};
+    D3D11_SUBRESOURCE_DATA  initData    = {};
     D3D11_SUBRESOURCE_DATA* initDataPtr = nullptr;
 
     if (desc.InitialData)
     {
-        initData.pSysMem = desc.InitialData;
+        initData.pSysMem     = desc.InitialData;
         initData.SysMemPitch = (desc.InitialRowPitch > 0) ? desc.InitialRowPitch : ComputeDefaultRowPitch(desc);
-        initDataPtr = &initData;
+        initDataPtr          = &initData;
     }
 
     Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
-    const HRESULT textureHr = m_Device->CreateTexture2D(&textureDesc, initDataPtr, &texture);
+    const HRESULT                           textureHr = m_Device->CreateTexture2D(&textureDesc, initDataPtr, &texture);
     if (FAILED(textureHr))
     {
         LX_ENGINE_ERROR("[Renderer] CreateTexture2D failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(textureHr));
@@ -203,10 +203,10 @@ RendererTextureHandle DX11Textures::CreateTexture(const RendererTextureDesc& des
         }
     }
 
-    DX11TextureRecord record = {};
-    record.Usage = desc.Usage;
-    record.BindFlags = desc.BindFlags;
-    record.Texture = texture;
+    DX11TextureRecord record  = {};
+    record.Usage              = desc.Usage;
+    record.BindFlags          = desc.BindFlags;
+    record.Texture            = texture;
     record.ShaderResourceView = shaderResourceView;
 
     RendererTextureHandle handle = m_ResourceTables->RegisterTexture(record);

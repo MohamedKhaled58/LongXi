@@ -13,7 +13,7 @@ bool TileGrid::Initialize(uint32_t width, uint32_t height)
         return false;
     }
 
-    m_Width = width;
+    m_Width  = width;
     m_Height = height;
     m_Tiles.clear();
     m_Tiles.resize(static_cast<size_t>(width) * static_cast<size_t>(height));
@@ -24,7 +24,7 @@ bool TileGrid::Initialize(uint32_t width, uint32_t height)
 
 void TileGrid::Clear()
 {
-    m_Width = 0;
+    m_Width  = 0;
     m_Height = 0;
     m_Tiles.clear();
     m_RowChecksums.clear();
@@ -33,7 +33,8 @@ void TileGrid::Clear()
 
 bool TileGrid::IsValid() const
 {
-    return m_Width > 0 && m_Height > 0 && m_Tiles.size() == static_cast<size_t>(m_Width) * static_cast<size_t>(m_Height) && m_IntegrityValid;
+    return m_Width > 0 && m_Height > 0 && m_Tiles.size() == static_cast<size_t>(m_Width) * static_cast<size_t>(m_Height) &&
+           m_IntegrityValid;
 }
 
 uint32_t TileGrid::GetWidth() const
@@ -94,7 +95,8 @@ void TileGrid::ComputeRowChecksums()
         {
             const TileRecord& tile = m_Tiles[GetIndex(static_cast<int32_t>(x), static_cast<int32_t>(y))];
             const int32_t left = static_cast<int32_t>(tile.MaskId) * (static_cast<int32_t>(tile.TerrainId) + static_cast<int32_t>(y) + 1);
-            const int32_t right = (static_cast<int32_t>(tile.Height) + 2) * (static_cast<int32_t>(x) + 1 + static_cast<int32_t>(tile.TerrainId));
+            const int32_t right =
+                (static_cast<int32_t>(tile.Height) + 2) * (static_cast<int32_t>(x) + 1 + static_cast<int32_t>(tile.TerrainId));
             rowChecksum += static_cast<uint32_t>(left + right);
         }
 
@@ -157,7 +159,7 @@ void TileGrid::EnumerateVisible(const VisibleTileWindow& window, std::vector<con
     for (int32_t depth = minDepth; depth <= maxDepth; ++depth)
     {
         const int32_t startX = std::max(minX, depth - maxY);
-        const int32_t endX = std::min(maxX, depth - minY);
+        const int32_t endX   = std::min(maxX, depth - minY);
         for (int32_t x = startX; x <= endX; ++x)
         {
             const int32_t y = depth - x;

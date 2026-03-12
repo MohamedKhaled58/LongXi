@@ -27,7 +27,7 @@ namespace LongXi
 struct WdfHeader
 {
     uint32_t Id;     // [Partially Confirmed — field present; semantic unknown; NOT validated]
-    int32_t Count;   // [Confirmed — number of entries in the index table]
+    int32_t  Count;  // [Confirmed — number of entries in the index table]
     uint32_t Offset; // [Confirmed — byte offset from file start to the index table]
 };
 
@@ -49,7 +49,7 @@ public:
     WdfArchive();
     ~WdfArchive();
 
-    WdfArchive(const WdfArchive&) = delete;
+    WdfArchive(const WdfArchive&)            = delete;
     WdfArchive& operator=(const WdfArchive&) = delete;
 
     // Open a .wdf archive at the given absolute path (UTF-8, forward-slash).
@@ -57,10 +57,10 @@ public:
     // Returns false on any failure (logged).
     bool Open(const std::string& absolutePath);
 
-    void Close();
-    bool IsOpen() const;
+    void               Close();
+    bool               IsOpen() const;
     const std::string& GetPath() const;
-    int GetEntryCount() const;
+    int                GetEntryCount() const;
 
     bool HasEntry(const std::string& normalizedPath) const;
 
@@ -72,11 +72,11 @@ private:
     uint32_t ComputeUid(const std::string& path) const;
 
 private:
-    std::string m_Path;
-    mutable std::ifstream m_File;       // mutable — seekg/read are non-const
+    std::string                m_Path;
+    mutable std::ifstream      m_File;  // mutable — seekg/read are non-const
     std::vector<WdfIndexEntry> m_Index; // sorted by Uid after Open()
-    bool m_IsOpen;
-    mutable std::mutex m_Mutex;
+    bool                       m_IsOpen;
+    mutable std::mutex         m_Mutex;
 };
 
 } // namespace LongXi

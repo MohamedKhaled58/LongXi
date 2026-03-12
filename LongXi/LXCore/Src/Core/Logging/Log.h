@@ -1,7 +1,7 @@
 #pragma once
 
-#include <spdlog/spdlog.h>
 #include <memory>
+#include <spdlog/spdlog.h>
 
 // =============================================================================
 // Log — Central logging system for all LongXi modules
@@ -22,19 +22,27 @@ public:
     {
         return s_CoreLogger;
     }
+
     static std::shared_ptr<spdlog::logger>& GetEngineLogger()
     {
         return s_EngineLogger;
     }
+
     static std::shared_ptr<spdlog::logger>& GetShellLogger()
     {
         return s_ShellLogger;
+    }
+
+    static std::shared_ptr<spdlog::logger>& GetMapLogger()
+    {
+        return s_MapLogger;
     }
 
 private:
     static std::shared_ptr<spdlog::logger> s_CoreLogger;
     static std::shared_ptr<spdlog::logger> s_EngineLogger;
     static std::shared_ptr<spdlog::logger> s_ShellLogger;
+    static std::shared_ptr<spdlog::logger> s_MapLogger;
 };
 
 } // namespace LongXi

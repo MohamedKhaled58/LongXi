@@ -26,7 +26,7 @@ class IFileStream
 public:
     virtual ~IFileStream() = default;
 
-    IFileStream(const IFileStream&) = delete;
+    IFileStream(const IFileStream&)            = delete;
     IFileStream& operator=(const IFileStream&) = delete;
 
     // Read up to `size` bytes into `buffer` from the current position.
@@ -57,18 +57,18 @@ public:
     explicit CFileDiskStream(const std::string& absolutePath);
     ~CFileDiskStream() override;
 
-    CFileDiskStream(const CFileDiskStream&) = delete;
+    CFileDiskStream(const CFileDiskStream&)            = delete;
     CFileDiskStream& operator=(const CFileDiskStream&) = delete;
 
     size_t Read(void* buffer, size_t size) override;
-    bool Seek(size_t offset) override;
+    bool   Seek(size_t offset) override;
     size_t Tell() const override;
     size_t Size() const override;
 
 private:
     std::ifstream m_File;
-    size_t m_Size;
-    size_t m_Position;
+    size_t        m_Size;
+    size_t        m_Position;
 };
 
 // =============================================================================
@@ -81,17 +81,17 @@ public:
     explicit CFileWdfStream(std::vector<uint8_t> data);
     ~CFileWdfStream() override = default;
 
-    CFileWdfStream(const CFileWdfStream&) = delete;
+    CFileWdfStream(const CFileWdfStream&)            = delete;
     CFileWdfStream& operator=(const CFileWdfStream&) = delete;
 
     size_t Read(void* buffer, size_t size) override;
-    bool Seek(size_t offset) override;
+    bool   Seek(size_t offset) override;
     size_t Tell() const override;
     size_t Size() const override;
 
 private:
     std::vector<uint8_t> m_Data;
-    size_t m_Position;
+    size_t               m_Position;
 };
 
 } // namespace LongXi

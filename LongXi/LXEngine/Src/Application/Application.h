@@ -23,26 +23,28 @@ public:
 
     // Core lifecycle methods
     virtual bool Initialize(); // Setup Win32 window and engine
-    virtual int Run();         // Own message pump until shutdown
+    virtual int  Run();        // Own message pump until shutdown
     virtual void Shutdown();   // Teardown resources, exit cleanly
 
 protected:
     // Protected accessors for subclasses
     Engine& GetEngine();
+
     HWND GetWindowHandle() const
     {
         return m_WindowHandle;
     }
+
     Win32Window& GetWindow()
     {
         return *m_Window;
     }
 
 private:
-    HWND m_WindowHandle;
-    bool m_Initialized;
+    HWND                         m_WindowHandle;
+    bool                         m_Initialized;
     std::unique_ptr<Win32Window> m_Window;
-    std::unique_ptr<Engine> m_Engine;
+    std::unique_ptr<Engine>      m_Engine;
 
     bool CreateMainWindow();
     void DestroyMainWindow();

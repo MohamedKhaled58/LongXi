@@ -3,90 +3,90 @@ Language: Cpp
 BasedOnStyle: Microsoft
 Standard: Latest
 
-# ── Indentation & Layout ─────────────────────────────────────────────────────
-IndentWidth:                      4
-TabWidth:                         4
-UseTab:                           Never
-ContinuationIndentWidth:          4
+# ── Indentation & Layout ─────────────────────────────────────
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ContinuationIndentWidth: 4
 ConstructorInitializerIndentWidth: 4
-AccessModifierOffset:             -4
-NamespaceIndentation:             None
-FixNamespaceComments:             true
-ColumnLimit:                      200
-MaxEmptyLinesToKeep:              2
+AccessModifierOffset: -4
+NamespaceIndentation: None
+FixNamespaceComments: true
+
+ColumnLimit: 140
+MaxEmptyLinesToKeep: 2
 KeepEmptyLinesAtTheStartOfBlocks: false
 
-# ── Brace Placement (Allman) ─────────────────────────────────────────────────
+# ── Brace Placement (Allman) ──────────────────────────────────
 BreakBeforeBraces: Allman
 
-# ── Short Statement Rules ────────────────────────────────────────────────────
+# ── Short Statement Rules ─────────────────────────────────────
 AllowShortIfStatementsOnASingleLine: Never
-AllowShortLoopsOnASingleLine:        false
-AllowShortFunctionsOnASingleLine:    Empty
-AllowShortBlocksOnASingleLine:       Never
-AllowShortEnumsOnASingleLine:        false
-AllowShortCaseLabelsOnASingleLine:   false
-AllowShortLambdasOnASingleLine:      Empty
+AllowShortLoopsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortBlocksOnASingleLine: Never
+AllowShortEnumsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortLambdasOnASingleLine: Empty
 
-# ── Function / Parameter / Call Formatting ───────────────────────────────────
-BinPackArguments:                         false
-BinPackParameters:                        false
-AlignAfterOpenBracket:                    Align
-AllowAllArgumentsOnNextLine:              true
+# ── Function / Parameter / Call Formatting ────────────────────
+BinPackArguments: false
+BinPackParameters: false
+AlignAfterOpenBracket: Align
+AllowAllArgumentsOnNextLine: true
 AllowAllParametersOfDeclarationOnNextLine: true
 
-# ── Class & Hierarchy Formatting ─────────────────────────────────────────────
-# Puts the colon and each base class on its own line:
-#   class Foo
-#       : public Bar
-#       , public Baz
+# ── Class & Hierarchy Formatting ──────────────────────────────
 BreakInheritanceList: BeforeComma
-
-# Puts each constructor initializer on its own line:
-#   Foo()
-#       : m_A(0)
-#       , m_B(1)
 BreakConstructorInitializers: BeforeComma
-PackConstructorInitializers:  Never
+PackConstructorInitializers: Never
 
-# Case labels are indented under switch for clear visual nesting
-IndentCaseLabels:  true
-IndentCaseBlocks:  false
+IndentCaseLabels: true
+IndentCaseBlocks: false
 
-# Blank line before each access modifier block (public / protected / private)
 EmptyLineBeforeAccessModifier: LogicalBlock
+SeparateDefinitionBlocks: Always
 
-# ── Pointer & Reference Alignment ────────────────────────────────────────────
-PointerAlignment:   Left
+# ── Pointer & Reference Alignment ─────────────────────────────
+PointerAlignment: Left
 ReferenceAlignment: Left
 
-# ── Spacing ──────────────────────────────────────────────────────────────────
-SpaceBeforeParens:        ControlStatements
-SpaceInEmptyParentheses:  false
-SpacesInParentheses:      false
-SpacesInSquareBrackets:   false
-SpaceAfterCStyleCast:     false
+# ── Spacing ───────────────────────────────────────────────────
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyParentheses: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+SpaceAfterCStyleCast: false
 
-# ── Alignment ────────────────────────────────────────────────────────────────
-AlignConsecutiveMacros:       false
-AlignConsecutiveAssignments:  false
-AlignConsecutiveBitFields:    false
-AlignConsecutiveDeclarations: false
-AlignEscapedNewlines:         Left
-AlignOperands:                true
-AlignTrailingComments:        true
+# ── Alignment ─────────────────────────────────────────────────
+AlignOperands: true
+AlignTrailingComments: true
+AlignEscapedNewlines: Left
 
-# ── Comments ─────────────────────────────────────────────────────────────────
+AlignConsecutiveAssignments: Consecutive
+AlignConsecutiveDeclarations: Consecutive
+AlignConsecutiveMacros: false
+AlignConsecutiveBitFields: false
+
+# ── Comments ──────────────────────────────────────────────────
 ReflowComments: true
 
-# ── Includes ─────────────────────────────────────────────────────────────────
-SortIncludes:       false
-IncludeBlocks:      Preserve
+# ── Includes ──────────────────────────────────────────────────
+SortIncludes: true
+IncludeBlocks: Regroup
 IncludeIsMainRegex: "(Test)?$"
 
-# ── Break Penalties ──────────────────────────────────────────────────────────
-PenaltyBreakAssignment:               2
+IncludeCategories:
+  - Regex: '^<.*>'
+    Priority: 1
+  - Regex: '^"LXEngine/'
+    Priority: 2
+  - Regex: '.*'
+    Priority: 3
+
+# ── Break Penalties ───────────────────────────────────────────
+PenaltyBreakAssignment: 2
 PenaltyBreakBeforeFirstCallParameter: 19
-PenaltyBreakComment:                  300
-PenaltyBreakFirstLessLess:            120
-PenaltyBreakString:                   1000
+PenaltyBreakComment: 300
+PenaltyBreakFirstLessLess: 120
+PenaltyBreakString: 1000

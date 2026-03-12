@@ -42,21 +42,21 @@ enum class RendererResourceUsage : uint8_t
 
 enum class RendererCpuAccessFlags : uint8_t
 {
-    None = 0,
-    Read = 1 << 0,
-    Write = 1 << 1,
+    None      = 0,
+    Read      = 1 << 0,
+    Write     = 1 << 1,
     ReadWrite = 3,
 };
 
 enum class RendererBindFlags : uint32_t
 {
-    None = 0,
-    VertexBuffer = 1 << 0,
-    IndexBuffer = 1 << 1,
+    None           = 0,
+    VertexBuffer   = 1 << 0,
+    IndexBuffer    = 1 << 1,
     ConstantBuffer = 1 << 2,
     ShaderResource = 1 << 3,
-    RenderTarget = 1 << 4,
-    DepthStencil = 1 << 5,
+    RenderTarget   = 1 << 4,
+    DepthStencil   = 1 << 5,
 };
 
 enum class RendererShaderStage : uint8_t
@@ -124,7 +124,7 @@ inline bool HasAnyCpuAccess(RendererCpuAccessFlags value, RendererCpuAccessFlags
 
 struct RendererHandleId
 {
-    uint32_t Slot = 0;
+    uint32_t Slot       = 0;
     uint32_t Generation = 0;
 
     bool IsValid() const
@@ -175,7 +175,7 @@ struct RendererConstantBufferHandle
 
 struct RendererBufferHandle
 {
-    RendererHandleId Id;
+    RendererHandleId   Id;
     RendererBufferType Type = RendererBufferType::Vertex;
 
     bool IsValid() const
@@ -186,7 +186,7 @@ struct RendererBufferHandle
 
 struct RendererShaderHandle
 {
-    RendererHandleId Id;
+    RendererHandleId    Id;
     RendererShaderStage Stage = RendererShaderStage::Vertex;
 
     bool IsValid() const
@@ -197,10 +197,10 @@ struct RendererShaderHandle
 
 struct RendererViewport
 {
-    float X = 0.0f;
-    float Y = 0.0f;
-    float Width = 0.0f;
-    float Height = 0.0f;
+    float X        = 0.0f;
+    float Y        = 0.0f;
+    float Width    = 0.0f;
+    float Height   = 0.0f;
     float MinDepth = 0.0f;
     float MaxDepth = 1.0f;
 };
@@ -225,54 +225,54 @@ struct RendererResult
 
 struct RendererTextureDesc
 {
-    uint32_t Width = 0;
-    uint32_t Height = 0;
-    TextureFormat Format = TextureFormat::RGBA8;
-    RendererResourceUsage Usage = RendererResourceUsage::Static;
-    RendererCpuAccessFlags CpuAccess = RendererCpuAccessFlags::None;
-    RendererBindFlags BindFlags = RendererBindFlags::ShaderResource;
-    const void* InitialData = nullptr;
-    uint32_t InitialDataSize = 0;
-    uint32_t InitialRowPitch = 0;
+    uint32_t               Width           = 0;
+    uint32_t               Height          = 0;
+    TextureFormat          Format          = TextureFormat::RGBA8;
+    RendererResourceUsage  Usage           = RendererResourceUsage::Static;
+    RendererCpuAccessFlags CpuAccess       = RendererCpuAccessFlags::None;
+    RendererBindFlags      BindFlags       = RendererBindFlags::ShaderResource;
+    const void*            InitialData     = nullptr;
+    uint32_t               InitialDataSize = 0;
+    uint32_t               InitialRowPitch = 0;
 };
 
 struct RendererBufferDesc
 {
-    RendererBufferType Type = RendererBufferType::Vertex;
-    uint32_t ByteSize = 0;
-    uint32_t Stride = 0;
-    RendererResourceUsage Usage = RendererResourceUsage::Static;
-    RendererCpuAccessFlags CpuAccess = RendererCpuAccessFlags::None;
-    RendererBindFlags BindFlags = RendererBindFlags::None;
-    const void* InitialData = nullptr;
-    uint32_t InitialDataSize = 0;
+    RendererBufferType     Type            = RendererBufferType::Vertex;
+    uint32_t               ByteSize        = 0;
+    uint32_t               Stride          = 0;
+    RendererResourceUsage  Usage           = RendererResourceUsage::Static;
+    RendererCpuAccessFlags CpuAccess       = RendererCpuAccessFlags::None;
+    RendererBindFlags      BindFlags       = RendererBindFlags::None;
+    const void*            InitialData     = nullptr;
+    uint32_t               InitialDataSize = 0;
 };
 
 struct RendererShaderDesc
 {
-    RendererShaderStage Stage = RendererShaderStage::Vertex;
-    const void* Bytecode = nullptr;
-    uint32_t BytecodeSize = 0;
+    RendererShaderStage Stage        = RendererShaderStage::Vertex;
+    const void*         Bytecode     = nullptr;
+    uint32_t            BytecodeSize = 0;
 };
 
 struct RendererBufferUpdateRequest
 {
     RendererBufferHandle Handle;
-    const void* Data = nullptr;
-    uint32_t ByteOffset = 0;
-    uint32_t ByteSize = 0;
+    const void*          Data       = nullptr;
+    uint32_t             ByteOffset = 0;
+    uint32_t             ByteSize   = 0;
 };
 
 struct RendererMapRequest
 {
     RendererBufferHandle Handle;
-    RendererMapMode Mode = RendererMapMode::WriteDiscard;
+    RendererMapMode      Mode = RendererMapMode::WriteDiscard;
 };
 
 struct RendererMappedResource
 {
-    void* Data = nullptr;
-    uint32_t RowPitch = 0;
+    void*    Data       = nullptr;
+    uint32_t RowPitch   = 0;
     uint32_t DepthPitch = 0;
 };
 

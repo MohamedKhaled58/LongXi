@@ -1,8 +1,9 @@
 #pragma once
 
-#include "Texture/TextureFormat.h"
 #include <cstdint>
 #include <vector>
+
+#include "Texture/TextureFormat.h"
 
 // =============================================================================
 // TextureData — CPU-side decoded texture data
@@ -15,9 +16,9 @@ namespace LongXi
 
 struct TextureData
 {
-    uint32_t Width;
-    uint32_t Height;
-    TextureFormat Format;
+    uint32_t             Width;
+    uint32_t             Height;
+    TextureFormat        Format;
     std::vector<uint8_t> Pixels;
 };
 

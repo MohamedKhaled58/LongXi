@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Math/Math.h"
-#include "Renderer/Renderer.h"
-
 #include <memory>
 #include <string>
 #include <vector>
+
+#include "Math/Math.h"
+#include "Renderer/Renderer.h"
 
 namespace LongXi
 {
@@ -16,7 +16,7 @@ public:
     SceneNode();
     virtual ~SceneNode() = default;
 
-    SceneNode(const SceneNode&) = delete;
+    SceneNode(const SceneNode&)            = delete;
     SceneNode& operator=(const SceneNode&) = delete;
 
     void AddChild(std::unique_ptr<SceneNode> child);
@@ -30,13 +30,13 @@ public:
     const Vector3& GetRotation() const;
     const Vector3& GetScale() const;
 
-    void SetName(std::string name);
+    void               SetName(std::string name);
     const std::string& GetName() const;
 
-    const Vector3& GetWorldPosition() const;
-    const Vector3& GetWorldRotation() const;
-    const Vector3& GetWorldScale() const;
-    SceneNode* GetParent();
+    const Vector3&   GetWorldPosition() const;
+    const Vector3&   GetWorldRotation() const;
+    const Vector3&   GetWorldScale() const;
+    SceneNode*       GetParent();
     const SceneNode* GetParent() const;
 
     virtual void Update(float deltaTime);
@@ -52,16 +52,16 @@ private:
 private:
     Vector3 m_Position = {0.0f, 0.0f, 0.0f};
     Vector3 m_Rotation = {0.0f, 0.0f, 0.0f};
-    Vector3 m_Scale = {1.0f, 1.0f, 1.0f};
+    Vector3 m_Scale    = {1.0f, 1.0f, 1.0f};
 
     Vector3 m_WorldPosition = {0.0f, 0.0f, 0.0f};
     Vector3 m_WorldRotation = {0.0f, 0.0f, 0.0f};
-    Vector3 m_WorldScale = {1.0f, 1.0f, 1.0f};
+    Vector3 m_WorldScale    = {1.0f, 1.0f, 1.0f};
 
-    bool m_TransformDirty = true;
-    SceneNode* m_Parent = nullptr;
+    bool                                    m_TransformDirty = true;
+    SceneNode*                              m_Parent         = nullptr;
     std::vector<std::unique_ptr<SceneNode>> m_Children;
-    std::string m_Name = "SceneNode";
+    std::string                             m_Name = "SceneNode";
 };
 
 } // namespace LongXi

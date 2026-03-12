@@ -1,9 +1,10 @@
 #include "Scene/Camera.h"
-#include "Core/Logging/LogMacros.h"
 
 #include <algorithm>
 #include <cmath>
 #include <numbers>
+
+#include "Core/Logging/LogMacros.h"
 
 namespace LongXi
 {
@@ -13,17 +14,17 @@ namespace
 
 constexpr float kMinFovDegrees = 1.0f;
 constexpr float kMaxFovDegrees = 179.0f;
-constexpr float kMinNearPlane = 0.01f;
+constexpr float kMinNearPlane  = 0.01f;
 constexpr float kMinDepthRange = 0.01f;
-constexpr float kEpsilon = 0.000001f;
+constexpr float kEpsilon       = 0.000001f;
 
 Matrix4 MakeIdentity()
 {
     Matrix4 matrix = {};
-    matrix.m[0] = 1.0f;
-    matrix.m[5] = 1.0f;
-    matrix.m[10] = 1.0f;
-    matrix.m[15] = 1.0f;
+    matrix.m[0]    = 1.0f;
+    matrix.m[5]    = 1.0f;
+    matrix.m[10]   = 1.0f;
+    matrix.m[15]   = 1.0f;
     return matrix;
 }
 
@@ -72,13 +73,13 @@ Vector3 Normalize(const Vector3& value)
 
 Camera::Camera()
 {
-    m_ViewMatrix = MakeIdentity();
+    m_ViewMatrix       = MakeIdentity();
     m_ProjectionMatrix = MakeIdentity();
 }
 
 void Camera::SetPosition(Vector3 position)
 {
-    m_Position = position;
+    m_Position  = position;
     m_ViewDirty = true;
 }
 
@@ -94,7 +95,7 @@ void Camera::SetRotation(Vector3 rotationDegrees)
     rotationDegrees.z = NormalizeDegrees(rotationDegrees.z);
 
     m_RotationDegrees = rotationDegrees;
-    m_ViewDirty = true;
+    m_ViewDirty       = true;
 }
 
 Vector3 Camera::GetRotation() const
@@ -111,7 +112,7 @@ void Camera::SetFOV(float degrees)
     }
 
     m_FieldOfViewDegrees = clampedDegrees;
-    m_ProjectionDirty = true;
+    m_ProjectionDirty    = true;
 }
 
 float Camera::GetFOV() const
@@ -122,15 +123,15 @@ float Camera::GetFOV() const
 void Camera::SetNearFar(float nearPlane, float farPlane)
 {
     float clampedNear = std::max(nearPlane, kMinNearPlane);
-    float clampedFar = std::max(farPlane, clampedNear + kMinDepthRange);
+    float clampedFar  = std::max(farPlane, clampedNear + kMinDepthRange);
 
     if (clampedNear != nearPlane || clampedFar != farPlane)
     {
         LX_ENGINE_WARN("[Camera] Invalid near/far ({}, {}) clamped to ({}, {})", nearPlane, farPlane, clampedNear, clampedFar);
     }
 
-    m_NearPlane = clampedNear;
-    m_FarPlane = clampedFar;
+    m_NearPlane       = clampedNear;
+    m_FarPlane        = clampedFar;
     m_ProjectionDirty = true;
 }
 
@@ -146,9 +147,9 @@ float Camera::GetFarPlane() const
 
 void Camera::UpdateViewMatrix()
 {
-    const float yawRadians = DegreesToRadians(m_RotationDegrees.y);
+    const float yawRadians   = DegreesToRadians(m_RotationDegrees.y);
     const float pitchRadians = DegreesToRadians(m_RotationDegrees.x);
-    const float rollRadians = DegreesToRadians(m_RotationDegrees.z);
+    const float rollRadians  = DegreesToRadians(m_RotationDegrees.z);
 
     Vector3 forward = {
         std::cos(pitchRadians) * std::sin(yawRadians),
@@ -167,8 +168,8 @@ void Camera::UpdateViewMatrix()
 
     if (std::fabs(rollRadians) > kEpsilon)
     {
-        const float cosRoll = std::cos(rollRadians);
-        const float sinRoll = std::sin(rollRadians);
+        const float   cosRoll  = std::cos(rollRadians);
+        const float   sinRoll  = std::sin(rollRadians);
         const Vector3 oldRight = right;
 
         right = Normalize({
@@ -176,14 +177,14 @@ void Camera::UpdateViewMatrix()
             oldRight.y * cosRoll + up.y * sinRoll,
             oldRight.z * cosRoll + up.z * sinRoll,
         });
-        up = Normalize({
+        up    = Normalize({
             up.x * cosRoll - oldRight.x * sinRoll,
             up.y * cosRoll - oldRight.y * sinRoll,
             up.z * cosRoll - oldRight.z * sinRoll,
         });
     }
 
-    m_ViewMatrix = {};
+    m_ViewMatrix      = {};
     m_ViewMatrix.m[0] = right.x;
     m_ViewMatrix.m[1] = up.x;
     m_ViewMatrix.m[2] = forward.x;
@@ -194,8 +195,8 @@ void Camera::UpdateViewMatrix()
     m_ViewMatrix.m[6] = forward.y;
     m_ViewMatrix.m[7] = 0.0f;
 
-    m_ViewMatrix.m[8] = right.z;
-    m_ViewMatrix.m[9] = up.z;
+    m_ViewMatrix.m[8]  = right.z;
+    m_ViewMatrix.m[9]  = up.z;
     m_ViewMatrix.m[10] = forward.z;
     m_ViewMatrix.m[11] = 0.0f;
 
@@ -218,13 +219,13 @@ void Camera::UpdateProjectionMatrix(int viewportWidth, int viewportHeight)
     m_AspectRatio = static_cast<float>(viewportWidth) / static_cast<float>(viewportHeight);
 
     const float fovRadians = DegreesToRadians(m_FieldOfViewDegrees);
-    const float yScale = 1.0f / std::tan(fovRadians * 0.5f);
-    const float xScale = yScale / m_AspectRatio;
+    const float yScale     = 1.0f / std::tan(fovRadians * 0.5f);
+    const float xScale     = yScale / m_AspectRatio;
     const float depthRange = m_FarPlane - m_NearPlane;
 
-    m_ProjectionMatrix = {};
-    m_ProjectionMatrix.m[0] = xScale;
-    m_ProjectionMatrix.m[5] = yScale;
+    m_ProjectionMatrix       = {};
+    m_ProjectionMatrix.m[0]  = xScale;
+    m_ProjectionMatrix.m[5]  = yScale;
     m_ProjectionMatrix.m[10] = m_FarPlane / depthRange;
     m_ProjectionMatrix.m[11] = 1.0f;
     m_ProjectionMatrix.m[14] = (-m_NearPlane * m_FarPlane) / depthRange;

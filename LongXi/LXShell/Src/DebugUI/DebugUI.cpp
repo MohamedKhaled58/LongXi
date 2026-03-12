@@ -2,13 +2,6 @@
 
 #if defined(LX_DEBUG) || defined(LX_DEV)
 
-#include "Panels/CameraPanel.h"
-#include "Panels/EnginePanel.h"
-#include "Panels/InputMonitor.h"
-#include "Panels/ProfilerPanel.h"
-#include "Panels/SceneInspector.h"
-#include "Panels/TextureViewer.h"
-
 #include <Core/Logging/LogMacros.h>
 #include <Engine/Engine.h>
 #include <Input/InputSystem.h>
@@ -17,8 +10,14 @@
 #include <Texture/Texture.h>
 #include <Texture/TextureFormat.h>
 #include <Texture/TextureManager.h>
-
 #include <algorithm>
+
+#include "Panels/CameraPanel.h"
+#include "Panels/EnginePanel.h"
+#include "Panels/InputMonitor.h"
+#include "Panels/ProfilerPanel.h"
+#include "Panels/SceneInspector.h"
+#include "Panels/TextureViewer.h"
 
 namespace LongXi
 {
@@ -28,7 +27,7 @@ namespace
 
 size_t EstimateTextureMemoryBytes(const Texture& texture)
 {
-    const size_t width = static_cast<size_t>(texture.GetWidth());
+    const size_t width  = static_cast<size_t>(texture.GetWidth());
     const size_t height = static_cast<size_t>(texture.GetHeight());
 
     switch (texture.GetFormat())
@@ -56,8 +55,8 @@ size_t EstimateTextureMemoryBytes(const Texture& texture)
 std::string KeyToString(Key key)
 {
     const uint8_t raw = static_cast<uint8_t>(key);
-    const uint8_t a = static_cast<uint8_t>(Key::A);
-    const uint8_t z = static_cast<uint8_t>(Key::Z);
+    const uint8_t a   = static_cast<uint8_t>(Key::A);
+    const uint8_t z   = static_cast<uint8_t>(Key::Z);
     if (raw >= a && raw <= z)
     {
         const char c = static_cast<char>('A' + (raw - a));
@@ -72,7 +71,7 @@ std::string KeyToString(Key key)
         return std::string(1, c);
     }
 
-    const uint8_t f1 = static_cast<uint8_t>(Key::F1);
+    const uint8_t f1  = static_cast<uint8_t>(Key::F1);
     const uint8_t f12 = static_cast<uint8_t>(Key::F12);
     if (raw >= f1 && raw <= f12)
     {
@@ -122,29 +121,30 @@ std::string KeyToString(Key key)
 void DebugUI::UpdateViewModels(Engine& engine)
 {
     const TimingSnapshot& timingSnapshot = engine.GetTimingSnapshot();
-    m_EngineMetrics.FrameIndex = timingSnapshot.FrameIndex;
-    m_EngineMetrics.DeltaTimeMs = static_cast<float>(timingSnapshot.DeltaTimeSeconds * 1000.0);
-    m_EngineMetrics.FrameTimeMs = static_cast<float>(timingSnapshot.FrameTimeSeconds * 1000.0);
-    m_EngineMetrics.FramesPerSecond = timingSnapshot.DeltaTimeSeconds > 0.0 ? static_cast<float>(1.0 / timingSnapshot.DeltaTimeSeconds) : 0.0f;
-    m_EngineMetrics.DrawCallCount = 0;
-    m_EngineMetrics.MapVisibleTiles = 0;
+    m_EngineMetrics.FrameIndex           = timingSnapshot.FrameIndex;
+    m_EngineMetrics.DeltaTimeMs          = static_cast<float>(timingSnapshot.DeltaTimeSeconds * 1000.0);
+    m_EngineMetrics.FrameTimeMs          = static_cast<float>(timingSnapshot.FrameTimeSeconds * 1000.0);
+    m_EngineMetrics.FramesPerSecond =
+        timingSnapshot.DeltaTimeSeconds > 0.0 ? static_cast<float>(1.0 / timingSnapshot.DeltaTimeSeconds) : 0.0f;
+    m_EngineMetrics.DrawCallCount     = 0;
+    m_EngineMetrics.MapVisibleTiles   = 0;
     m_EngineMetrics.MapVisibleObjects = 0;
-    m_EngineMetrics.MapAnimatedTiles = 0;
-    m_EngineMetrics.GpuDeviceName = "Renderer API (DX11 backend)";
+    m_EngineMetrics.MapAnimatedTiles  = 0;
+    m_EngineMetrics.GpuDeviceName     = "Renderer API (DX11 backend)";
 
     if (engine.IsMapReady())
     {
         const MapRenderSnapshot& mapSnapshot = engine.GetMapRenderSnapshot();
-        m_EngineMetrics.DrawCallCount = static_cast<int>(mapSnapshot.DrawCalls);
-        m_EngineMetrics.MapVisibleTiles = static_cast<int>(mapSnapshot.VisibleTiles);
-        m_EngineMetrics.MapVisibleObjects = static_cast<int>(mapSnapshot.VisibleObjects);
-        m_EngineMetrics.MapAnimatedTiles = static_cast<int>(mapSnapshot.AnimatedTiles);
+        m_EngineMetrics.DrawCallCount        = static_cast<int>(mapSnapshot.DrawCalls);
+        m_EngineMetrics.MapVisibleTiles      = static_cast<int>(mapSnapshot.VisibleTiles);
+        m_EngineMetrics.MapVisibleObjects    = static_cast<int>(mapSnapshot.VisibleObjects);
+        m_EngineMetrics.MapAnimatedTiles     = static_cast<int>(mapSnapshot.AnimatedTiles);
     }
 
     m_ProfilerPanel.ProfilingEnabled = engine.IsProfilingEnabled();
     m_ProfilerPanel.TimingFrameIndex = timingSnapshot.FrameIndex;
-    m_ProfilerPanel.DeltaTimeMs = static_cast<float>(timingSnapshot.DeltaTimeSeconds * 1000.0);
-    m_ProfilerPanel.FrameTimeMs = static_cast<float>(timingSnapshot.FrameTimeSeconds * 1000.0);
+    m_ProfilerPanel.DeltaTimeMs      = static_cast<float>(timingSnapshot.DeltaTimeSeconds * 1000.0);
+    m_ProfilerPanel.FrameTimeMs      = static_cast<float>(timingSnapshot.FrameTimeSeconds * 1000.0);
     m_ProfilerPanel.TotalTimeSeconds = static_cast<float>(timingSnapshot.TotalTimeSeconds);
 
     m_SceneNodes.clear();
@@ -153,18 +153,18 @@ void DebugUI::UpdateViewModels(Engine& engine)
         [&](SceneNode& node, int depth)
         {
             SceneNodeViewModel vm;
-            vm.Node = &node;
-            vm.NodeName = node.GetName();
-            vm.Depth = depth;
+            vm.Node        = &node;
+            vm.NodeName    = node.GetName();
+            vm.Depth       = depth;
             vm.Position[0] = node.GetPosition().x;
             vm.Position[1] = node.GetPosition().y;
             vm.Position[2] = node.GetPosition().z;
             vm.Rotation[0] = node.GetRotation().x;
             vm.Rotation[1] = node.GetRotation().y;
             vm.Rotation[2] = node.GetRotation().z;
-            vm.Scale[0] = node.GetScale().x;
-            vm.Scale[1] = node.GetScale().y;
-            vm.Scale[2] = node.GetScale().z;
+            vm.Scale[0]    = node.GetScale().x;
+            vm.Scale[1]    = node.GetScale().y;
+            vm.Scale[2]    = node.GetScale().z;
             m_SceneNodes.push_back(std::move(vm));
         });
 
@@ -174,8 +174,8 @@ void DebugUI::UpdateViewModels(Engine& engine)
         {
             TextureInfoViewModel vm;
             vm.TextureName = path;
-            vm.Width = static_cast<int>(texture.GetWidth());
-            vm.Height = static_cast<int>(texture.GetHeight());
+            vm.Width       = static_cast<int>(texture.GetWidth());
+            vm.Height      = static_cast<int>(texture.GetHeight());
             vm.MemoryBytes = EstimateTextureMemoryBytes(texture);
             m_Textures.push_back(std::move(vm));
         });
@@ -186,24 +186,24 @@ void DebugUI::UpdateViewModels(Engine& engine)
                   return lhs.TextureName < rhs.TextureName;
               });
 
-    Camera& camera = scene.GetActiveCamera();
-    m_CameraState.Position[0] = camera.GetPosition().x;
-    m_CameraState.Position[1] = camera.GetPosition().y;
-    m_CameraState.Position[2] = camera.GetPosition().z;
+    Camera& camera                   = scene.GetActiveCamera();
+    m_CameraState.Position[0]        = camera.GetPosition().x;
+    m_CameraState.Position[1]        = camera.GetPosition().y;
+    m_CameraState.Position[2]        = camera.GetPosition().z;
     m_CameraState.RotationDegrees[0] = camera.GetRotation().x;
     m_CameraState.RotationDegrees[1] = camera.GetRotation().y;
     m_CameraState.RotationDegrees[2] = camera.GetRotation().z;
-    m_CameraState.FieldOfView = camera.GetFOV();
-    m_CameraState.NearPlane = camera.GetNearPlane();
-    m_CameraState.FarPlane = camera.GetFarPlane();
+    m_CameraState.FieldOfView        = camera.GetFOV();
+    m_CameraState.NearPlane          = camera.GetNearPlane();
+    m_CameraState.FarPlane           = camera.GetFarPlane();
 
-    InputSystem& input = engine.GetInput();
-    m_InputState.MouseX = input.GetMouseX();
-    m_InputState.MouseY = input.GetMouseY();
-    m_InputState.WheelDelta = input.GetWheelDelta();
-    m_InputState.LeftButtonDown = input.IsMouseButtonDown(MouseButton::Left);
-    m_InputState.RightButtonDown = input.IsMouseButtonDown(MouseButton::Right);
-    m_InputState.MiddleButtonDown = input.IsMouseButtonDown(MouseButton::Middle);
+    InputSystem& input             = engine.GetInput();
+    m_InputState.MouseX            = input.GetMouseX();
+    m_InputState.MouseY            = input.GetMouseY();
+    m_InputState.WheelDelta        = input.GetWheelDelta();
+    m_InputState.LeftButtonDown    = input.IsMouseButtonDown(MouseButton::Left);
+    m_InputState.RightButtonDown   = input.IsMouseButtonDown(MouseButton::Right);
+    m_InputState.MiddleButtonDown  = input.IsMouseButtonDown(MouseButton::Middle);
     m_InputState.ConsumedByDebugUI = m_LastInputConsumedByDebugUI;
     m_InputState.PressedKeys.clear();
     const auto pressedKeys = input.GetPressedKeys();
@@ -214,26 +214,26 @@ void DebugUI::UpdateViewModels(Engine& engine)
     }
 
     const FrameProfileSnapshot& profileSnapshot = engine.GetLastFrameProfileSnapshot();
-    const bool frameMismatch = profileSnapshot.FrameIndex > timingSnapshot.FrameIndex && profileSnapshot.FrameIndex != 0;
+    const bool                  frameMismatch   = profileSnapshot.FrameIndex > timingSnapshot.FrameIndex && profileSnapshot.FrameIndex != 0;
     if (frameMismatch)
     {
         LX_WARN("[DebugUI] Profile snapshot frame mismatch (profile={} timing={})", profileSnapshot.FrameIndex, timingSnapshot.FrameIndex);
-        m_ProfilerPanel.IsDataStale = true;
+        m_ProfilerPanel.IsDataStale       = true;
         m_ProfilerPanel.ProfileFrameIndex = 0;
         m_ProfilerPanel.Entries.clear();
     }
     else
     {
-        m_ProfilerPanel.IsDataStale = false;
+        m_ProfilerPanel.IsDataStale       = false;
         m_ProfilerPanel.ProfileFrameIndex = profileSnapshot.FrameIndex;
         m_ProfilerPanel.Entries.clear();
         m_ProfilerPanel.Entries.reserve(profileSnapshot.Entries.size());
         for (const FrameProfileEntry& entry : profileSnapshot.Entries)
         {
             ProfilerEntryViewModel vm;
-            vm.ScopeName = entry.ScopeName;
+            vm.ScopeName  = entry.ScopeName;
             vm.DurationMs = static_cast<float>(entry.TotalDurationMicroseconds / 1000.0);
-            vm.CallCount = entry.CallCount;
+            vm.CallCount  = entry.CallCount;
             m_ProfilerPanel.Entries.push_back(std::move(vm));
         }
     }
@@ -243,11 +243,11 @@ void DebugUI::UpdateViewModels(Engine& engine)
 
 void DebugUI::RenderPanels(Engine& engine)
 {
-    static bool loggedEnginePanelOpen = false;
+    static bool loggedEnginePanelOpen    = false;
     static bool loggedSceneInspectorOpen = false;
-    static bool loggedTextureViewerOpen = false;
-    static bool loggedInputMonitorOpen = false;
-    static bool loggedProfilerPanelOpen = false;
+    static bool loggedTextureViewerOpen  = false;
+    static bool loggedInputMonitorOpen   = false;
+    static bool loggedProfilerPanelOpen  = false;
 
     if (m_ShowEnginePanel)
     {

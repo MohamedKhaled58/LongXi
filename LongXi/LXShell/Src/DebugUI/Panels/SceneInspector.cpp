@@ -1,11 +1,11 @@
 #include "SceneInspector.h"
 
-#include "Scene/Scene.h"
-#include "Scene/SceneNode.h"
-#include "Core/Logging/LogMacros.h"
-
 #include <imgui.h>
 #include <string>
+
+#include "Core/Logging/LogMacros.h"
+#include "Scene/Scene.h"
+#include "Scene/SceneNode.h"
 
 namespace LongXi
 {
@@ -70,11 +70,11 @@ void SceneInspector::Render(const std::vector<SceneNodeViewModel>& nodes, Scene&
 
             const Vector3 positionValue = s_SelectedNode->GetPosition();
             const Vector3 rotationValue = s_SelectedNode->GetRotation();
-            const Vector3 scaleValue = s_SelectedNode->GetScale();
+            const Vector3 scaleValue    = s_SelectedNode->GetScale();
 
             float position[3] = {positionValue.x, positionValue.y, positionValue.z};
             float rotation[3] = {rotationValue.x, rotationValue.y, rotationValue.z};
-            float scale[3] = {scaleValue.x, scaleValue.y, scaleValue.z};
+            float scale[3]    = {scaleValue.x, scaleValue.y, scaleValue.z};
 
             ImGui::Separator();
 

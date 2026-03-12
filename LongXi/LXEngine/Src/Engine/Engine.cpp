@@ -1,5 +1,8 @@
 #include "Engine/Engine.h"
 
+#include <chrono>
+#include <cmath>
+
 #include "Core/FileSystem/VirtualFileSystem.h"
 #include "Core/Logging/LogMacros.h"
 #include "Input/InputSystem.h"
@@ -8,9 +11,6 @@
 #include "Renderer/SpriteRenderer.h"
 #include "Scene/Scene.h"
 #include "Texture/TextureManager.h"
-
-#include <chrono>
-#include <cmath>
 
 namespace LongXi
 {
@@ -79,10 +79,10 @@ bool Engine::Initialize(HWND windowHandle, int width, int height)
     else
     {
         const Vector3 cameraPosition = m_Scene->GetActiveCamera().GetPosition();
-        m_LastSceneCameraX = cameraPosition.x;
-        m_LastSceneCameraY = cameraPosition.y;
-        m_LastSceneCameraZ = cameraPosition.z;
-        m_HasLastSceneCameraState = true;
+        m_LastSceneCameraX           = cameraPosition.x;
+        m_LastSceneCameraY           = cameraPosition.y;
+        m_LastSceneCameraZ           = cameraPosition.z;
+        m_HasLastSceneCameraState    = true;
     }
 
     LX_ENGINE_INFO("[Engine] Initializing map system");
@@ -166,11 +166,11 @@ void Engine::Shutdown()
     m_ProfilerCollector.Shutdown();
     m_TimingService.Shutdown();
 
-    m_Initialized = false;
+    m_Initialized             = false;
     m_HasLastSceneCameraState = false;
-    m_LastSceneCameraX = 0.0f;
-    m_LastSceneCameraY = 0.0f;
-    m_LastSceneCameraZ = 0.0f;
+    m_LastSceneCameraX        = 0.0f;
+    m_LastSceneCameraY        = 0.0f;
+    m_LastSceneCameraZ        = 0.0f;
 }
 
 bool Engine::IsInitialized() const
@@ -220,9 +220,9 @@ void Engine::Update()
             const Vector3 sceneCameraPosition = m_Scene->GetActiveCamera().GetPosition();
             if (!m_HasLastSceneCameraState)
             {
-                m_LastSceneCameraX = sceneCameraPosition.x;
-                m_LastSceneCameraY = sceneCameraPosition.y;
-                m_LastSceneCameraZ = sceneCameraPosition.z;
+                m_LastSceneCameraX        = sceneCameraPosition.x;
+                m_LastSceneCameraY        = sceneCameraPosition.y;
+                m_LastSceneCameraZ        = sceneCameraPosition.z;
                 m_HasLastSceneCameraState = true;
             }
 
@@ -377,7 +377,8 @@ void Engine::Present()
         LX_ENGINE_ERROR("[Engine] Present() called before Initialize()");
         return;
     }
-    const bool canPresentFrame = m_Renderer->GetLifecyclePhase() == FrameLifecyclePhase::InFrame && m_Renderer->GetActivePass() == RenderPassType::None;
+    const bool canPresentFrame =
+        m_Renderer->GetLifecyclePhase() == FrameLifecyclePhase::InFrame && m_Renderer->GetActivePass() == RenderPassType::None;
     {
         LX_PROFILE_SCOPE("Engine.PresentCommands");
 

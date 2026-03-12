@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Core/FileSystem/MountPoint.h"
-
 #include <memory>
 #include <string>
 #include <vector>
+
+#include "Core/FileSystem/MountPoint.h"
 
 // =============================================================================
 // CVirtualFileSystem — unified resource access layer
@@ -28,7 +28,7 @@ public:
     // Defined in .cpp — unique_ptr<IMountPoint> destructor requires complete type.
     ~CVirtualFileSystem();
 
-    CVirtualFileSystem(const CVirtualFileSystem&) = delete;
+    CVirtualFileSystem(const CVirtualFileSystem&)            = delete;
     CVirtualFileSystem& operator=(const CVirtualFileSystem&) = delete;
 
     // -------------------------------------------------------------------------

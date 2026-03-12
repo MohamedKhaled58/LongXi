@@ -1,24 +1,24 @@
 #include "Map/TileRenderer.h"
 
+#include <algorithm>
+#include <cmath>
+#include <sstream>
+#include <unordered_map>
+
 #include "Core/Logging/LogMacros.h"
 #include "Map/MapCamera.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/SpriteRenderer.h"
 #include "Texture/Texture.h"
 
-#include <algorithm>
-#include <cmath>
-#include <sstream>
-#include <unordered_map>
-
 namespace LongXi
 {
 
 bool TileRenderer::Initialize(Renderer& renderer)
 {
-    m_ViewportWidth = static_cast<uint32_t>(std::max(1, renderer.GetViewportWidth()));
+    m_ViewportWidth  = static_cast<uint32_t>(std::max(1, renderer.GetViewportWidth()));
     m_ViewportHeight = static_cast<uint32_t>(std::max(1, renderer.GetViewportHeight()));
-    m_Initialized = true;
+    m_Initialized    = true;
     return true;
 }
 
@@ -39,18 +39,18 @@ bool TileRenderer::IsInitialized() const
 
 void TileRenderer::OnResize(uint32_t width, uint32_t height)
 {
-    m_ViewportWidth = width > 0 ? width : 1;
+    m_ViewportWidth  = width > 0 ? width : 1;
     m_ViewportHeight = height > 0 ? height : 1;
 }
 
-bool TileRenderer::RenderTiles(const MapDescriptor& descriptor,
-                               const MapCamera& camera,
-                               const std::vector<MapAnimationState>& animationStates,
+bool TileRenderer::RenderTiles(const MapDescriptor&                                          descriptor,
+                               const MapCamera&                                              camera,
+                               const std::vector<MapAnimationState>&                         animationStates,
                                const std::unordered_map<uint16_t, std::shared_ptr<Texture>>& textureRefs,
-                               SpriteRenderer& spriteRenderer,
-                               float puzzleScrollOffsetX,
-                               float puzzleScrollOffsetY,
-                               MapRenderSnapshot& inOutSnapshot)
+                               SpriteRenderer&                                               spriteRenderer,
+                               float                                                         puzzleScrollOffsetX,
+                               float                                                         puzzleScrollOffsetY,
+                               MapRenderSnapshot&                                            inOutSnapshot)
 {
     if (!m_Initialized || !descriptor.IsValid())
     {
@@ -69,28 +69,32 @@ bool TileRenderer::RenderTiles(const MapDescriptor& descriptor,
         return false;
     }
 
-    const float zoom = std::max(0.1f, camera.GetZoom());
-    const float viewportWidth = static_cast<float>(std::max<uint32_t>(1u, m_ViewportWidth));
-    const float viewportHeight = static_cast<float>(std::max<uint32_t>(1u, m_ViewportHeight));
-    const float viewWorldWidth = viewportWidth / zoom;
+    const float zoom            = std::max(0.1f, camera.GetZoom());
+    const float viewportWidth   = static_cast<float>(std::max<uint32_t>(1u, m_ViewportWidth));
+    const float viewportHeight  = static_cast<float>(std::max<uint32_t>(1u, m_ViewportHeight));
+    const float viewWorldWidth  = viewportWidth / zoom;
     const float viewWorldHeight = viewportHeight / zoom;
-    const float viewWorldMinX = camera.GetViewCenterWorldX() - viewWorldWidth * 0.5f;
-    const float viewWorldMinY = camera.GetViewCenterWorldY() - viewWorldHeight * 0.5f;
+    const float viewWorldMinX   = camera.GetViewCenterWorldX() - viewWorldWidth * 0.5f;
+    const float viewWorldMinY   = camera.GetViewCenterWorldY() - viewWorldHeight * 0.5f;
 
-    const float bgWorldWidth = static_cast<float>(descriptor.PuzzleGridWidth) * kPuzzleGridSize;
-    const float bgWorldHeight = static_cast<float>(descriptor.PuzzleGridHeight) * kPuzzleGridSize;
+    const float bgWorldWidth       = static_cast<float>(descriptor.PuzzleGridWidth) * kPuzzleGridSize;
+    const float bgWorldHeight      = static_cast<float>(descriptor.PuzzleGridHeight) * kPuzzleGridSize;
     const float mapHalfHeightWorld = static_cast<float>(descriptor.CellHeight) * static_cast<float>(descriptor.HeightInTiles) * 0.5f;
     // Legacy map centering applies this half-cell shift when the terrain height is even.
-    const float legacyEvenHeightOffset = ((descriptor.HeightInTiles + 1u) % 2u) != 0u ? static_cast<float>(descriptor.CellHeight) * 0.5f : 0.0f;
+    const float legacyEvenHeightOffset =
+        ((descriptor.HeightInTiles + 1u) % 2u) != 0u ? static_cast<float>(descriptor.CellHeight) * 0.5f : 0.0f;
     const float bgWorldX = static_cast<float>(descriptor.OriginX) - bgWorldWidth * 0.5f + puzzleScrollOffsetX;
-    const float bgWorldY = static_cast<float>(descriptor.OriginY) + mapHalfHeightWorld - bgWorldHeight * 0.5f - legacyEvenHeightOffset + puzzleScrollOffsetY;
+    const float bgWorldY =
+        static_cast<float>(descriptor.OriginY) + mapHalfHeightWorld - bgWorldHeight * 0.5f - legacyEvenHeightOffset + puzzleScrollOffsetY;
 
-    const float bgViewportX = viewWorldMinX - bgWorldX;
-    const float bgViewportY = viewWorldMinY - bgWorldY;
-    const int32_t startGridX = std::max<int32_t>(0, static_cast<int32_t>(std::floor(bgViewportX / kPuzzleGridSize)) - 1);
-    const int32_t startGridY = std::max<int32_t>(0, static_cast<int32_t>(std::floor(bgViewportY / kPuzzleGridSize)) - 1);
-    const int32_t endGridX = std::min<int32_t>(static_cast<int32_t>(descriptor.PuzzleGridWidth) - 1, static_cast<int32_t>(std::floor((bgViewportX + viewWorldWidth) / kPuzzleGridSize)) + 1);
-    const int32_t endGridY = std::min<int32_t>(static_cast<int32_t>(descriptor.PuzzleGridHeight) - 1, static_cast<int32_t>(std::floor((bgViewportY + viewWorldHeight) / kPuzzleGridSize)) + 1);
+    const float   bgViewportX = viewWorldMinX - bgWorldX;
+    const float   bgViewportY = viewWorldMinY - bgWorldY;
+    const int32_t startGridX  = std::max<int32_t>(0, static_cast<int32_t>(std::floor(bgViewportX / kPuzzleGridSize)) - 1);
+    const int32_t startGridY  = std::max<int32_t>(0, static_cast<int32_t>(std::floor(bgViewportY / kPuzzleGridSize)) - 1);
+    const int32_t endGridX    = std::min<int32_t>(static_cast<int32_t>(descriptor.PuzzleGridWidth) - 1,
+                                               static_cast<int32_t>(std::floor((bgViewportX + viewWorldWidth) / kPuzzleGridSize)) + 1);
+    const int32_t endGridY    = std::min<int32_t>(static_cast<int32_t>(descriptor.PuzzleGridHeight) - 1,
+                                               static_cast<int32_t>(std::floor((bgViewportY + viewWorldHeight) / kPuzzleGridSize)) + 1);
 
     if (startGridX > endGridX || startGridY > endGridY)
     {
@@ -109,15 +113,16 @@ bool TileRenderer::RenderTiles(const MapDescriptor& descriptor,
         animationLookup[animationState.AnimationId] = &animationState;
     }
 
-    const float puzzleCellScreenSize = kPuzzleGridSize * zoom;
-    uint32_t skippedMissingTextures = 0;
+    const float           puzzleCellScreenSize   = kPuzzleGridSize * zoom;
+    uint32_t              skippedMissingTextures = 0;
     std::vector<uint16_t> skippedTextureSamples;
     skippedTextureSamples.reserve(6);
     for (int32_t gridY = startGridY; gridY <= endGridY; ++gridY)
     {
         for (int32_t gridX = startGridX; gridX <= endGridX; ++gridX)
         {
-            const size_t puzzleOffset = static_cast<size_t>(gridY) * static_cast<size_t>(descriptor.PuzzleGridWidth) + static_cast<size_t>(gridX);
+            const size_t puzzleOffset =
+                static_cast<size_t>(gridY) * static_cast<size_t>(descriptor.PuzzleGridWidth) + static_cast<size_t>(gridX);
             const uint16_t puzzleIndex = descriptor.PuzzleIndices[puzzleOffset];
             if (puzzleIndex == kInvalidPuzzleIndex)
             {
@@ -125,10 +130,10 @@ bool TileRenderer::RenderTiles(const MapDescriptor& descriptor,
             }
 
             const Texture* selectedTexture = nullptr;
-            const auto animationIt = animationLookup.find(puzzleIndex);
+            const auto     animationIt     = animationLookup.find(puzzleIndex);
             if (animationIt != animationLookup.end() && animationIt->second != nullptr)
             {
-                const MapAnimationState* state = animationIt->second;
+                const MapAnimationState*        state        = animationIt->second;
                 const std::shared_ptr<Texture>& frameTexture = state->Frames[state->CurrentFrame % state->Frames.size()];
                 if (frameTexture)
                 {
@@ -157,13 +162,14 @@ bool TileRenderer::RenderTiles(const MapDescriptor& descriptor,
             const float screenX = (static_cast<float>(gridX) * kPuzzleGridSize - bgViewportX) * zoom;
             const float screenY = (static_cast<float>(gridY) * kPuzzleGridSize - bgViewportY) * zoom;
 
-            if (screenX + puzzleCellScreenSize < 0.0f || screenY + puzzleCellScreenSize < 0.0f || screenX > viewportWidth || screenY > viewportHeight)
+            if (screenX + puzzleCellScreenSize < 0.0f || screenY + puzzleCellScreenSize < 0.0f || screenX > viewportWidth ||
+                screenY > viewportHeight)
             {
                 continue;
             }
 
             const Vector2 drawPosition = {screenX, screenY};
-            const Vector2 drawSize = {puzzleCellScreenSize, puzzleCellScreenSize};
+            const Vector2 drawSize     = {puzzleCellScreenSize, puzzleCellScreenSize};
             spriteRenderer.DrawSprite(selectedTexture, drawPosition, drawSize);
             ++inOutSnapshot.DrawCalls;
             ++inOutSnapshot.VisibleTiles;

@@ -1,10 +1,11 @@
 #include "Core/FileSystem/VirtualFileSystem.h"
-#include "Core/FileSystem/PathUtils.h"
-#include "Core/FileSystem/WdfArchive.h"
-#include "Core/Logging/LogMacros.h"
 
 #include <Windows.h>
 #include <filesystem>
+
+#include "Core/FileSystem/PathUtils.h"
+#include "Core/FileSystem/WdfArchive.h"
+#include "Core/Logging/LogMacros.h"
 
 namespace LongXi
 {
@@ -30,7 +31,7 @@ static std::wstring ToWide(const std::string& utf8)
 // ============================================================================
 
 // Constructors defined here so unique_ptr<IMountPoint> destructor has complete type.
-CVirtualFileSystem::CVirtualFileSystem() = default;
+CVirtualFileSystem::CVirtualFileSystem()  = default;
 CVirtualFileSystem::~CVirtualFileSystem() = default;
 
 // ============================================================================

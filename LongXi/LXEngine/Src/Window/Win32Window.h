@@ -1,9 +1,9 @@
 #pragma once
 
+#include <Windows.h>
 #include <cstdint>
 #include <functional>
 #include <string>
-#include <Windows.h>
 
 // =============================================================================
 // Win32Window — RAII wrapper around Win32 window handle
@@ -23,7 +23,7 @@ public:
     ~Win32Window();
 
     // Disable copy
-    Win32Window(const Win32Window&) = delete;
+    Win32Window(const Win32Window&)            = delete;
     Win32Window& operator=(const Win32Window&) = delete;
 
     bool Create(WNDPROC windowProc);
@@ -34,6 +34,7 @@ public:
     {
         return m_WindowHandle;
     }
+
     bool IsValid() const
     {
         return m_WindowHandle != nullptr;
@@ -43,6 +44,7 @@ public:
     {
         return m_Width;
     }
+
     int GetHeight() const
     {
         return m_Height;
@@ -50,30 +52,30 @@ public:
 
     void SetSize(int width, int height)
     {
-        m_Width = width;
+        m_Width  = width;
         m_Height = height;
     }
 
     // Window event callbacks — wired by Application after engine initialization
     std::function<bool(UINT, WPARAM, LPARAM)> OnRawMessage;
-    std::function<void(int, int)> OnResize;
-    std::function<void(UINT, bool)> OnKeyDown;
-    std::function<void(UINT)> OnKeyUp;
-    std::function<void(int, int)> OnMouseMove;
-    std::function<void(MouseButton)> OnMouseButtonDown;
-    std::function<void(MouseButton)> OnMouseButtonUp;
-    std::function<void(int)> OnMouseWheel;
-    std::function<void()> OnFocusLost;
+    std::function<void(int, int)>             OnResize;
+    std::function<void(UINT, bool)>           OnKeyDown;
+    std::function<void(UINT)>                 OnKeyUp;
+    std::function<void(int, int)>             OnMouseMove;
+    std::function<void(MouseButton)>          OnMouseButtonDown;
+    std::function<void(MouseButton)>          OnMouseButtonUp;
+    std::function<void(int)>                  OnMouseWheel;
+    std::function<void()>                     OnFocusLost;
 
     // Win32 message dispatcher — retrieves Win32Window* via GWLP_USERDATA to route callbacks
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 private:
     std::wstring m_Title;
-    int m_Width;
-    int m_Height;
-    HWND m_WindowHandle;
-    ATOM m_ClassAtom;
+    int          m_Width;
+    int          m_Height;
+    HWND         m_WindowHandle;
+    ATOM         m_ClassAtom;
 };
 
 } // namespace LongXi

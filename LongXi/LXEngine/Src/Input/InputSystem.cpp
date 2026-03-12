@@ -1,7 +1,8 @@
 #include "Input/InputSystem.h"
-#include "Core/Logging/LogMacros.h"
 
 #include <cstring>
+
+#include "Core/Logging/LogMacros.h"
 
 namespace LongXi
 {
@@ -22,7 +23,7 @@ static void BuildKeyTables(UINT* keyToVK, Key* vkToKey)
     auto Map = [&](Key key, UINT vk)
     {
         keyToVK[static_cast<size_t>(key)] = vk;
-        vkToKey[vk] = key;
+        vkToKey[vk]                       = key;
     };
 
     // Letters (VK_A = 0x41 ... VK_Z = 0x5A)

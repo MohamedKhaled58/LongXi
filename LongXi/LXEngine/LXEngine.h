@@ -6,18 +6,18 @@
 // =============================================================================
 
 #include "Application/Application.h"
+#include "Core/Logging/LogMacros.h"
 #include "Engine/Engine.h"
-#include "Window/Win32Window.h"
-#include "Texture/TextureManager.h"
+#include "LXGameMap.h"
+#include "Math/Math.h"
+#include "Profiling/ProfileScope.h"
+#include "Profiling/ProfilerCollector.h"
 #include "Renderer/SpriteRenderer.h"
+#include "Scene/Camera.h"
 #include "Scene/Scene.h"
 #include "Scene/SceneNode.h"
-#include "Scene/Camera.h"
-#include "Math/Math.h"
+#include "Texture/TextureManager.h"
 #include "Timing/TimingService.h"
-#include "Profiling/ProfilerCollector.h"
-#include "Profiling/ProfileScope.h"
-#include "LXGameMap.h"
-#include "Core/Logging/LogMacros.h"
+#include "Window/Win32Window.h"
 
 // Entry point: include Application/EntryPoint.h ONCE in the client executable

@@ -31,19 +31,19 @@ private:
     int32_t ClampTileY(int32_t value) const;
 
 private:
-    uint32_t m_MapWidth = 0;
-    uint32_t m_MapHeight = 0;
-    uint32_t m_CellWidth = 64;
+    uint32_t m_MapWidth   = 0;
+    uint32_t m_MapHeight  = 0;
+    uint32_t m_CellWidth  = 64;
     uint32_t m_CellHeight = 32;
-    int32_t m_OriginX = 0;
-    int32_t m_OriginY = 0;
+    int32_t  m_OriginX    = 0;
+    int32_t  m_OriginY    = 0;
 
-    uint32_t m_ViewportWidth = 1;
+    uint32_t m_ViewportWidth  = 1;
     uint32_t m_ViewportHeight = 1;
 
     float m_ViewCenterWorldX = 0.0f;
     float m_ViewCenterWorldY = 0.0f;
-    float m_Zoom = 1.0f;
+    float m_Zoom             = 1.0f;
 
     uint32_t m_CullMarginTilesX = 2;
     uint32_t m_CullMarginTilesY = 2;

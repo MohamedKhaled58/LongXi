@@ -20,8 +20,8 @@
 #include "ImGui/ImGuiLayer.h"
 #endif
 
-#include <array>
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <cstring>
 #include <memory>
@@ -132,7 +132,8 @@ private:
     {
         GetWindow().OnRawMessage = [this](UINT msg, WPARAM wParam, LPARAM lParam) -> bool
         {
-            const bool consumed = m_ImGuiLayer.HandleWin32Message(static_cast<uint32_t>(msg), static_cast<uint64_t>(wParam), static_cast<int64_t>(lParam));
+            const bool consumed =
+                m_ImGuiLayer.HandleWin32Message(static_cast<uint32_t>(msg), static_cast<uint64_t>(wParam), static_cast<int64_t>(lParam));
             m_DebugUI.SetLastInputConsumedByDebugUI(consumed);
             return consumed;
         };
@@ -155,11 +156,11 @@ private:
         LX_INFO("VALIDATION SCENE SETUP");
         LX_INFO("==============================================");
 
-        Engine& engine = GetEngine();
-        Scene& scene = engine.GetScene();
-        TextureManager& textureManager = engine.GetTextureManager();
-        CVirtualFileSystem& vfs = engine.GetVFS();
-        bool mapLoaded = false;
+        Engine&             engine         = GetEngine();
+        Scene&              scene          = engine.GetScene();
+        TextureManager&     textureManager = engine.GetTextureManager();
+        CVirtualFileSystem& vfs            = engine.GetVFS();
+        bool                mapLoaded      = false;
 
         auto rootNode = std::make_unique<SceneNode>();
         rootNode->SetName("ValidationRoot");
@@ -176,7 +177,7 @@ private:
         };
 
         std::shared_ptr<Texture> testTexture;
-        const char* resolvedPath = nullptr;
+        const char*              resolvedPath = nullptr;
         for (const char* candidate : textureCandidates)
         {
             if (!vfs.Exists(candidate))
@@ -195,7 +196,7 @@ private:
         if (testTexture)
         {
             m_ValidationTexture = testTexture;
-            auto spriteNode = std::make_unique<SceneNode>();
+            auto spriteNode     = std::make_unique<SceneNode>();
             spriteNode->SetName("TestSpriteNode");
             spriteNode->SetPosition({0.0f, 0.0f, 0.0f});
             spriteNode->SetScale({1.0f, 1.0f, 1.0f});
@@ -274,10 +275,10 @@ private:
             });
     }
 
-    ImGuiLayer m_ImGuiLayer;
-    DebugUI m_DebugUI;
+    ImGuiLayer               m_ImGuiLayer;
+    DebugUI                  m_DebugUI;
     std::shared_ptr<Texture> m_ValidationTexture;
-    bool m_F6WasDown = false;
+    bool                     m_F6WasDown = false;
 #endif
 };
 

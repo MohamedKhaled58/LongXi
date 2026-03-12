@@ -150,10 +150,10 @@ enum class Key : uint8_t
 // =============================================================================
 enum class MouseButton : uint8_t
 {
-    Left = 0,
-    Right = 1,
+    Left   = 0,
+    Right  = 1,
     Middle = 2,
-    Count = 3
+    Count  = 3
 };
 
 // =============================================================================
@@ -166,7 +166,7 @@ public:
     ~InputSystem() = default;
 
     // Disable copy
-    InputSystem(const InputSystem&) = delete;
+    InputSystem(const InputSystem&)            = delete;
     InputSystem& operator=(const InputSystem&) = delete;
 
     // Lifecycle
@@ -186,9 +186,9 @@ public:
     void OnFocusLost();
 
     // Keyboard queries
-    bool IsKeyDown(Key key) const;
-    bool IsKeyPressed(Key key) const;
-    bool IsKeyReleased(Key key) const;
+    bool             IsKeyDown(Key key) const;
+    bool             IsKeyPressed(Key key) const;
+    bool             IsKeyReleased(Key key) const;
     std::vector<Key> GetPressedKeys() const;
 
     // Mouse button queries
@@ -219,7 +219,7 @@ private:
 
     // Translation tables: Key enum ↔ Win32 VK code
     UINT m_KeyToVK[static_cast<size_t>(Key::Count)];
-    Key m_VKToKey[256];
+    Key  m_VKToKey[256];
 };
 
 } // namespace LongXi

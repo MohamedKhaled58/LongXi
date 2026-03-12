@@ -1,11 +1,11 @@
 #include "Renderer/SpriteRenderer.h"
 
+#include <cstring>
+
 #include "Core/Logging/LogMacros.h"
 #include "Profiling/ProfileScope.h"
 #include "Renderer/SpritePipelineBridge.h"
 #include "Texture/Texture.h"
-
-#include <cstring>
 
 // ============================================================================
 // Embedded HLSL Shaders
@@ -184,7 +184,7 @@ void SpriteRenderer::FlushBatch()
     // Backend pipeline performs upload/bind via renderer resource APIs.
     m_Impl->Pipeline->FlushBatch(*m_Renderer, m_VertexData, m_SpriteCount, *m_CurrentTexture);
 
-    m_SpriteCount = 0;
+    m_SpriteCount    = 0;
     m_CurrentTexture = nullptr;
 }
 
@@ -197,8 +197,8 @@ void SpriteRenderer::Begin()
 
     LX_PROFILE_SCOPE("SpriteRenderer.Begin");
 
-    m_InBatch = true;
-    m_SpriteCount = 0;
+    m_InBatch        = true;
+    m_SpriteCount    = 0;
     m_CurrentTexture = nullptr;
 
     m_Impl->Pipeline->BindBatchPipeline(*m_Renderer);
@@ -256,20 +256,20 @@ void SpriteRenderer::DrawSprite(const Texture* texture, Vector2 position, Vector
     SpriteVertex* v = &m_VertexData[m_SpriteCount * 4];
 
     v[0].Position = {position.x, position.y};
-    v[0].UV = {uvMin.x, uvMin.y};
-    v[0].Color = color;
+    v[0].UV       = {uvMin.x, uvMin.y};
+    v[0].Color    = color;
 
     v[1].Position = {position.x + size.x, position.y};
-    v[1].UV = {uvMax.x, uvMin.y};
-    v[1].Color = color;
+    v[1].UV       = {uvMax.x, uvMin.y};
+    v[1].Color    = color;
 
     v[2].Position = {position.x, position.y + size.y};
-    v[2].UV = {uvMin.x, uvMax.y};
-    v[2].Color = color;
+    v[2].UV       = {uvMin.x, uvMax.y};
+    v[2].Color    = color;
 
     v[3].Position = {position.x + size.x, position.y + size.y};
-    v[3].UV = {uvMax.x, uvMax.y};
-    v[3].Color = color;
+    v[3].UV       = {uvMax.x, uvMax.y};
+    v[3].Color    = color;
 
     ++m_SpriteCount;
 }

@@ -1,9 +1,9 @@
 #pragma once
 
+#include <cstdint>
+
 #include "Renderer/RendererTypes.h"
 #include "Texture/TextureFormat.h"
-
-#include <cstdint>
 
 // =============================================================================
 // Texture — GPU texture metadata wrapper.
@@ -20,7 +20,7 @@ public:
     ~Texture() = default;
 
     // Non-copyable
-    Texture(const Texture&) = delete;
+    Texture(const Texture&)            = delete;
     Texture& operator=(const Texture&) = delete;
 
     // Getters
@@ -55,9 +55,9 @@ private:
     }
 
     RendererTextureHandle m_Handle;
-    uint32_t m_Width;
-    uint32_t m_Height;
-    TextureFormat m_Format;
+    uint32_t              m_Width;
+    uint32_t              m_Height;
+    TextureFormat         m_Format;
 
     friend class TextureManager;
 };

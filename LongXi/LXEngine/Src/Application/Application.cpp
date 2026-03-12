@@ -1,13 +1,13 @@
 #include "Application/Application.h"
-#include "Window/Win32Window.h"
-#include "Engine/Engine.h"
-#include "Input/InputSystem.h"
+
+#include <memory>
+#include <windows.h>
+
 #include "Core/FileSystem/ResourceSystem.h"
 #include "Core/Logging/LogMacros.h"
-
-#include <windows.h>
-#include <memory>
-
+#include "Engine/Engine.h"
+#include "Input/InputSystem.h"
+#include "Window/Win32Window.h"
 
 namespace LongXi
 {
@@ -36,7 +36,7 @@ Application::~Application()
 
 bool Application::CreateMainWindow()
 {
-    m_Window = std::make_unique<Win32Window>(L"LongXi", 1024, 768);
+    m_Window = std::make_unique<Win32Window>(L"LongXi Client", 1024, 768);
 
     if (!m_Window->Create(Win32Window::WindowProc))
     {
@@ -97,8 +97,8 @@ void Application::ConfigureVirtualFileSystem()
         LX_ENGINE_INFO("[Application] Configuring VFS mounts");
 
         // Mount directories first (highest priority)
-        m_Engine->MountDirectory(exeDir + "/Data");
         m_Engine->MountDirectory(exeDir);
+        // m_Engine->MountDirectory(exeDir + "/Data");
 
         // Mount WDF archives after directories (lower priority)
         m_Engine->MountWdf(exeDir + "/C3.wdf");

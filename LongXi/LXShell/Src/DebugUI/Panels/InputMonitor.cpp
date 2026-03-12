@@ -1,7 +1,9 @@
 #include "InputMonitor.h"
-#include "Core/Logging/LogMacros.h"
+
 #include <imgui.h>
 #include <string>
+
+#include "Core/Logging/LogMacros.h"
 
 namespace LongXi
 {

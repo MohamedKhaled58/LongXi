@@ -1,18 +1,19 @@
 #include "Core/FileSystem/ResourceSystem.h"
-#include "Core/FileSystem/PathUtils.h"
-#include "Core/FileSystem/WdfArchive.h"
-#include "Core/Logging/LogMacros.h"
 
 #include <Windows.h>
 #include <filesystem>
 #include <fstream>
+
+#include "Core/FileSystem/PathUtils.h"
+#include "Core/FileSystem/WdfArchive.h"
+#include "Core/Logging/LogMacros.h"
 
 namespace LongXi
 {
 
 // Constructor and destructor defined here so WdfArchive (full type) is visible
 // for unique_ptr<WdfArchive> construction/cleanup in m_Archives.
-ResourceSystem::ResourceSystem() = default;
+ResourceSystem::ResourceSystem()  = default;
 ResourceSystem::~ResourceSystem() = default;
 
 // ============================================================================
@@ -39,7 +40,7 @@ static std::wstring ToWide(const std::string& utf8)
 std::string ResourceSystem::GetExecutableDirectory()
 {
     wchar_t buffer[MAX_PATH] = {};
-    DWORD len = GetModuleFileNameW(nullptr, buffer, MAX_PATH);
+    DWORD   len              = GetModuleFileNameW(nullptr, buffer, MAX_PATH);
 
     if (len == 0 || len == MAX_PATH)
     {
@@ -48,7 +49,7 @@ std::string ResourceSystem::GetExecutableDirectory()
     }
 
     std::filesystem::path exePath(buffer);
-    std::wstring wideDir = exePath.parent_path().wstring();
+    std::wstring          wideDir = exePath.parent_path().wstring();
 
     // Convert back to UTF-8 for internal use
     int size = WideCharToMultiByte(CP_UTF8, 0, wideDir.data(), static_cast<int>(wideDir.size()), nullptr, 0, nullptr, nullptr);
@@ -82,7 +83,7 @@ std::string ResourceSystem::Resolve(const std::string& normalizedPath) const
     // Currently, only directory-backed roots are searched.
     for (const std::string& root : m_Roots)
     {
-        std::string candidate = root + "/" + normalizedPath;
+        std::string     candidate = root + "/" + normalizedPath;
         std::error_code ec;
         if (std::filesystem::is_regular_file(ToWide(candidate), ec))
             return candidate;

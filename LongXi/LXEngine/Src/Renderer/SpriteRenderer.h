@@ -1,9 +1,9 @@
 #pragma once
 
+#include <memory>
+
 #include "Math/Math.h"
 #include "Renderer/Renderer.h"
-
-#include <memory>
 
 namespace LongXi
 {
@@ -16,7 +16,7 @@ struct SpriteVertex
 {
     Vector2 Position;
     Vector2 UV;
-    Color Color;
+    Color   Color;
 };
 
 class SpriteRenderer
@@ -25,7 +25,7 @@ public:
     SpriteRenderer();
     ~SpriteRenderer();
 
-    SpriteRenderer(const SpriteRenderer&) = delete;
+    SpriteRenderer(const SpriteRenderer&)            = delete;
     SpriteRenderer& operator=(const SpriteRenderer&) = delete;
 
     bool Initialize(Renderer& renderer, int width, int height);
@@ -46,16 +46,16 @@ private:
     class Impl;
 
 private:
-    Renderer* m_Renderer = nullptr;
+    Renderer*             m_Renderer = nullptr;
     std::unique_ptr<Impl> m_Impl;
 
     SpriteVertex m_VertexData[MAX_SPRITES_PER_BATCH * 4];
 
-    int m_SpriteCount = 0;
+    int            m_SpriteCount    = 0;
     const Texture* m_CurrentTexture = nullptr;
 
     bool m_Initialized = false;
-    bool m_InBatch = false;
+    bool m_InBatch     = false;
 
     float m_ProjectionMatrix[16] = {};
 };

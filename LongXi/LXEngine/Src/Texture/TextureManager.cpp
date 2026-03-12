@@ -1,11 +1,12 @@
 #include "Texture/TextureManager.h"
-#include "Texture/TextureLoader.h"
+
+#include <ctype.h>
+
 #include "Core/FileSystem/PathUtils.h"
 #include "Core/FileSystem/VirtualFileSystem.h"
 #include "Core/Logging/LogMacros.h"
 #include "Renderer/Renderer.h"
-
-#include <ctype.h>
+#include "Texture/TextureLoader.h"
 
 namespace LongXi
 {
@@ -70,7 +71,7 @@ std::shared_ptr<Texture> TextureManager::LoadTexture(const std::string& path)
 
     // Detect file extension from path
     std::string ext;
-    size_t dotPos = normalized.find_last_of('.');
+    size_t      dotPos = normalized.find_last_of('.');
     if (dotPos != std::string::npos)
     {
         ext = normalized.substr(dotPos);
@@ -83,7 +84,7 @@ std::shared_ptr<Texture> TextureManager::LoadTexture(const std::string& path)
 
     // Decode based on extension
     TextureData texData;
-    bool decodeSuccess = false;
+    bool        decodeSuccess = false;
 
     if (ext == ".dds")
     {
@@ -125,14 +126,14 @@ std::shared_ptr<Texture> TextureManager::LoadTexture(const std::string& path)
 
     // Upload to GPU via descriptor-based renderer API.
     RendererTextureDesc textureDesc = {};
-    textureDesc.Width = texData.Width;
-    textureDesc.Height = texData.Height;
-    textureDesc.Format = texData.Format;
-    textureDesc.Usage = RendererResourceUsage::Static;
-    textureDesc.CpuAccess = RendererCpuAccessFlags::None;
-    textureDesc.BindFlags = RendererBindFlags::ShaderResource;
-    textureDesc.InitialData = texData.Pixels.data();
-    textureDesc.InitialDataSize = static_cast<uint32_t>(texData.Pixels.size());
+    textureDesc.Width               = texData.Width;
+    textureDesc.Height              = texData.Height;
+    textureDesc.Format              = texData.Format;
+    textureDesc.Usage               = RendererResourceUsage::Static;
+    textureDesc.CpuAccess           = RendererCpuAccessFlags::None;
+    textureDesc.BindFlags           = RendererBindFlags::ShaderResource;
+    textureDesc.InitialData         = texData.Pixels.data();
+    textureDesc.InitialDataSize     = static_cast<uint32_t>(texData.Pixels.size());
 
     RendererTextureHandle handle = m_Renderer.CreateTexture(textureDesc);
     if (!handle.IsValid())

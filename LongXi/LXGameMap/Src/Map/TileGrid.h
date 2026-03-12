@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Map/MapTypes.h"
-
 #include <cstdint>
 #include <vector>
+
+#include "Map/MapTypes.h"
 
 namespace LongXi
 {
@@ -19,7 +19,7 @@ public:
     uint32_t GetWidth() const;
     uint32_t GetHeight() const;
 
-    TileRecord* GetTile(int32_t x, int32_t y);
+    TileRecord*       GetTile(int32_t x, int32_t y);
     const TileRecord* GetTile(int32_t x, int32_t y) const;
 
     bool SetTile(const TileRecord& tile);
@@ -30,15 +30,15 @@ public:
     void EnumerateVisible(const VisibleTileWindow& window, std::vector<const TileRecord*>& outTiles) const;
 
 private:
-    bool IsInBounds(int32_t x, int32_t y) const;
+    bool   IsInBounds(int32_t x, int32_t y) const;
     size_t GetIndex(int32_t x, int32_t y) const;
 
 private:
-    uint32_t m_Width = 0;
-    uint32_t m_Height = 0;
+    uint32_t                m_Width  = 0;
+    uint32_t                m_Height = 0;
     std::vector<TileRecord> m_Tiles;
-    std::vector<uint32_t> m_RowChecksums;
-    bool m_IntegrityValid = true;
+    std::vector<uint32_t>   m_RowChecksums;
+    bool                    m_IntegrityValid = true;
 };
 
 } // namespace LongXi

@@ -1,9 +1,10 @@
 #include "Window/Win32Window.h"
-#include "Input/InputSystem.h"
-#include "Core/Logging/LogMacros.h"
 
 #include <windows.h>
 #include <windowsx.h>
+
+#include "Core/Logging/LogMacros.h"
+#include "Input/InputSystem.h"
 
 namespace LongXi
 {
@@ -13,7 +14,7 @@ static UINT NormalizeVirtualKey(UINT vk, LPARAM lParam)
     if (vk == VK_SHIFT)
     {
         UINT scanCode = (static_cast<UINT>(lParam) >> 16) & 0xFFu;
-        UINT mapped = MapVirtualKeyW(scanCode, MAPVK_VSC_TO_VK_EX);
+        UINT mapped   = MapVirtualKeyW(scanCode, MAPVK_VSC_TO_VK_EX);
         if (mapped == VK_LSHIFT || mapped == VK_RSHIFT)
             return mapped;
 
@@ -59,12 +60,12 @@ bool Win32Window::Create(WNDPROC windowProc)
 {
     HINSTANCE hInstance = GetModuleHandle(nullptr);
 
-    WNDCLASSEX wc = {};
-    wc.cbSize = sizeof(WNDCLASSEX);
-    wc.style = CS_HREDRAW | CS_VREDRAW;
-    wc.lpfnWndProc = windowProc;
-    wc.hInstance = hInstance;
-    wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
+    WNDCLASSEX wc    = {};
+    wc.cbSize        = sizeof(WNDCLASSEX);
+    wc.style         = CS_HREDRAW | CS_VREDRAW;
+    wc.lpfnWndProc   = windowProc;
+    wc.hInstance     = hInstance;
+    wc.hCursor       = LoadCursor(nullptr, IDC_ARROW);
     wc.hbrBackground = reinterpret_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));
     wc.lpszClassName = m_Title.c_str();
 
@@ -79,8 +80,18 @@ bool Win32Window::Create(WNDPROC windowProc)
     RECT rc = {0, 0, m_Width, m_Height};
     AdjustWindowRectEx(&rc, WS_OVERLAPPEDWINDOW, FALSE, 0);
 
-    m_WindowHandle =
-        CreateWindowEx(0, MAKEINTATOM(m_ClassAtom), m_Title.c_str(), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top, nullptr, nullptr, hInstance, nullptr);
+    m_WindowHandle = CreateWindowEx(0,
+                                    MAKEINTATOM(m_ClassAtom),
+                                    m_Title.c_str(),
+                                    WS_OVERLAPPEDWINDOW,
+                                    CW_USEDEFAULT,
+                                    CW_USEDEFAULT,
+                                    rc.right - rc.left,
+                                    rc.bottom - rc.top,
+                                    nullptr,
+                                    nullptr,
+                                    hInstance,
+                                    nullptr);
 
     if (!m_WindowHandle)
     {
@@ -162,7 +173,7 @@ LRESULT CALLBACK Win32Window::WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
         case WM_SIZE:
             if (window)
             {
-                int width = static_cast<int>(LOWORD(lParam));
+                int width  = static_cast<int>(LOWORD(lParam));
                 int height = static_cast<int>(HIWORD(lParam));
                 window->SetSize(width, height);
                 // Guard against zero-area (minimized window)
@@ -178,7 +189,7 @@ LRESULT CALLBACK Win32Window::WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
         case WM_SYSKEYDOWN:
             if (window && window->OnKeyDown)
             {
-                UINT vk = NormalizeVirtualKey(static_cast<UINT>(wParam), lParam);
+                UINT vk       = NormalizeVirtualKey(static_cast<UINT>(wParam), lParam);
                 bool isRepeat = (lParam & 0x40000000) != 0;
                 window->OnKeyDown(vk, isRepeat);
             }

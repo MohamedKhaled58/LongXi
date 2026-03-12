@@ -23,7 +23,7 @@ bool Scene::Initialize(Renderer& renderer)
     m_Camera.SetFOV(45.0f);
     m_Camera.SetNearFar(1.0f, 10000.0f);
 
-    const int viewportWidth = renderer.GetViewportWidth();
+    const int viewportWidth  = renderer.GetViewportWidth();
     const int viewportHeight = renderer.GetViewportHeight();
     m_Camera.UpdateViewMatrix();
     m_Camera.UpdateProjectionMatrix(viewportWidth, viewportHeight);

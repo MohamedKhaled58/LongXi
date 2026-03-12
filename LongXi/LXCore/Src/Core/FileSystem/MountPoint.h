@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Core/FileSystem/FileStream.h"
-
 #include <memory>
 #include <string>
+
+#include "Core/FileSystem/FileStream.h"
 
 // =============================================================================
 // MountPoint — abstract and concrete resource source types
@@ -26,7 +26,7 @@ class IMountPoint
 public:
     virtual ~IMountPoint() = default;
 
-    IMountPoint(const IMountPoint&) = delete;
+    IMountPoint(const IMountPoint&)            = delete;
     IMountPoint& operator=(const IMountPoint&) = delete;
 
     // Returns true if this source contains a resource at the given normalized path.
@@ -48,7 +48,7 @@ class CDirectoryMountPoint : public IMountPoint
 public:
     explicit CDirectoryMountPoint(const std::string& rootDirectory);
 
-    bool Exists(const std::string& normalizedPath) const override;
+    bool                         Exists(const std::string& normalizedPath) const override;
     std::unique_ptr<IFileStream> Open(const std::string& normalizedPath) const override;
 
 private:
@@ -67,10 +67,10 @@ public:
     // Defined in .cpp — WdfArchive full type required by unique_ptr destructor.
     ~CWdfMountPoint() override;
 
-    CWdfMountPoint(const CWdfMountPoint&) = delete;
+    CWdfMountPoint(const CWdfMountPoint&)            = delete;
     CWdfMountPoint& operator=(const CWdfMountPoint&) = delete;
 
-    bool Exists(const std::string& normalizedPath) const override;
+    bool                         Exists(const std::string& normalizedPath) const override;
     std::unique_ptr<IFileStream> Open(const std::string& normalizedPath) const override;
 
 private:

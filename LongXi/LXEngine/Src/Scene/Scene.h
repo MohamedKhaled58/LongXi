@@ -1,10 +1,10 @@
 #pragma once
 
+#include <functional>
+
 #include "Renderer/Renderer.h"
 #include "Scene/Camera.h"
 #include "Scene/SceneNode.h"
-
-#include <functional>
 
 namespace LongXi
 {
@@ -15,7 +15,7 @@ public:
     Scene();
     ~Scene() = default;
 
-    Scene(const Scene&) = delete;
+    Scene(const Scene&)            = delete;
     Scene& operator=(const Scene&) = delete;
 
     bool Initialize(Renderer& renderer);
@@ -29,9 +29,9 @@ public:
     void Render(Renderer& renderer);
     void OnResize(int width, int height);
 
-    Camera& GetActiveCamera();
-    const Camera& GetActiveCamera() const;
-    SceneNode& GetRootNode();
+    Camera&          GetActiveCamera();
+    const Camera&    GetActiveCamera() const;
+    SceneNode&       GetRootNode();
     const SceneNode& GetRootNode() const;
 
     void VisitNodes(const std::function<void(SceneNode&, int depth)>& visitor);
@@ -39,8 +39,8 @@ public:
 
 private:
     SceneNode m_Root;
-    Camera m_Camera;
-    bool m_Initialized = false;
+    Camera    m_Camera;
+    bool      m_Initialized = false;
 };
 
 } // namespace LongXi

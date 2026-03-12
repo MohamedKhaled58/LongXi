@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Profiling/ProfilerCollector.h"
-
 #include <chrono>
 #include <cstdint>
+
+#include "Profiling/ProfilerCollector.h"
 
 namespace LongXi
 {
@@ -24,7 +24,7 @@ public:
         if (m_Collector && m_ScopeName && m_ScopeName[0] != '\0')
         {
             m_StartTimestamp = Clock::now();
-            m_Active = true;
+            m_Active         = true;
         }
     }
 
@@ -36,20 +36,21 @@ public:
         }
 
         const Clock::time_point endTimestamp = Clock::now();
-        const uint64_t elapsedMicros = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::microseconds>(endTimestamp - m_StartTimestamp).count());
+        const uint64_t          elapsedMicros =
+            static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::microseconds>(endTimestamp - m_StartTimestamp).count());
         m_Collector->RecordScope(m_ScopeName, elapsedMicros);
     }
 
-    ProfileScopeGuard(const ProfileScopeGuard&) = delete;
+    ProfileScopeGuard(const ProfileScopeGuard&)            = delete;
     ProfileScopeGuard& operator=(const ProfileScopeGuard&) = delete;
 
 private:
     using Clock = std::chrono::steady_clock;
 
-    const char* m_ScopeName = nullptr;
-    ProfilerCollector* m_Collector = nullptr;
-    Clock::time_point m_StartTimestamp = {};
-    bool m_Active = false;
+    const char*        m_ScopeName      = nullptr;
+    ProfilerCollector* m_Collector      = nullptr;
+    Clock::time_point  m_StartTimestamp = {};
+    bool               m_Active         = false;
 };
 
 } // namespace LongXi

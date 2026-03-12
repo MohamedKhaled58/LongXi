@@ -14,8 +14,8 @@ std::string NormalizeVirtualResourcePath(const std::string& path, bool lowercase
     auto start = path.find_first_not_of(" \t\r\n");
     if (start == std::string::npos)
         return {};
-    auto end = path.find_last_not_of(" \t\r\n");
-    std::string s = path.substr(start, end - start + 1);
+    auto        end = path.find_last_not_of(" \t\r\n");
+    std::string s   = path.substr(start, end - start + 1);
 
     for (char& c : s)
     {
@@ -50,7 +50,7 @@ std::string NormalizeVirtualResourcePath(const std::string& path, bool lowercase
         s.pop_back();
 
     std::vector<std::string> segments;
-    std::string segment;
+    std::string              segment;
     for (char c : s)
     {
         if (c == '/')

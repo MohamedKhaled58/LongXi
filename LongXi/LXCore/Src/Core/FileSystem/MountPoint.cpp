@@ -1,9 +1,10 @@
 #include "Core/FileSystem/MountPoint.h"
-#include "Core/FileSystem/WdfArchive.h"
-#include "Core/Logging/LogMacros.h"
 
 #include <Windows.h>
 #include <filesystem>
+
+#include "Core/FileSystem/WdfArchive.h"
+#include "Core/Logging/LogMacros.h"
 
 namespace LongXi
 {
@@ -38,14 +39,14 @@ CDirectoryMountPoint::CDirectoryMountPoint(const std::string& rootDirectory)
 
 bool CDirectoryMountPoint::Exists(const std::string& normalizedPath) const
 {
-    std::string absPath = m_Root + "/" + normalizedPath;
+    std::string     absPath = m_Root + "/" + normalizedPath;
     std::error_code ec;
     return std::filesystem::is_regular_file(ToWide(absPath), ec);
 }
 
 std::unique_ptr<IFileStream> CDirectoryMountPoint::Open(const std::string& normalizedPath) const
 {
-    std::string absPath = m_Root + "/" + normalizedPath;
+    std::string     absPath = m_Root + "/" + normalizedPath;
     std::error_code ec;
     if (!std::filesystem::is_regular_file(ToWide(absPath), ec))
         return nullptr;

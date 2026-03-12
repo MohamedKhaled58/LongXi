@@ -29,7 +29,7 @@ public:
     ResourceSystem();  // defined in .cpp — WdfArchive full type required by unique_ptr
     ~ResourceSystem(); // defined in .cpp — WdfArchive full type required by unique_ptr
 
-    ResourceSystem(const ResourceSystem&) = delete;
+    ResourceSystem(const ResourceSystem&)            = delete;
     ResourceSystem& operator=(const ResourceSystem&) = delete;
 
     // Returns the directory containing the current executable as a UTF-8 string.
@@ -54,7 +54,7 @@ private:
     std::string Resolve(const std::string& normalizedPath) const;
 
 private:
-    std::vector<std::string> m_Roots;
+    std::vector<std::string>                 m_Roots;
     std::vector<std::unique_ptr<WdfArchive>> m_Archives;
 };
 

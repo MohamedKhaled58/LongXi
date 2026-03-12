@@ -20,7 +20,7 @@ public:
     DX11Renderer();
     ~DX11Renderer() override;
 
-    DX11Renderer(const DX11Renderer&) = delete;
+    DX11Renderer(const DX11Renderer&)            = delete;
     DX11Renderer& operator=(const DX11Renderer&) = delete;
 
     bool Initialize(HWND hwnd, int width, int height) override;
@@ -33,28 +33,28 @@ public:
     void OnResize(int width, int height) override;
     void Shutdown() override;
 
-    void Clear(const RendererColor& color) override;
-    void SetViewport(const RendererViewport& viewport) override;
-    void SetRenderTarget() override;
-    void DrawIndexed(uint32_t indexCount, uint32_t startIndex = 0, int32_t baseVertex = 0) override;
-    void SetViewProjection(const Matrix4& view, const Matrix4& projection) override;
-    RendererTextureHandle CreateTexture(const RendererTextureDesc& desc) override;
-    bool DestroyTexture(RendererTextureHandle handle) override;
-    RendererVertexBufferHandle CreateVertexBuffer(const RendererBufferDesc& desc) override;
-    RendererIndexBufferHandle CreateIndexBuffer(const RendererBufferDesc& desc) override;
+    void                         Clear(const RendererColor& color) override;
+    void                         SetViewport(const RendererViewport& viewport) override;
+    void                         SetRenderTarget() override;
+    void                         DrawIndexed(uint32_t indexCount, uint32_t startIndex = 0, int32_t baseVertex = 0) override;
+    void                         SetViewProjection(const Matrix4& view, const Matrix4& projection) override;
+    RendererTextureHandle        CreateTexture(const RendererTextureDesc& desc) override;
+    bool                         DestroyTexture(RendererTextureHandle handle) override;
+    RendererVertexBufferHandle   CreateVertexBuffer(const RendererBufferDesc& desc) override;
+    RendererIndexBufferHandle    CreateIndexBuffer(const RendererBufferDesc& desc) override;
     RendererConstantBufferHandle CreateConstantBuffer(const RendererBufferDesc& desc) override;
-    bool DestroyBuffer(RendererBufferHandle handle) override;
-    RendererShaderHandle CreateVertexShader(const RendererShaderDesc& desc) override;
-    RendererShaderHandle CreatePixelShader(const RendererShaderDesc& desc) override;
-    bool DestroyShader(RendererShaderHandle handle) override;
-    bool UpdateBuffer(const RendererBufferUpdateRequest& request) override;
-    bool MapBuffer(const RendererMapRequest& request, RendererMappedResource& mapped) override;
-    bool UnmapBuffer(RendererBufferHandle handle) override;
-    bool BindVertexBuffer(RendererVertexBufferHandle handle, uint32_t stride, uint32_t offset) override;
-    bool BindIndexBuffer(RendererIndexBufferHandle handle, RendererIndexFormat format, uint32_t offset) override;
-    bool BindConstantBuffer(RendererConstantBufferHandle handle, RendererShaderStage stage, uint32_t slot) override;
-    bool BindShader(RendererShaderHandle handle) override;
-    bool BindTexture(RendererTextureHandle handle, RendererShaderStage stage, uint32_t slot) override;
+    bool                         DestroyBuffer(RendererBufferHandle handle) override;
+    RendererShaderHandle         CreateVertexShader(const RendererShaderDesc& desc) override;
+    RendererShaderHandle         CreatePixelShader(const RendererShaderDesc& desc) override;
+    bool                         DestroyShader(RendererShaderHandle handle) override;
+    bool                         UpdateBuffer(const RendererBufferUpdateRequest& request) override;
+    bool                         MapBuffer(const RendererMapRequest& request, RendererMappedResource& mapped) override;
+    bool                         UnmapBuffer(RendererBufferHandle handle) override;
+    bool                         BindVertexBuffer(RendererVertexBufferHandle handle, uint32_t stride, uint32_t offset) override;
+    bool                         BindIndexBuffer(RendererIndexBufferHandle handle, RendererIndexFormat format, uint32_t offset) override;
+    bool                         BindConstantBuffer(RendererConstantBufferHandle handle, RendererShaderStage stage, uint32_t slot) override;
+    bool                         BindShader(RendererShaderHandle handle) override;
+    bool                         BindTexture(RendererTextureHandle handle, RendererShaderStage stage, uint32_t slot) override;
 
     bool IsInitialized() const override
     {
@@ -119,7 +119,7 @@ public:
     }
 
     ID3D11ShaderResourceView* ResolveShaderResourceView(RendererTextureHandle handle, RendererResultCode& outError) const;
-    ID3D11Buffer* ResolveBuffer(RendererBufferHandle handle, RendererResultCode& outError) const;
+    ID3D11Buffer*             ResolveBuffer(RendererBufferHandle handle, RendererResultCode& outError) const;
 
 private:
     bool CreateRenderTarget();
@@ -136,42 +136,42 @@ private:
     bool ValidateDrawState() const;
 
 private:
-    Microsoft::WRL::ComPtr<ID3D11Device> m_Device;
-    Microsoft::WRL::ComPtr<ID3D11DeviceContext> m_Context;
-    Microsoft::WRL::ComPtr<IDXGISwapChain> m_SwapChain;
+    Microsoft::WRL::ComPtr<ID3D11Device>           m_Device;
+    Microsoft::WRL::ComPtr<ID3D11DeviceContext>    m_Context;
+    Microsoft::WRL::ComPtr<IDXGISwapChain>         m_SwapChain;
     Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_RenderTargetView;
-    Microsoft::WRL::ComPtr<ID3D11Texture2D> m_DepthStencilBuffer;
+    Microsoft::WRL::ComPtr<ID3D11Texture2D>        m_DepthStencilBuffer;
     Microsoft::WRL::ComPtr<ID3D11DepthStencilView> m_DepthStencilView;
 
-    Microsoft::WRL::ComPtr<ID3D11RasterizerState> m_DefaultRasterizerState;
-    Microsoft::WRL::ComPtr<ID3D11BlendState> m_DefaultBlendState;
+    Microsoft::WRL::ComPtr<ID3D11RasterizerState>   m_DefaultRasterizerState;
+    Microsoft::WRL::ComPtr<ID3D11BlendState>        m_DefaultBlendState;
     Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_DefaultDepthState;
     Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_NoDepthState;
 
     DX11ResourceTables m_ResourceTables;
-    DX11Textures m_Textures;
-    DX11Buffers m_Buffers;
-    DX11Shaders m_Shaders;
+    DX11Textures       m_Textures;
+    DX11Buffers        m_Buffers;
+    DX11Shaders        m_Shaders;
 
-    bool m_IsInitialized = false;
-    HWND m_WindowHandle = nullptr;
-    int m_ViewportWidth = 0;
-    int m_ViewportHeight = 0;
+    bool m_IsInitialized  = false;
+    HWND m_WindowHandle   = nullptr;
+    int  m_ViewportWidth  = 0;
+    int  m_ViewportHeight = 0;
 
-    Matrix4 m_CurrentViewMatrix = {};
+    Matrix4 m_CurrentViewMatrix       = {};
     Matrix4 m_CurrentProjectionMatrix = {};
 
-    FrameLifecyclePhase m_LifecyclePhase = FrameLifecyclePhase::NotStarted;
-    RenderPassType m_ActivePass = RenderPassType::None;
-    RendererRecoveryMode m_RecoveryMode = RendererRecoveryMode::Normal;
+    FrameLifecyclePhase  m_LifecyclePhase = FrameLifecyclePhase::NotStarted;
+    RenderPassType       m_ActivePass     = RenderPassType::None;
+    RendererRecoveryMode m_RecoveryMode   = RendererRecoveryMode::Normal;
 
-    bool m_HasPendingResize = false;
-    int m_PendingResizeWidth = 0;
-    int m_PendingResizeHeight = 0;
+    bool m_HasPendingResize    = false;
+    int  m_PendingResizeWidth  = 0;
+    int  m_PendingResizeHeight = 0;
 
-    RendererResult m_LastResourceResult = {};
-    uint64_t m_FrameIndex = 0;
-    mutable bool m_HasLoggedInvalidDrawStateThisFrame = false;
+    RendererResult m_LastResourceResult                 = {};
+    uint64_t       m_FrameIndex                         = 0;
+    mutable bool   m_HasLoggedInvalidDrawStateThisFrame = false;
 };
 
 } // namespace LongXi

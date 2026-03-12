@@ -1,9 +1,9 @@
 #include "Renderer/DX11Renderer.h"
 
-#include "Core/Logging/LogMacros.h"
-
 #include <cassert>
 #include <cstring>
+
+#include "Core/Logging/LogMacros.h"
 
 namespace LongXi
 {
@@ -24,10 +24,10 @@ static bool IsDeviceLost(HRESULT hr)
 static Matrix4 MakeIdentityMatrix()
 {
     Matrix4 matrix = {};
-    matrix.m[0] = 1.0f;
-    matrix.m[5] = 1.0f;
-    matrix.m[10] = 1.0f;
-    matrix.m[15] = 1.0f;
+    matrix.m[0]    = 1.0f;
+    matrix.m[5]    = 1.0f;
+    matrix.m[10]   = 1.0f;
+    matrix.m[15]   = 1.0f;
     return matrix;
 }
 
@@ -62,30 +62,40 @@ bool DX11Renderer::Initialize(HWND hwnd, int width, int height)
         return false;
     }
 
-    DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
-    swapChainDesc.BufferCount = 1;
-    swapChainDesc.BufferDesc.Width = width;
-    swapChainDesc.BufferDesc.Height = height;
-    swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    swapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
+    DXGI_SWAP_CHAIN_DESC swapChainDesc               = {};
+    swapChainDesc.BufferCount                        = 1;
+    swapChainDesc.BufferDesc.Width                   = width;
+    swapChainDesc.BufferDesc.Height                  = height;
+    swapChainDesc.BufferDesc.Format                  = DXGI_FORMAT_R8G8B8A8_UNORM;
+    swapChainDesc.BufferDesc.RefreshRate.Numerator   = 60;
     swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
-    swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    swapChainDesc.OutputWindow = hwnd;
-    swapChainDesc.SampleDesc.Count = 1;
-    swapChainDesc.SampleDesc.Quality = 0;
-    swapChainDesc.Windowed = TRUE;
-    swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+    swapChainDesc.BufferUsage                        = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    swapChainDesc.OutputWindow                       = hwnd;
+    swapChainDesc.SampleDesc.Count                   = 1;
+    swapChainDesc.SampleDesc.Quality                 = 0;
+    swapChainDesc.Windowed                           = TRUE;
+    swapChainDesc.SwapEffect                         = DXGI_SWAP_EFFECT_DISCARD;
 
     UINT createFlags = 0;
 #if LX_DX11_ENABLE_DEBUG_LAYER
     createFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
-    D3D_FEATURE_LEVEL featureLevels[] = {D3D_FEATURE_LEVEL_11_0};
+    D3D_FEATURE_LEVEL featureLevels[]     = {D3D_FEATURE_LEVEL_11_0};
     D3D_FEATURE_LEVEL createdFeatureLevel = D3D_FEATURE_LEVEL_11_0;
 
-    const HRESULT hr = D3D11CreateDeviceAndSwapChain(
-        nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, createFlags, featureLevels, 1, D3D11_SDK_VERSION, &swapChainDesc, &m_SwapChain, &m_Device, &createdFeatureLevel, &m_Context);
+    const HRESULT hr = D3D11CreateDeviceAndSwapChain(nullptr,
+                                                     D3D_DRIVER_TYPE_HARDWARE,
+                                                     nullptr,
+                                                     createFlags,
+                                                     featureLevels,
+                                                     1,
+                                                     D3D11_SDK_VERSION,
+                                                     &swapChainDesc,
+                                                     &m_SwapChain,
+                                                     &m_Device,
+                                                     &createdFeatureLevel,
+                                                     &m_Context);
 
     if (FAILED(hr))
     {
@@ -100,8 +110,8 @@ bool DX11Renderer::Initialize(HWND hwnd, int width, int height)
         return false;
     }
 
-    m_WindowHandle = hwnd;
-    m_ViewportWidth = width;
+    m_WindowHandle   = hwnd;
+    m_ViewportWidth  = width;
     m_ViewportHeight = height;
 
     if (!CreateRenderTarget() || !CreateDepthBuffer() || !CreateDefaultStates())
@@ -115,12 +125,12 @@ bool DX11Renderer::Initialize(HWND hwnd, int width, int height)
     m_Buffers.Initialize(m_Device.Get(), m_Context.Get(), &m_ResourceTables);
     m_Shaders.Initialize(m_Device.Get(), &m_ResourceTables);
 
-    m_IsInitialized = true;
-    m_LifecyclePhase = FrameLifecyclePhase::NotStarted;
-    m_ActivePass = RenderPassType::None;
-    m_RecoveryMode = RendererRecoveryMode::Normal;
+    m_IsInitialized      = true;
+    m_LifecyclePhase     = FrameLifecyclePhase::NotStarted;
+    m_ActivePass         = RenderPassType::None;
+    m_RecoveryMode       = RendererRecoveryMode::Normal;
     m_LastResourceResult = {};
-    m_FrameIndex = 0;
+    m_FrameIndex         = 0;
 
     LX_ENGINE_INFO("[Renderer] Device initialized");
     return true;
@@ -129,7 +139,7 @@ bool DX11Renderer::Initialize(HWND hwnd, int width, int height)
 bool DX11Renderer::CreateRenderTarget()
 {
     Microsoft::WRL::ComPtr<ID3D11Texture2D> backBuffer;
-    HRESULT hr = m_SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), &backBuffer);
+    HRESULT                                 hr = m_SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), &backBuffer);
     if (FAILED(hr))
     {
         LX_ENGINE_ERROR("[Renderer] GetBuffer failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
@@ -154,15 +164,15 @@ bool DX11Renderer::CreateDepthBuffer()
     }
 
     D3D11_TEXTURE2D_DESC depthDesc = {};
-    depthDesc.Width = static_cast<UINT>(m_ViewportWidth);
-    depthDesc.Height = static_cast<UINT>(m_ViewportHeight);
-    depthDesc.MipLevels = 1;
-    depthDesc.ArraySize = 1;
-    depthDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-    depthDesc.SampleDesc.Count = 1;
-    depthDesc.SampleDesc.Quality = 0;
-    depthDesc.Usage = D3D11_USAGE_DEFAULT;
-    depthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+    depthDesc.Width                = static_cast<UINT>(m_ViewportWidth);
+    depthDesc.Height               = static_cast<UINT>(m_ViewportHeight);
+    depthDesc.MipLevels            = 1;
+    depthDesc.ArraySize            = 1;
+    depthDesc.Format               = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    depthDesc.SampleDesc.Count     = 1;
+    depthDesc.SampleDesc.Quality   = 0;
+    depthDesc.Usage                = D3D11_USAGE_DEFAULT;
+    depthDesc.BindFlags            = D3D11_BIND_DEPTH_STENCIL;
 
     HRESULT hr = m_Device->CreateTexture2D(&depthDesc, nullptr, &m_DepthStencilBuffer);
     if (FAILED(hr))
@@ -184,9 +194,9 @@ bool DX11Renderer::CreateDepthBuffer()
 bool DX11Renderer::CreateDefaultStates()
 {
     D3D11_RASTERIZER_DESC rasterDesc = {};
-    rasterDesc.FillMode = D3D11_FILL_SOLID;
-    rasterDesc.CullMode = D3D11_CULL_BACK;
-    rasterDesc.DepthClipEnable = TRUE;
+    rasterDesc.FillMode              = D3D11_FILL_SOLID;
+    rasterDesc.CullMode              = D3D11_CULL_BACK;
+    rasterDesc.DepthClipEnable       = TRUE;
 
     HRESULT hr = m_Device->CreateRasterizerState(&rasterDesc, &m_DefaultRasterizerState);
     if (FAILED(hr))
@@ -195,8 +205,8 @@ bool DX11Renderer::CreateDefaultStates()
         return false;
     }
 
-    D3D11_BLEND_DESC blendDesc = {};
-    blendDesc.RenderTarget[0].BlendEnable = FALSE;
+    D3D11_BLEND_DESC blendDesc                      = {};
+    blendDesc.RenderTarget[0].BlendEnable           = FALSE;
     blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
     hr = m_Device->CreateBlendState(&blendDesc, &m_DefaultBlendState);
@@ -207,10 +217,10 @@ bool DX11Renderer::CreateDefaultStates()
     }
 
     D3D11_DEPTH_STENCIL_DESC depthDesc = {};
-    depthDesc.DepthEnable = TRUE;
-    depthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-    depthDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
-    depthDesc.StencilEnable = FALSE;
+    depthDesc.DepthEnable              = TRUE;
+    depthDesc.DepthWriteMask           = D3D11_DEPTH_WRITE_MASK_ALL;
+    depthDesc.DepthFunc                = D3D11_COMPARISON_LESS_EQUAL;
+    depthDesc.StencilEnable            = FALSE;
 
     hr = m_Device->CreateDepthStencilState(&depthDesc, &m_DefaultDepthState);
     if (FAILED(hr))
@@ -219,10 +229,10 @@ bool DX11Renderer::CreateDefaultStates()
         return false;
     }
 
-    depthDesc.DepthEnable = FALSE;
+    depthDesc.DepthEnable    = FALSE;
     depthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-    depthDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
-    hr = m_Device->CreateDepthStencilState(&depthDesc, &m_NoDepthState);
+    depthDesc.DepthFunc      = D3D11_COMPARISON_ALWAYS;
+    hr                       = m_Device->CreateDepthStencilState(&depthDesc, &m_NoDepthState);
     if (FAILED(hr))
     {
         LX_ENGINE_ERROR("[Renderer] Create no-depth state failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(hr));
@@ -247,8 +257,8 @@ void DX11Renderer::ReleaseRenderTarget()
 
 void DX11Renderer::QueueResize(int width, int height)
 {
-    m_HasPendingResize = true;
-    m_PendingResizeWidth = width;
+    m_HasPendingResize    = true;
+    m_PendingResizeWidth  = width;
     m_PendingResizeHeight = height;
 }
 
@@ -268,7 +278,7 @@ bool DX11Renderer::ApplyResizeNow(int width, int height)
         return false;
     }
 
-    m_ViewportWidth = width;
+    m_ViewportWidth  = width;
     m_ViewportHeight = height;
 
     if (!CreateRenderTarget() || !CreateDepthBuffer())
@@ -277,12 +287,12 @@ bool DX11Renderer::ApplyResizeNow(int width, int height)
     }
 
     D3D11_VIEWPORT viewport = {};
-    viewport.TopLeftX = 0.0f;
-    viewport.TopLeftY = 0.0f;
-    viewport.Width = static_cast<float>(m_ViewportWidth);
-    viewport.Height = static_cast<float>(m_ViewportHeight);
-    viewport.MinDepth = 0.0f;
-    viewport.MaxDepth = 1.0f;
+    viewport.TopLeftX       = 0.0f;
+    viewport.TopLeftY       = 0.0f;
+    viewport.Width          = static_cast<float>(m_ViewportWidth);
+    viewport.Height         = static_cast<float>(m_ViewportHeight);
+    viewport.MinDepth       = 0.0f;
+    viewport.MaxDepth       = 1.0f;
     m_Context->RSSetViewports(1, &viewport);
 
     LX_ENGINE_INFO("[Renderer] Swapchain resized: {}x{}", width, height);
@@ -304,8 +314,8 @@ void DX11Renderer::ApplyPendingResizeIfNeeded()
 
     if (ApplyResizeNow(m_PendingResizeWidth, m_PendingResizeHeight))
     {
-        m_HasPendingResize = false;
-        m_PendingResizeWidth = 0;
+        m_HasPendingResize    = false;
+        m_PendingResizeWidth  = 0;
         m_PendingResizeHeight = 0;
     }
 }
@@ -326,9 +336,9 @@ void DX11Renderer::SetResourceResult(RendererResultCode code)
 void DX11Renderer::EnterRecoveryMode(const char* reason, HRESULT hr)
 {
     LX_ENGINE_ERROR("[Renderer] Entering recovery mode: {} (HRESULT: 0x{:08X})", reason, static_cast<uint32_t>(hr));
-    m_RecoveryMode = RendererRecoveryMode::SafeNoRender;
+    m_RecoveryMode   = RendererRecoveryMode::SafeNoRender;
     m_LifecyclePhase = FrameLifecyclePhase::NotStarted;
-    m_ActivePass = RenderPassType::None;
+    m_ActivePass     = RenderPassType::None;
 }
 
 void DX11Renderer::BeginFrame()
@@ -368,10 +378,10 @@ void DX11Renderer::BeginFrame()
             return;
         }
 
-        m_HasPendingResize = false;
-        m_PendingResizeWidth = 0;
+        m_HasPendingResize    = false;
+        m_PendingResizeWidth  = 0;
         m_PendingResizeHeight = 0;
-        m_RecoveryMode = RendererRecoveryMode::Normal;
+        m_RecoveryMode        = RendererRecoveryMode::Normal;
         LX_ENGINE_INFO("[Renderer] Recovery completed");
     }
 
@@ -394,7 +404,7 @@ void DX11Renderer::BeginFrame()
     m_Context->ClearDepthStencilView(m_DepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     m_LifecyclePhase = FrameLifecyclePhase::InFrame;
-    m_ActivePass = RenderPassType::None;
+    m_ActivePass     = RenderPassType::None;
 }
 
 void DX11Renderer::Clear(const RendererColor& color)
@@ -416,17 +426,17 @@ void DX11Renderer::SetViewport(const RendererViewport& viewport)
     }
 
     D3D11_VIEWPORT dxViewport = {};
-    dxViewport.TopLeftX = viewport.X;
-    dxViewport.TopLeftY = viewport.Y;
-    dxViewport.Width = viewport.Width;
-    dxViewport.Height = viewport.Height;
-    dxViewport.MinDepth = viewport.MinDepth;
-    dxViewport.MaxDepth = viewport.MaxDepth;
+    dxViewport.TopLeftX       = viewport.X;
+    dxViewport.TopLeftY       = viewport.Y;
+    dxViewport.Width          = viewport.Width;
+    dxViewport.Height         = viewport.Height;
+    dxViewport.MinDepth       = viewport.MinDepth;
+    dxViewport.MaxDepth       = viewport.MaxDepth;
     m_Context->RSSetViewports(1, &dxViewport);
 
     if (viewport.Width > 0.0f && viewport.Height > 0.0f)
     {
-        m_ViewportWidth = static_cast<int>(viewport.Width);
+        m_ViewportWidth  = static_cast<int>(viewport.Width);
         m_ViewportHeight = static_cast<int>(viewport.Height);
     }
 }
@@ -533,7 +543,7 @@ bool DX11Renderer::BeginPass(RenderPassType passType)
     }
 
     ApplyPassState(passType);
-    m_ActivePass = passType;
+    m_ActivePass     = passType;
     m_LifecyclePhase = FrameLifecyclePhase::InPass;
     return true;
 }
@@ -551,7 +561,7 @@ void DX11Renderer::EndPass()
         return;
     }
 
-    m_ActivePass = RenderPassType::None;
+    m_ActivePass     = RenderPassType::None;
     m_LifecyclePhase = FrameLifecyclePhase::InFrame;
 
     // Restore baseline depth state between passes.
@@ -630,7 +640,7 @@ void DX11Renderer::Present()
     }
 
     m_LifecyclePhase = FrameLifecyclePhase::NotStarted;
-    m_ActivePass = RenderPassType::None;
+    m_ActivePass     = RenderPassType::None;
 }
 
 void DX11Renderer::OnResize(int width, int height)
@@ -659,8 +669,8 @@ void DX11Renderer::OnResize(int width, int height)
         return;
     }
 
-    m_HasPendingResize = false;
-    m_PendingResizeWidth = 0;
+    m_HasPendingResize    = false;
+    m_PendingResizeWidth  = 0;
     m_PendingResizeHeight = 0;
 }
 
@@ -673,7 +683,7 @@ RendererTextureHandle DX11Renderer::CreateTexture(const RendererTextureDesc& des
         return {};
     }
 
-    RendererResult result = {};
+    RendererResult        result = {};
     RendererTextureHandle handle = m_Textures.CreateTexture(desc, result);
     SetResourceResult(result.Code);
 
@@ -687,7 +697,7 @@ RendererTextureHandle DX11Renderer::CreateTexture(const RendererTextureDesc& des
 
 bool DX11Renderer::DestroyTexture(RendererTextureHandle handle)
 {
-    RendererResultCode resolveCode = RendererResultCode::Success;
+    RendererResultCode        resolveCode = RendererResultCode::Success;
     ID3D11ShaderResourceView* textureView = m_Textures.ResolveShaderResourceView(handle, resolveCode);
     if (!textureView)
     {
@@ -704,7 +714,7 @@ bool DX11Renderer::DestroyTexture(RendererTextureHandle handle)
     }
 
     RendererResult result = {};
-    const bool ok = m_Textures.DestroyTexture(handle, result);
+    const bool     ok     = m_Textures.DestroyTexture(handle, result);
     SetResourceResult(result.Code);
 
     if (!ok)
@@ -717,7 +727,7 @@ bool DX11Renderer::DestroyTexture(RendererTextureHandle handle)
 
 RendererVertexBufferHandle DX11Renderer::CreateVertexBuffer(const RendererBufferDesc& desc)
 {
-    RendererResult result = {};
+    RendererResult             result = {};
     RendererVertexBufferHandle handle = m_Buffers.CreateVertexBuffer(desc, result);
     SetResourceResult(result.Code);
     if (!handle.IsValid())
@@ -729,7 +739,7 @@ RendererVertexBufferHandle DX11Renderer::CreateVertexBuffer(const RendererBuffer
 
 RendererIndexBufferHandle DX11Renderer::CreateIndexBuffer(const RendererBufferDesc& desc)
 {
-    RendererResult result = {};
+    RendererResult            result = {};
     RendererIndexBufferHandle handle = m_Buffers.CreateIndexBuffer(desc, result);
     SetResourceResult(result.Code);
     if (!handle.IsValid())
@@ -741,7 +751,7 @@ RendererIndexBufferHandle DX11Renderer::CreateIndexBuffer(const RendererBufferDe
 
 RendererConstantBufferHandle DX11Renderer::CreateConstantBuffer(const RendererBufferDesc& desc)
 {
-    RendererResult result = {};
+    RendererResult               result = {};
     RendererConstantBufferHandle handle = m_Buffers.CreateConstantBuffer(desc, result);
     SetResourceResult(result.Code);
     if (!handle.IsValid())
@@ -754,7 +764,7 @@ RendererConstantBufferHandle DX11Renderer::CreateConstantBuffer(const RendererBu
 bool DX11Renderer::DestroyBuffer(RendererBufferHandle handle)
 {
     RendererResultCode resolveCode = RendererResultCode::Success;
-    ID3D11Buffer* buffer = m_Buffers.ResolveBuffer(handle, resolveCode);
+    ID3D11Buffer*      buffer      = m_Buffers.ResolveBuffer(handle, resolveCode);
     if (!buffer)
     {
         SetResourceResult(resolveCode);
@@ -767,8 +777,8 @@ bool DX11Renderer::DestroyBuffer(RendererBufferHandle handle)
         if (handle.Type == RendererBufferType::Vertex)
         {
             ID3D11Buffer* nullBuffer = nullptr;
-            UINT stride = 0;
-            UINT offset = 0;
+            UINT          stride     = 0;
+            UINT          offset     = 0;
             m_Context->IASetVertexBuffers(0, 1, &nullBuffer, &stride, &offset);
         }
         else if (handle.Type == RendererBufferType::Index)
@@ -784,7 +794,7 @@ bool DX11Renderer::DestroyBuffer(RendererBufferHandle handle)
     }
 
     RendererResult result = {};
-    const bool ok = m_Buffers.DestroyBuffer(handle, result);
+    const bool     ok     = m_Buffers.DestroyBuffer(handle, result);
     SetResourceResult(result.Code);
     if (!ok)
     {
@@ -795,7 +805,7 @@ bool DX11Renderer::DestroyBuffer(RendererBufferHandle handle)
 
 RendererShaderHandle DX11Renderer::CreateVertexShader(const RendererShaderDesc& desc)
 {
-    RendererResult result = {};
+    RendererResult       result = {};
     RendererShaderHandle handle = m_Shaders.CreateVertexShader(desc, result);
     SetResourceResult(result.Code);
     if (!handle.IsValid())
@@ -807,7 +817,7 @@ RendererShaderHandle DX11Renderer::CreateVertexShader(const RendererShaderDesc& 
 
 RendererShaderHandle DX11Renderer::CreatePixelShader(const RendererShaderDesc& desc)
 {
-    RendererResult result = {};
+    RendererResult       result = {};
     RendererShaderHandle handle = m_Shaders.CreatePixelShader(desc, result);
     SetResourceResult(result.Code);
     if (!handle.IsValid())
@@ -854,7 +864,7 @@ bool DX11Renderer::DestroyShader(RendererShaderHandle handle)
     }
 
     RendererResult result = {};
-    const bool ok = m_Shaders.DestroyShader(handle, result);
+    const bool     ok     = m_Shaders.DestroyShader(handle, result);
     SetResourceResult(result.Code);
     if (!ok)
     {
@@ -866,7 +876,7 @@ bool DX11Renderer::DestroyShader(RendererShaderHandle handle)
 bool DX11Renderer::UpdateBuffer(const RendererBufferUpdateRequest& request)
 {
     RendererResult result = {};
-    const bool ok = m_Buffers.UpdateBuffer(request, result);
+    const bool     ok     = m_Buffers.UpdateBuffer(request, result);
     SetResourceResult(result.Code);
     if (!ok)
     {
@@ -878,7 +888,7 @@ bool DX11Renderer::UpdateBuffer(const RendererBufferUpdateRequest& request)
 bool DX11Renderer::MapBuffer(const RendererMapRequest& request, RendererMappedResource& mapped)
 {
     RendererResult result = {};
-    const bool ok = m_Buffers.MapBuffer(request, mapped, result);
+    const bool     ok     = m_Buffers.MapBuffer(request, mapped, result);
     SetResourceResult(result.Code);
     if (!ok)
     {
@@ -890,7 +900,7 @@ bool DX11Renderer::MapBuffer(const RendererMapRequest& request, RendererMappedRe
 bool DX11Renderer::UnmapBuffer(RendererBufferHandle handle)
 {
     RendererResult result = {};
-    const bool ok = m_Buffers.UnmapBuffer(handle, result);
+    const bool     ok     = m_Buffers.UnmapBuffer(handle, result);
     SetResourceResult(result.Code);
     if (!ok)
     {
@@ -902,7 +912,7 @@ bool DX11Renderer::UnmapBuffer(RendererBufferHandle handle)
 bool DX11Renderer::BindVertexBuffer(RendererVertexBufferHandle handle, uint32_t stride, uint32_t offset)
 {
     RendererResultCode resolveCode = RendererResultCode::Success;
-    ID3D11Buffer* buffer = m_Buffers.ResolveBuffer(ToBufferHandle(handle), resolveCode);
+    ID3D11Buffer*      buffer      = m_Buffers.ResolveBuffer(ToBufferHandle(handle), resolveCode);
     SetResourceResult(resolveCode);
     if (!buffer)
     {
@@ -919,7 +929,7 @@ bool DX11Renderer::BindVertexBuffer(RendererVertexBufferHandle handle, uint32_t 
 bool DX11Renderer::BindIndexBuffer(RendererIndexBufferHandle handle, RendererIndexFormat format, uint32_t offset)
 {
     RendererResultCode resolveCode = RendererResultCode::Success;
-    ID3D11Buffer* buffer = m_Buffers.ResolveBuffer(ToBufferHandle(handle), resolveCode);
+    ID3D11Buffer*      buffer      = m_Buffers.ResolveBuffer(ToBufferHandle(handle), resolveCode);
     SetResourceResult(resolveCode);
     if (!buffer)
     {
@@ -937,7 +947,7 @@ bool DX11Renderer::BindIndexBuffer(RendererIndexBufferHandle handle, RendererInd
 bool DX11Renderer::BindConstantBuffer(RendererConstantBufferHandle handle, RendererShaderStage stage, uint32_t slot)
 {
     RendererResultCode resolveCode = RendererResultCode::Success;
-    ID3D11Buffer* buffer = m_Buffers.ResolveBuffer(ToBufferHandle(handle), resolveCode);
+    ID3D11Buffer*      buffer      = m_Buffers.ResolveBuffer(ToBufferHandle(handle), resolveCode);
     SetResourceResult(resolveCode);
     if (!buffer)
     {
@@ -994,7 +1004,7 @@ bool DX11Renderer::BindShader(RendererShaderHandle handle)
 
 bool DX11Renderer::BindTexture(RendererTextureHandle handle, RendererShaderStage stage, uint32_t slot)
 {
-    RendererResultCode resolveCode = RendererResultCode::Success;
+    RendererResultCode        resolveCode = RendererResultCode::Success;
     ID3D11ShaderResourceView* textureView = m_Textures.ResolveShaderResourceView(handle, resolveCode);
     SetResourceResult(resolveCode);
     if (!textureView)
@@ -1042,9 +1052,10 @@ void DX11Renderer::Shutdown()
 
     m_ResourceTables.ReleaseAll();
     const DX11ResourcePoolStats textureStats = m_ResourceTables.GetTexturePoolStats();
-    const DX11ResourcePoolStats bufferStats = m_ResourceTables.GetBufferPoolStats();
-    const DX11ResourcePoolStats shaderStats = m_ResourceTables.GetShaderPoolStats();
-    LX_ENGINE_INFO("[Renderer] Resource cleanup summary | Texture(created={}, destroyed={}, forceReleased={}, live={}) | Buffer(created={}, destroyed={}, forceReleased={}, live={}) | "
+    const DX11ResourcePoolStats bufferStats  = m_ResourceTables.GetBufferPoolStats();
+    const DX11ResourcePoolStats shaderStats  = m_ResourceTables.GetShaderPoolStats();
+    LX_ENGINE_INFO("[Renderer] Resource cleanup summary | Texture(created={}, destroyed={}, forceReleased={}, live={}) | "
+                   "Buffer(created={}, destroyed={}, forceReleased={}, live={}) | "
                    "Shader(created={}, destroyed={}, forceReleased={}, live={})",
                    textureStats.Created,
                    textureStats.Destroyed,
@@ -1074,19 +1085,19 @@ void DX11Renderer::Shutdown()
     m_Context.Reset();
     m_Device.Reset();
 
-    m_ViewportWidth = 0;
-    m_ViewportHeight = 0;
-    m_CurrentViewMatrix = MakeIdentityMatrix();
+    m_ViewportWidth           = 0;
+    m_ViewportHeight          = 0;
+    m_CurrentViewMatrix       = MakeIdentityMatrix();
     m_CurrentProjectionMatrix = MakeIdentityMatrix();
 
-    m_LifecyclePhase = FrameLifecyclePhase::NotStarted;
-    m_ActivePass = RenderPassType::None;
-    m_RecoveryMode = RendererRecoveryMode::Normal;
-    m_HasPendingResize = false;
-    m_PendingResizeWidth = 0;
+    m_LifecyclePhase      = FrameLifecyclePhase::NotStarted;
+    m_ActivePass          = RenderPassType::None;
+    m_RecoveryMode        = RendererRecoveryMode::Normal;
+    m_HasPendingResize    = false;
+    m_PendingResizeWidth  = 0;
     m_PendingResizeHeight = 0;
-    m_LastResourceResult = {};
-    m_FrameIndex = 0;
+    m_LastResourceResult  = {};
+    m_FrameIndex          = 0;
 
     m_IsInitialized = false;
     LX_ENGINE_INFO("[Renderer] Shutdown complete");

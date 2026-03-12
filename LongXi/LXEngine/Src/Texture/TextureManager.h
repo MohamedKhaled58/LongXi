@@ -1,10 +1,11 @@
 #pragma once
 
-#include "Texture/Texture.h"
 #include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
+
+#include "Texture/Texture.h"
 
 // =============================================================================
 // TextureManager — Texture loading and caching subsystem
@@ -25,7 +26,7 @@ public:
     ~TextureManager();
 
     // Non-copyable
-    TextureManager(const TextureManager&) = delete;
+    TextureManager(const TextureManager&)            = delete;
     TextureManager& operator=(const TextureManager&) = delete;
 
     // Load texture from virtual path (returns cached shared_ptr if already loaded)
@@ -46,8 +47,8 @@ private:
     std::string Normalize(const std::string& path) const;
 
 private:
-    Renderer& m_Renderer;
-    CVirtualFileSystem& m_VFS;
+    Renderer&                                                 m_Renderer;
+    CVirtualFileSystem&                                       m_VFS;
     std::unordered_map<std::string, std::shared_ptr<Texture>> m_Cache;
 };
 

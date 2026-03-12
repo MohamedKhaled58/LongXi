@@ -3,7 +3,10 @@
 namespace LongXi
 {
 
-RendererHandleId DX11ResourceTables::AllocateSlot(std::vector<uint32_t>& freeList, uint32_t& liveCount, uint32_t& createdCount, std::vector<uint32_t>& generations)
+RendererHandleId DX11ResourceTables::AllocateSlot(std::vector<uint32_t>& freeList,
+                                                  uint32_t&              liveCount,
+                                                  uint32_t&              createdCount,
+                                                  std::vector<uint32_t>& generations)
 {
     uint32_t slot = 0;
 
@@ -50,9 +53,9 @@ RendererTextureHandle DX11ResourceTables::RegisterTexture(const DX11TextureRecor
     }
 
     DX11TextureRecord& record = m_Textures[id.Slot - 1];
-    record = recordTemplate;
-    record.Generation = id.Generation;
-    record.State = DX11ResourceRecordState::Allocated;
+    record                    = recordTemplate;
+    record.Generation         = id.Generation;
+    record.State              = DX11ResourceRecordState::Allocated;
 
     return {id};
 }
@@ -67,10 +70,10 @@ RendererVertexBufferHandle DX11ResourceTables::RegisterVertexBuffer(const DX11Bu
     }
 
     DX11BufferRecord& record = m_Buffers[id.Slot - 1];
-    record = recordTemplate;
-    record.Generation = id.Generation;
-    record.Type = RendererBufferType::Vertex;
-    record.State = DX11ResourceRecordState::Allocated;
+    record                   = recordTemplate;
+    record.Generation        = id.Generation;
+    record.Type              = RendererBufferType::Vertex;
+    record.State             = DX11ResourceRecordState::Allocated;
 
     return {id};
 }
@@ -85,10 +88,10 @@ RendererIndexBufferHandle DX11ResourceTables::RegisterIndexBuffer(const DX11Buff
     }
 
     DX11BufferRecord& record = m_Buffers[id.Slot - 1];
-    record = recordTemplate;
-    record.Generation = id.Generation;
-    record.Type = RendererBufferType::Index;
-    record.State = DX11ResourceRecordState::Allocated;
+    record                   = recordTemplate;
+    record.Generation        = id.Generation;
+    record.Type              = RendererBufferType::Index;
+    record.State             = DX11ResourceRecordState::Allocated;
 
     return {id};
 }
@@ -103,10 +106,10 @@ RendererConstantBufferHandle DX11ResourceTables::RegisterConstantBuffer(const DX
     }
 
     DX11BufferRecord& record = m_Buffers[id.Slot - 1];
-    record = recordTemplate;
-    record.Generation = id.Generation;
-    record.Type = RendererBufferType::Constant;
-    record.State = DX11ResourceRecordState::Allocated;
+    record                   = recordTemplate;
+    record.Generation        = id.Generation;
+    record.Type              = RendererBufferType::Constant;
+    record.State             = DX11ResourceRecordState::Allocated;
 
     return {id};
 }
@@ -121,9 +124,9 @@ RendererShaderHandle DX11ResourceTables::RegisterShader(const DX11ShaderRecord& 
     }
 
     DX11ShaderRecord& record = m_Shaders[id.Slot - 1];
-    record = recordTemplate;
-    record.Generation = id.Generation;
-    record.State = DX11ResourceRecordState::Allocated;
+    record                   = recordTemplate;
+    record.Generation        = id.Generation;
+    record.State             = DX11ResourceRecordState::Allocated;
 
     return {id, record.Stage};
 }
@@ -131,7 +134,7 @@ RendererShaderHandle DX11ResourceTables::RegisterShader(const DX11ShaderRecord& 
 bool DX11ResourceTables::ResolveTexture(RendererTextureHandle handle, DX11TextureRecord*& outRecord, RendererResultCode& outError)
 {
     outRecord = nullptr;
-    outError = RendererResultCode::InvalidHandle;
+    outError  = RendererResultCode::InvalidHandle;
 
     if (!handle.IsValid())
     {
@@ -150,14 +153,16 @@ bool DX11ResourceTables::ResolveTexture(RendererTextureHandle handle, DX11Textur
     }
 
     outRecord = &record;
-    outError = RendererResultCode::Success;
+    outError  = RendererResultCode::Success;
     return true;
 }
 
-bool DX11ResourceTables::ResolveTexture(RendererTextureHandle handle, const DX11TextureRecord*& outRecord, RendererResultCode& outError) const
+bool DX11ResourceTables::ResolveTexture(RendererTextureHandle     handle,
+                                        const DX11TextureRecord*& outRecord,
+                                        RendererResultCode&       outError) const
 {
     outRecord = nullptr;
-    outError = RendererResultCode::InvalidHandle;
+    outError  = RendererResultCode::InvalidHandle;
 
     if (!handle.IsValid())
     {
@@ -176,14 +181,14 @@ bool DX11ResourceTables::ResolveTexture(RendererTextureHandle handle, const DX11
     }
 
     outRecord = &record;
-    outError = RendererResultCode::Success;
+    outError  = RendererResultCode::Success;
     return true;
 }
 
 bool DX11ResourceTables::ResolveBuffer(RendererBufferHandle handle, DX11BufferRecord*& outRecord, RendererResultCode& outError)
 {
     outRecord = nullptr;
-    outError = RendererResultCode::InvalidHandle;
+    outError  = RendererResultCode::InvalidHandle;
 
     if (!handle.IsValid())
     {
@@ -202,14 +207,14 @@ bool DX11ResourceTables::ResolveBuffer(RendererBufferHandle handle, DX11BufferRe
     }
 
     outRecord = &record;
-    outError = RendererResultCode::Success;
+    outError  = RendererResultCode::Success;
     return true;
 }
 
 bool DX11ResourceTables::ResolveBuffer(RendererBufferHandle handle, const DX11BufferRecord*& outRecord, RendererResultCode& outError) const
 {
     outRecord = nullptr;
-    outError = RendererResultCode::InvalidHandle;
+    outError  = RendererResultCode::InvalidHandle;
 
     if (!handle.IsValid())
     {
@@ -228,14 +233,14 @@ bool DX11ResourceTables::ResolveBuffer(RendererBufferHandle handle, const DX11Bu
     }
 
     outRecord = &record;
-    outError = RendererResultCode::Success;
+    outError  = RendererResultCode::Success;
     return true;
 }
 
 bool DX11ResourceTables::ResolveShader(RendererShaderHandle handle, DX11ShaderRecord*& outRecord, RendererResultCode& outError)
 {
     outRecord = nullptr;
-    outError = RendererResultCode::InvalidHandle;
+    outError  = RendererResultCode::InvalidHandle;
 
     if (!handle.IsValid())
     {
@@ -254,14 +259,14 @@ bool DX11ResourceTables::ResolveShader(RendererShaderHandle handle, DX11ShaderRe
     }
 
     outRecord = &record;
-    outError = RendererResultCode::Success;
+    outError  = RendererResultCode::Success;
     return true;
 }
 
 bool DX11ResourceTables::ResolveShader(RendererShaderHandle handle, const DX11ShaderRecord*& outRecord, RendererResultCode& outError) const
 {
     outRecord = nullptr;
-    outError = RendererResultCode::InvalidHandle;
+    outError  = RendererResultCode::InvalidHandle;
 
     if (!handle.IsValid())
     {
@@ -280,7 +285,7 @@ bool DX11ResourceTables::ResolveShader(RendererShaderHandle handle, const DX11Sh
     }
 
     outRecord = &record;
-    outError = RendererResultCode::Success;
+    outError  = RendererResultCode::Success;
     return true;
 }
 
@@ -321,7 +326,7 @@ bool DX11ResourceTables::DestroyBuffer(RendererBufferHandle handle, RendererResu
 
     record->Buffer.Reset();
     record->IsMapped = false;
-    record->State = DX11ResourceRecordState::Destroyed;
+    record->State    = DX11ResourceRecordState::Destroyed;
 
     if (handle.Id.Slot <= m_BufferGenerations.size())
     {
@@ -368,32 +373,32 @@ bool DX11ResourceTables::DestroyShader(RendererShaderHandle handle, RendererResu
 void DX11ResourceTables::MarkTextureBound(RendererTextureHandle handle, uint64_t frameIndex)
 {
     DX11TextureRecord* record = nullptr;
-    RendererResultCode error = RendererResultCode::Success;
+    RendererResultCode error  = RendererResultCode::Success;
     if (ResolveTexture(handle, record, error))
     {
-        record->State = DX11ResourceRecordState::Bound;
+        record->State               = DX11ResourceRecordState::Bound;
         record->LastBoundFrameIndex = frameIndex;
     }
 }
 
 void DX11ResourceTables::MarkBufferBound(RendererBufferHandle handle, uint64_t frameIndex)
 {
-    DX11BufferRecord* record = nullptr;
-    RendererResultCode error = RendererResultCode::Success;
+    DX11BufferRecord*  record = nullptr;
+    RendererResultCode error  = RendererResultCode::Success;
     if (ResolveBuffer(handle, record, error))
     {
-        record->State = DX11ResourceRecordState::Bound;
+        record->State               = DX11ResourceRecordState::Bound;
         record->LastBoundFrameIndex = frameIndex;
     }
 }
 
 void DX11ResourceTables::MarkShaderBound(RendererShaderHandle handle, uint64_t frameIndex)
 {
-    DX11ShaderRecord* record = nullptr;
-    RendererResultCode error = RendererResultCode::Success;
+    DX11ShaderRecord*  record = nullptr;
+    RendererResultCode error  = RendererResultCode::Success;
     if (ResolveShader(handle, record, error))
     {
-        record->State = DX11ResourceRecordState::Bound;
+        record->State               = DX11ResourceRecordState::Bound;
         record->LastBoundFrameIndex = frameIndex;
     }
 }
@@ -413,8 +418,8 @@ bool DX11ResourceTables::MarkBufferMapped(RendererBufferHandle handle, RendererR
     }
 
     record->IsMapped = true;
-    record->State = DX11ResourceRecordState::Mapped;
-    outError = RendererResultCode::Success;
+    record->State    = DX11ResourceRecordState::Mapped;
+    outError         = RendererResultCode::Success;
     return true;
 }
 
@@ -433,8 +438,8 @@ bool DX11ResourceTables::MarkBufferUnmapped(RendererBufferHandle handle, Rendere
     }
 
     record->IsMapped = false;
-    record->State = DX11ResourceRecordState::Allocated;
-    outError = RendererResultCode::Success;
+    record->State    = DX11ResourceRecordState::Allocated;
+    outError         = RendererResultCode::Success;
     return true;
 }
 
@@ -473,7 +478,7 @@ void DX11ResourceTables::ReleaseAll()
 
         record.Buffer.Reset();
         record.IsMapped = false;
-        record.State = DX11ResourceRecordState::Destroyed;
+        record.State    = DX11ResourceRecordState::Destroyed;
         ++m_BufferStats.ForceReleased;
         DestroySlot({i + 1, record.Generation}, m_BufferFreeList, m_BufferStats.Live, m_BufferStats.Destroyed);
         if (i < m_BufferGenerations.size())

@@ -1,9 +1,9 @@
 #include "Scene/SceneNode.h"
 
-#include "Core/Logging/LogMacros.h"
-
 #include <algorithm>
 #include <utility>
+
+#include "Core/Logging/LogMacros.h"
 
 namespace LongXi
 {
@@ -18,7 +18,7 @@ void SceneNode::AddChild(std::unique_ptr<SceneNode> child)
         return;
     }
 
-    child->m_Parent = this;
+    child->m_Parent         = this;
     child->m_TransformDirty = true;
     m_Children.push_back(std::move(child));
     LX_ENGINE_INFO("[Scene] Node added");
@@ -49,19 +49,19 @@ void SceneNode::RemoveChild(SceneNode* child)
 
 void SceneNode::SetPosition(Vector3 position)
 {
-    m_Position = position;
+    m_Position       = position;
     m_TransformDirty = true;
 }
 
 void SceneNode::SetRotation(Vector3 rotationDegrees)
 {
-    m_Rotation = rotationDegrees;
+    m_Rotation       = rotationDegrees;
     m_TransformDirty = true;
 }
 
 void SceneNode::SetScale(Vector3 scale)
 {
-    m_Scale = scale;
+    m_Scale          = scale;
     m_TransformDirty = true;
 }
 
@@ -139,7 +139,7 @@ void SceneNode::ComputeWorldTransform()
 
     m_WorldPosition = m_Position;
     m_WorldRotation = m_Rotation;
-    m_WorldScale = m_Scale;
+    m_WorldScale    = m_Scale;
 }
 
 void SceneNode::TraverseUpdate(float deltaTime, bool parentWasRecomputed)

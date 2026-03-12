@@ -32,10 +32,10 @@ public:
     bool HandleWin32Message(uint32_t msg, uint64_t wParam, int64_t lParam);
 
 private:
-    bool m_Initialized = false;
-    HWND m_WindowHandle = nullptr;
-    int m_ViewportWidth = 0;
-    int m_ViewportHeight = 0;
+    bool m_Initialized    = false;
+    HWND m_WindowHandle   = nullptr;
+    int  m_ViewportWidth  = 0;
+    int  m_ViewportHeight = 0;
 };
 
 } // namespace LongXi

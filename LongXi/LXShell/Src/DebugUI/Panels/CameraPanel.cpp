@@ -1,7 +1,9 @@
 #include "CameraPanel.h"
-#include "Scene/Camera.h"
-#include "Core/Logging/LogMacros.h"
+
 #include <imgui.h>
+
+#include "Core/Logging/LogMacros.h"
+#include "Scene/Camera.h"
 
 namespace LongXi
 {

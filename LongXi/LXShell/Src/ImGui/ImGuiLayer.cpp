@@ -4,7 +4,6 @@
 
 #include <Core/Logging/LogMacros.h>
 #include <Engine/Engine.h>
-
 #include <d3d11.h>
 #include <imgui.h>
 #include <imgui_impl_dx11.h>
@@ -28,7 +27,7 @@ bool ImGuiLayer::Initialize(Engine& engine, HWND windowHandle)
         return false;
     }
 
-    ID3D11Device* device = static_cast<ID3D11Device*>(engine.GetRendererDeviceHandle());
+    ID3D11Device*        device  = static_cast<ID3D11Device*>(engine.GetRendererDeviceHandle());
     ID3D11DeviceContext* context = static_cast<ID3D11DeviceContext*>(engine.GetRendererContextHandle());
     if (!device || !context)
     {
@@ -36,8 +35,8 @@ bool ImGuiLayer::Initialize(Engine& engine, HWND windowHandle)
         return false;
     }
 
-    m_WindowHandle = windowHandle;
-    m_ViewportWidth = engine.GetRendererViewportWidth();
+    m_WindowHandle   = windowHandle;
+    m_ViewportWidth  = engine.GetRendererViewportWidth();
     m_ViewportHeight = engine.GetRendererViewportHeight();
 
     IMGUI_CHECKVERSION();
@@ -121,7 +120,7 @@ void ImGuiLayer::OnResize(int width, int height)
         return;
     }
 
-    m_ViewportWidth = width;
+    m_ViewportWidth  = width;
     m_ViewportHeight = height;
 }
 
@@ -133,7 +132,8 @@ bool ImGuiLayer::HandleWin32Message(uint32_t msg, uint64_t wParam, int64_t lPara
     }
 
     extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND, UINT, WPARAM, LPARAM);
-    return ImGui_ImplWin32_WndProcHandler(m_WindowHandle, static_cast<UINT>(msg), static_cast<WPARAM>(wParam), static_cast<LPARAM>(lParam)) != 0;
+    return ImGui_ImplWin32_WndProcHandler(
+               m_WindowHandle, static_cast<UINT>(msg), static_cast<WPARAM>(wParam), static_cast<LPARAM>(lParam)) != 0;
 }
 
 } // namespace LongXi

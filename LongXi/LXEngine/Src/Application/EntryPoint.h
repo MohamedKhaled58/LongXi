@@ -7,12 +7,12 @@
 // CreateApplication() and includes this header exactly once.
 // =============================================================================
 
+#include <windows.h>
+
 #include "Application/Application.h"
 #include "Application/DebugConsoleGuard.h"
 #include "Core/Logging/Log.h"
 #include "Core/Logging/LogMacros.h"
-
-#include <windows.h>
 
 namespace LongXi
 {

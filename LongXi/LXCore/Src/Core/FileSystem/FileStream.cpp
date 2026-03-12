@@ -1,9 +1,10 @@
 #include "Core/FileSystem/FileStream.h"
-#include "Core/Logging/LogMacros.h"
 
 #include <Windows.h>
 #include <algorithm>
 #include <cstring>
+
+#include "Core/Logging/LogMacros.h"
 
 namespace LongXi
 {
@@ -63,7 +64,7 @@ size_t CFileDiskStream::Read(void* buffer, size_t size)
         return 0;
 
     size_t remaining = m_Size - m_Position;
-    size_t toRead = std::min(size, remaining);
+    size_t toRead    = std::min(size, remaining);
     if (toRead == 0)
         return 0;
 
@@ -116,7 +117,7 @@ size_t CFileWdfStream::Read(void* buffer, size_t size)
         return 0;
 
     size_t remaining = m_Data.size() - m_Position;
-    size_t toRead = std::min(size, remaining);
+    size_t toRead    = std::min(size, remaining);
     std::memcpy(buffer, m_Data.data() + m_Position, toRead);
     m_Position += toRead;
     return toRead;

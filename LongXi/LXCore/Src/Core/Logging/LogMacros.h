@@ -31,3 +31,10 @@
 #define LX_WARN(...) ::LongXi::Log::GetShellLogger()->warn(__VA_ARGS__)
 #define LX_ERROR(...) ::LongXi::Log::GetShellLogger()->error(__VA_ARGS__)
 #define LX_CRITICAL(...) ::LongXi::Log::GetShellLogger()->critical(__VA_ARGS__)
+
+// --- LXGameMap Macros ---
+#define LX_MAP_TRACE(...) ::LongXi::Log::GetShellLogger()->trace(__VA_ARGS__)
+#define LX_MAP_INFO(...) ::LongXi::Log::GetShellLogger()->info(__VA_ARGS__)
+#define LX_MAP_WARN(...) ::LongXi::Log::GetShellLogger()->warn(__VA_ARGS__)
+#define LX_MAP_ERROR(...) ::LongXi::Log::GetShellLogger()->error(__VA_ARGS__)
+#define LX_MAP_CRITICAL(...) ::LongXi::Log::GetShellLogger()->critical(__VA_ARGS__)

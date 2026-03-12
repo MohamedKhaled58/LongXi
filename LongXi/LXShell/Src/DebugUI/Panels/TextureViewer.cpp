@@ -1,6 +1,8 @@
 #include "TextureViewer.h"
-#include "Core/Logging/LogMacros.h"
+
 #include <imgui.h>
+
+#include "Core/Logging/LogMacros.h"
 
 namespace LongXi
 {
@@ -41,7 +43,7 @@ void TextureViewer::Render(const std::vector<TextureInfoViewModel>& textures)
         ImGui::NextColumn();
 
         // Format memory size (bytes to KB/MB)
-        char memoryStr[64];
+        char   memoryStr[64];
         double memMB = static_cast<double>(tex.MemoryBytes) / (1024.0 * 1024.0);
         if (memMB >= 1.0)
         {

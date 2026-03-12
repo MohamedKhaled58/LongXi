@@ -38,7 +38,8 @@ void MapObjects::CollectVisible(const VisibleTileWindow& window, std::vector<con
     outVisibleObjects.reserve(m_Objects.size());
     for (const MapObjectRecord& objectRecord : m_Objects)
     {
-        if (objectRecord.TileX < window.StartTileX || objectRecord.TileX > window.EndTileX || objectRecord.TileY < window.StartTileY || objectRecord.TileY > window.EndTileY)
+        if (objectRecord.TileX < window.StartTileX || objectRecord.TileX > window.EndTileX || objectRecord.TileY < window.StartTileY ||
+            objectRecord.TileY > window.EndTileY)
         {
             continue;
         }

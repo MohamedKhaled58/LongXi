@@ -1,8 +1,8 @@
 #include "Profiling/ProfilerCollector.h"
 
-#include "Core/Logging/LogMacros.h"
-
 #include <algorithm>
+
+#include "Core/Logging/LogMacros.h"
 
 namespace LongXi
 {
@@ -18,7 +18,7 @@ void ProfilerCollector::Initialize()
 #else
     m_Enabled = false;
 #endif
-    m_FrameActive = false;
+    m_FrameActive      = false;
     m_ActiveFrameIndex = 0;
     m_ActiveEntries.clear();
     m_LastFrameSnapshot = {};
@@ -32,9 +32,9 @@ void ProfilerCollector::Shutdown()
     }
 
     std::lock_guard<std::mutex> lock(m_EntriesMutex);
-    m_Initialized = false;
-    m_Enabled = false;
-    m_FrameActive = false;
+    m_Initialized      = false;
+    m_Enabled          = false;
+    m_FrameActive      = false;
     m_ActiveFrameIndex = 0;
     m_ActiveEntries.clear();
     m_LastFrameSnapshot = {};
@@ -99,12 +99,12 @@ void ProfilerCollector::EndFrame(uint64_t frameIndex, double frameTimeSeconds)
     {
         LX_ENGINE_WARN("[Profiler] EndFrame rejected: frame index mismatch (expected={}, actual={})", m_ActiveFrameIndex, frameIndex);
         m_ActiveEntries.clear();
-        m_FrameActive = false;
+        m_FrameActive      = false;
         m_ActiveFrameIndex = 0;
         return;
     }
 
-    m_LastFrameSnapshot.FrameIndex = frameIndex;
+    m_LastFrameSnapshot.FrameIndex            = frameIndex;
     m_LastFrameSnapshot.FrameTimeMicroseconds = static_cast<uint64_t>(std::max(0.0, frameTimeSeconds) * 1000000.0);
     m_LastFrameSnapshot.Entries.clear();
     m_LastFrameSnapshot.Entries.reserve(m_ActiveEntries.size());
@@ -125,7 +125,7 @@ void ProfilerCollector::EndFrame(uint64_t frameIndex, double frameTimeSeconds)
                       });
 
     m_ActiveEntries.clear();
-    m_FrameActive = false;
+    m_FrameActive      = false;
     m_ActiveFrameIndex = 0;
 }
 
