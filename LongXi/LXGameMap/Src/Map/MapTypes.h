@@ -112,11 +112,16 @@ struct MapObjectRecord
     std::string ResourcePath;
     std::string ResourceTag;
 
-    // Cover object fields (MAP_COVER / MAP_TERRAIN)
-    int32_t OffsetX    = 0;
-    int32_t OffsetY    = 0;
-    int32_t FrameCount = 0;
-    int32_t ShowMode   = 0;
+    // Legacy object footprint in tile-space for culling and ordering.
+    int32_t BaseWidth  = 1;
+    int32_t BaseHeight = 1;
+
+    // Legacy 2D object fields (MAP_COVER / MAP_SCENE / MAP_TERRAIN_PART)
+    int32_t OffsetX       = 0;
+    int32_t OffsetY       = 0;
+    int32_t FrameCount    = 0;
+    int32_t FrameInterval = 0;
+    int32_t ShowMode      = 0;
 
     // Sound object fields (MAP_SOUND)
     int32_t SoundRange    = 0;

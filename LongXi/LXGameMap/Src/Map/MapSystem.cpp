@@ -197,6 +197,36 @@ bool IsAllDigits(const std::string& value)
                        });
 }
 
+int32_t WrapGridIndex(int32_t value, uint32_t gridSize)
+{
+    if (gridSize == 0)
+    {
+        return 0;
+    }
+
+    const int32_t signedGridSize = static_cast<int32_t>(gridSize);
+    int32_t       wrappedValue   = value % signedGridSize;
+    if (wrappedValue < 0)
+    {
+        wrappedValue += signedGridSize;
+    }
+
+    return wrappedValue;
+}
+
+bool ShouldRenderSkyPuzzleLayerInPass(int32_t sceneLayerIndex, uint32_t renderPass)
+{
+    switch (renderPass)
+    {
+        case 0:
+            return sceneLayerIndex <= 0;
+        case 1:
+            return sceneLayerIndex > 0 && sceneLayerIndex < 4;
+        default:
+            return sceneLayerIndex >= 4;
+    }
+}
+
 std::string JoinPath(const std::string& basePath, const std::string& relativePath)
 {
     const std::string normalizedRelative = NormalizeVirtualResourcePath(relativePath, true);
@@ -688,7 +718,7 @@ void MapSystem::Render(SpriteRenderer& spriteRenderer, const TimingSnapshot& tim
     m_MapObjects.CollectVisible(window, m_VisibleObjectsCache);
     m_RenderSnapshot.VisibleObjects = static_cast<uint32_t>(m_VisibleObjectsCache.size());
 
-    RenderSkyPuzzleLayers(spriteRenderer);
+    RenderSkyPuzzleLayers(spriteRenderer, 0);
 
     const bool renderSuccess = m_TileRenderer.RenderTiles(m_MapDescriptor,
                                                           m_MapCamera,
@@ -703,7 +733,9 @@ void MapSystem::Render(SpriteRenderer& spriteRenderer, const TimingSnapshot& tim
         m_RenderSnapshot.Warnings.push_back("TileRenderer failed to submit map tiles");
     }
 
+    RenderSkyPuzzleLayers(spriteRenderer, 1);
     RenderMapObjects(spriteRenderer);
+    RenderSkyPuzzleLayers(spriteRenderer, 2);
 
     m_RenderSnapshot.FrameIndex = timingSnapshot.FrameIndex;
     m_RenderSnapshot.IsValid    = renderSuccess;
@@ -874,10 +906,11 @@ void MapSystem::UpdateSkyPuzzleScroll(const TimingSnapshot& timingSnapshot)
 
 bool MapSystem::LoadSkyPuzzleLayer(const MapObjectRecord& skyPuzzleObject, SkyPuzzleLayer& outLayer, std::vector<std::string>& outWarnings)
 {
-    outLayer                = {};
-    outLayer.SourceObjectId = skyPuzzleObject.ObjectId;
-    outLayer.MoveRateX      = skyPuzzleObject.MoveRateX;
-    outLayer.MoveRateY      = skyPuzzleObject.MoveRateY;
+    outLayer                  = {};
+    outLayer.SourceObjectId   = skyPuzzleObject.ObjectId;
+    outLayer.SceneLayerIndex  = skyPuzzleObject.SceneLayerIndex;
+    outLayer.MoveRateX        = skyPuzzleObject.MoveRateX;
+    outLayer.MoveRateY        = skyPuzzleObject.MoveRateY;
 
     if (m_VFS == nullptr || m_TextureManager == nullptr)
     {
@@ -1085,7 +1118,7 @@ bool MapSystem::LoadSkyPuzzleLayer(const MapObjectRecord& skyPuzzleObject, SkyPu
     return true;
 }
 
-void MapSystem::RenderSkyPuzzleLayers(SpriteRenderer& spriteRenderer)
+void MapSystem::RenderSkyPuzzleLayers(SpriteRenderer& spriteRenderer, uint32_t renderPass)
 {
     if (m_SkyPuzzleLayers.empty())
     {
@@ -1105,6 +1138,11 @@ void MapSystem::RenderSkyPuzzleLayers(SpriteRenderer& spriteRenderer)
 
     for (const SkyPuzzleLayer& skyLayer : m_SkyPuzzleLayers)
     {
+        if (!ShouldRenderSkyPuzzleLayerInPass(skyLayer.SceneLayerIndex, renderPass))
+        {
+            continue;
+        }
+
         if (skyLayer.GridWidth == 0 || skyLayer.GridHeight == 0)
         {
             continue;
@@ -1129,12 +1167,17 @@ void MapSystem::RenderSkyPuzzleLayers(SpriteRenderer& spriteRenderer)
         const float bgViewportX = parallaxViewX - bgWorldX;
         const float bgViewportY = parallaxViewY - bgWorldY;
 
-        const int32_t startGridX = std::max<int32_t>(0, static_cast<int32_t>(std::floor(bgViewportX / kPuzzleGridSize)) - 1);
-        const int32_t startGridY = std::max<int32_t>(0, static_cast<int32_t>(std::floor(bgViewportY / kPuzzleGridSize)) - 1);
-        const int32_t endGridX   = std::min<int32_t>(static_cast<int32_t>(skyLayer.GridWidth) - 1,
-                                                   static_cast<int32_t>(std::floor((bgViewportX + viewWorldWidth) / kPuzzleGridSize)) + 1);
-        const int32_t endGridY   = std::min<int32_t>(static_cast<int32_t>(skyLayer.GridHeight) - 1,
-                                                   static_cast<int32_t>(std::floor((bgViewportY + viewWorldHeight) / kPuzzleGridSize)) + 1);
+        const bool    wrapGrid   = skyLayer.RollSpeedX != 0 || skyLayer.RollSpeedY != 0;
+        const int32_t startGridX = static_cast<int32_t>(std::floor(bgViewportX / kPuzzleGridSize)) - 1;
+        const int32_t startGridY = static_cast<int32_t>(std::floor(bgViewportY / kPuzzleGridSize)) - 1;
+        int32_t       endGridX   = static_cast<int32_t>(std::floor((bgViewportX + viewWorldWidth) / kPuzzleGridSize)) + 1;
+        int32_t       endGridY   = static_cast<int32_t>(std::floor((bgViewportY + viewWorldHeight) / kPuzzleGridSize)) + 1;
+
+        if (!wrapGrid)
+        {
+            endGridX = std::min<int32_t>(endGridX, static_cast<int32_t>(skyLayer.GridWidth) - 1);
+            endGridY = std::min<int32_t>(endGridY, static_cast<int32_t>(skyLayer.GridHeight) - 1);
+        }
 
         if (startGridX > endGridX || startGridY > endGridY)
         {
@@ -1156,8 +1199,16 @@ void MapSystem::RenderSkyPuzzleLayers(SpriteRenderer& spriteRenderer)
         {
             for (int32_t gridX = startGridX; gridX <= endGridX; ++gridX)
             {
-                const size_t puzzleOffset =
-                    static_cast<size_t>(gridY) * static_cast<size_t>(skyLayer.GridWidth) + static_cast<size_t>(gridX);
+                if (!wrapGrid &&
+                    (gridX < 0 || gridY < 0 || gridX >= static_cast<int32_t>(skyLayer.GridWidth) || gridY >= static_cast<int32_t>(skyLayer.GridHeight)))
+                {
+                    continue;
+                }
+
+                const int32_t sampleGridX = wrapGrid ? WrapGridIndex(gridX, skyLayer.GridWidth) : gridX;
+                const int32_t sampleGridY = wrapGrid ? WrapGridIndex(gridY, skyLayer.GridHeight) : gridY;
+                const size_t  puzzleOffset =
+                    static_cast<size_t>(sampleGridY) * static_cast<size_t>(skyLayer.GridWidth) + static_cast<size_t>(sampleGridX);
                 const uint16_t puzzleIndex = skyLayer.PuzzleIndices[puzzleOffset];
                 if (puzzleIndex == kInvalidPuzzleIndex)
                 {

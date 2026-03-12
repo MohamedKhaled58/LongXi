@@ -1,6 +1,7 @@
 #include "Map/MapLoader.h"
 
 #include <algorithm>
+#include <atomic>
 #include <cctype>
 #include <cmath>
 #include <cstring>
@@ -156,6 +157,8 @@ struct TerrainPartDescriptor
     std::string AniTag;
     int32_t     SpriteOffsetX = 0;
     int32_t     SpriteOffsetY = 0;
+    int32_t     BaseWidth     = 1;
+    int32_t     BaseHeight    = 1;
     int32_t     SceneOffsetX  = 0;
     int32_t     SceneOffsetY  = 0;
     int32_t     HeightOffset  = 0;
@@ -212,6 +215,8 @@ bool TryParseTerrainPartRecord(const std::vector<uint8_t>& bytes, size_t& ioCurs
     outDescriptor.SpriteOffsetY = readI32(base + kAniPathBytes + kAniTitleBytes + 4);
     const uint32_t baseWidth    = readU32(base + kAniPathBytes + kAniTitleBytes + 12);
     const uint32_t baseHeight   = readU32(base + kAniPathBytes + kAniTitleBytes + 16);
+    outDescriptor.BaseWidth     = static_cast<int32_t>(baseWidth);
+    outDescriptor.BaseHeight    = static_cast<int32_t>(baseHeight);
     outDescriptor.SceneOffsetX  = readI32(base + kAniPathBytes + kAniTitleBytes + 24);
     outDescriptor.SceneOffsetY  = readI32(base + kAniPathBytes + kAniTitleBytes + 28);
     outDescriptor.HeightOffset  = readI32(base + kAniPathBytes + kAniTitleBytes + 32);
@@ -363,54 +368,33 @@ std::string FileStem(const std::string& path)
     return fileName.substr(0, dot);
 }
 
-void ExtractEmbeddedPathHints(const std::vector<uint8_t>& payload, std::vector<std::string>& outHints)
+std::string StripArchivePrefix(std::string stem)
 {
-    outHints.clear();
-    std::string token;
-    token.reserve(256);
-
-    auto flushToken = [&token, &outHints]()
+    if (stem.size() > 2 && std::isalpha(static_cast<unsigned char>(stem[0])) != 0 && (stem[1] == '-' || stem[1] == '_'))
     {
-        if (token.empty())
-        {
-            return;
-        }
-
-        std::string normalized = NormalizeVirtualResourcePath(token, true);
-        token.clear();
-        if (normalized.empty())
-        {
-            return;
-        }
-
-        if (!EndsWithInsensitive(normalized, ".part") && !EndsWithInsensitive(normalized, ".scene"))
-        {
-            return;
-        }
-
-        if (std::ranges::find(outHints, normalized) == outHints.end())
-        {
-            outHints.push_back(std::move(normalized));
-        }
-    };
-
-    for (uint8_t byteValue : payload)
-    {
-        const char character  = static_cast<char>(byteValue);
-        const bool isPathChar = (character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z') ||
-                                (character >= '0' && character <= '9') || character == '.' || character == '_' || character == '-' ||
-                                character == '/' || character == '\\';
-        if (isPathChar)
-        {
-            token.push_back(character);
-        }
-        else
-        {
-            flushToken();
-        }
+        return stem.substr(2);
     }
 
-    flushToken();
+    return stem;
+}
+
+bool CatalogPathMatchesResolvedDmap(const std::string& catalogPath, const std::string& resolvedPath)
+{
+    const std::string normalizedResolved = NormalizeVirtualResourcePath(resolvedPath, true);
+    const std::string normalizedCatalog  = NormalizeVirtualResourcePath(catalogPath, true);
+    if (normalizedResolved.empty() || normalizedCatalog.empty())
+    {
+        return false;
+    }
+
+    if (EndsWithInsensitive(normalizedCatalog, ".dmap") && NormalizeCatalogDmapPath(normalizedCatalog) == normalizedResolved)
+    {
+        return true;
+    }
+
+    const std::string catalogStem  = ToLowerAscii(StripArchivePrefix(FileStem(normalizedCatalog)));
+    const std::string resolvedStem = ToLowerAscii(FileStem(normalizedResolved));
+    return !catalogStem.empty() && catalogStem == resolvedStem;
 }
 
 } // namespace
@@ -707,8 +691,6 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
     std::unordered_set<std::string> loadedScenePartFiles;
     uint32_t                        unresolvedAniTextureCount = 0;
     std::vector<std::string>        unresolvedAniSamples;
-    std::vector<std::string>        pathHints;
-
     using AniSectionFrames = std::unordered_map<std::string, std::vector<std::string>>;
     std::unordered_map<std::string, AniSectionFrames> aniSectionsByPath;
 
@@ -745,27 +727,14 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
             return tryPath(normalizedRaw);
         }
 
-        if (loweredRaw.rfind("data/ani/", 0) == 0)
-        {
-            return tryPath("ani/" + normalizedRaw.substr(9));
-        }
-
         if (loweredRaw.rfind("map/", 0) == 0)
         {
-            if (tryPath(normalizedRaw))
-            {
-                return true;
-            }
-            return tryPath("data/" + normalizedRaw);
+            return tryPath(normalizedRaw);
         }
 
         if (loweredRaw.rfind("data/map/", 0) == 0)
         {
-            if (tryPath(normalizedRaw))
-            {
-                return true;
-            }
-            return tryPath(normalizedRaw.substr(5));
+            return tryPath(normalizedRaw);
         }
 
         const std::string fileName  = FileNameFromPath(normalizedRaw);
@@ -784,33 +753,14 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
 
         if (extension == ".scene")
         {
-            if (tryPath("map/scene/" + fileName))
-            {
-                return true;
-            }
-            if (tryPath("data/map/scene/" + fileName))
-            {
-                return true;
-            }
+            return tryPath("map/scene/" + fileName);
         }
-        else if (extension == ".part")
+        if (extension == ".part")
         {
-            if (tryPath("map/scenepart/" + fileName))
-            {
-                return true;
-            }
-            if (tryPath("data/map/scenepart/" + fileName))
-            {
-                return true;
-            }
+            return tryPath("map/scenepart/" + fileName);
         }
 
-        if (tryPath("map/" + normalizedRaw))
-        {
-            return true;
-        }
-
-        return tryPath("data/map/" + normalizedRaw);
+        return tryPath(normalizedRaw);
     };
 
     auto loadAniSections = [&vfs, &aniSectionsByPath](const std::string& aniPath) -> const AniSectionFrames*
@@ -886,15 +836,15 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
     {
         outResolvedTexturePath.clear();
 
-        static uint32_t s_AniResolveFailureLogCount = 0;
+        static std::atomic<uint32_t> s_AniResolveFailureLogCount{0};
 
         const AniSectionFrames* sections = loadAniSections(aniPath);
         if (sections == nullptr || sections->empty())
         {
-            if (s_AniResolveFailureLogCount < 8)
+            if (s_AniResolveFailureLogCount.load(std::memory_order_relaxed) < 8)
             {
                 LX_MAP_WARN("[Map] ANI resolve failed: no sections loaded for '{}' (tag='{}')", aniPath, resourceTag);
-                ++s_AniResolveFailureLogCount;
+                s_AniResolveFailureLogCount.fetch_add(1, std::memory_order_relaxed);
             }
             return false;
         }
@@ -962,7 +912,7 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
             }
         }
 
-        if (s_AniResolveFailureLogCount < 8)
+        if (s_AniResolveFailureLogCount.load(std::memory_order_relaxed) < 8)
         {
             std::ostringstream message;
             message << "ANI resolve failed: ani='" << aniPath << "' tag='" << resourceTag
@@ -994,27 +944,39 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
             }
 
             LX_MAP_WARN("[Map] {}", message.str());
-            ++s_AniResolveFailureLogCount;
+            s_AniResolveFailureLogCount.fetch_add(1, std::memory_order_relaxed);
         }
 
         return false;
     };
 
-    auto registerScenePart = [&vfs, &loadedScenePartFiles, &outDescriptor, &outWarnings](const std::string& partPath)
+    auto registerScenePart = [&vfs, &loadedScenePartFiles, &outDescriptor, &outWarnings](const std::string& partPath, const std::vector<uint8_t>* partBytes = nullptr) -> bool
     {
         if (!loadedScenePartFiles.insert(partPath).second)
         {
-            return;
+            return true;
         }
 
-        const std::vector<uint8_t> partBytes = vfs.ReadAll(partPath);
-        if (partBytes.empty())
+        if (partBytes != nullptr)
         {
-            AddWarning(outWarnings, "Failed to load map ScenePart resource: " + partPath);
-            return;
+            if (partBytes->empty())
+            {
+                AddWarning(outWarnings, "Failed to load map ScenePart resource: " + partPath);
+                return false;
+            }
+        }
+        else
+        {
+            const std::vector<uint8_t> loadedBytes = vfs.ReadAll(partPath);
+            if (loadedBytes.empty())
+            {
+                AddWarning(outWarnings, "Failed to load map ScenePart resource: " + partPath);
+                return false;
+            }
         }
 
         ++outDescriptor.LoadedScenePartCount;
+        return true;
     };
 
     auto appendUnresolvedAniSample =
@@ -1057,14 +1019,18 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
         }
     };
 
+    uint32_t terrainPartOutOfBoundsWarningCount = 0;
+
     auto appendTerrainCompositeParts = [&nextObjectId,
                                         &terrainPartDescriptorsByPath,
                                         &resolveMapObjectPath,
                                         &resolveAniObjectToTexture,
                                         &generatedMapObjects,
-                                        &outWarnings](const MapObjectRecord&      sourceObject,
-                                                      const std::string&          compositePath,
-                                                      const std::vector<uint8_t>& compositeBytes) -> void
+                                        &outDescriptor,
+                                        &outWarnings,
+                                        &terrainPartOutOfBoundsWarningCount](const MapObjectRecord&      sourceObject,
+                                                                              const std::string&          compositePath,
+                                                                              const std::vector<uint8_t>& compositeBytes) -> bool
     {
         const auto cacheIt = terrainPartDescriptorsByPath.find(compositePath);
         if (cacheIt == terrainPartDescriptorsByPath.end())
@@ -1074,7 +1040,7 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
             {
                 AddWarning(outWarnings, "Failed to parse terrain composite payload: " + compositePath);
                 terrainPartDescriptorsByPath.emplace(compositePath, std::vector<TerrainPartDescriptor>{});
-                return;
+                return false;
             }
 
             terrainPartDescriptorsByPath.emplace(compositePath, std::move(parsedDescriptors));
@@ -1083,9 +1049,10 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
         const auto descriptorsIt = terrainPartDescriptorsByPath.find(compositePath);
         if (descriptorsIt == terrainPartDescriptorsByPath.end() || descriptorsIt->second.empty())
         {
-            return;
+            return false;
         }
 
+        bool appendedAnyPart = false;
         for (const TerrainPartDescriptor& partDescriptor : descriptorsIt->second)
         {
             if (partDescriptor.AniPath.empty())
@@ -1100,10 +1067,22 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
             partObject.VisibilityFlags = 1u;
             // Terrain part scene offsets are tile-space deltas relative to the terrain root cell.
             // Keep the original values (no clamping) to avoid shifting multi-part scenes.
-            partObject.TileX   = sourceObject.TileX + partDescriptor.SceneOffsetX;
-            partObject.TileY   = sourceObject.TileY + partDescriptor.SceneOffsetY;
-            partObject.OffsetX = partDescriptor.SpriteOffsetX;
-            partObject.OffsetY = partDescriptor.SpriteOffsetY;
+            partObject.TileX = sourceObject.TileX + partDescriptor.SceneOffsetX;
+            partObject.TileY = sourceObject.TileY + partDescriptor.SceneOffsetY;
+            if ((partObject.TileX < 0 || partObject.TileY < 0 ||
+                 partObject.TileX >= static_cast<int32_t>(outDescriptor.WidthInTiles) ||
+                 partObject.TileY >= static_cast<int32_t>(outDescriptor.HeightInTiles)) &&
+                terrainPartOutOfBoundsWarningCount < 8)
+            {
+                AddWarning(outWarnings,
+                           "Terrain part anchor is outside map bounds: " + compositePath + " tile=(" + std::to_string(partObject.TileX) + "," +
+                               std::to_string(partObject.TileY) + ")");
+                ++terrainPartOutOfBoundsWarningCount;
+            }
+            partObject.BaseWidth  = std::max(1, partDescriptor.BaseWidth);
+            partObject.BaseHeight = std::max(1, partDescriptor.BaseHeight);
+            partObject.OffsetX    = partDescriptor.SpriteOffsetX;
+            partObject.OffsetY    = partDescriptor.SpriteOffsetY;
             // Legacy terrain-part "height" is not a reliable screen-space Z offset in practice.
             // Keep it out of sprite projection to prevent parts from being displaced off-screen.
             partObject.HeightOffset = 0;
@@ -1120,8 +1099,11 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
             if (!partObject.ResourcePath.empty() && IsSupportedTexturePath(partObject.ResourcePath))
             {
                 generatedMapObjects.push_back(std::move(partObject));
+                appendedAnyPart = true;
             }
         }
+
+        return appendedAnyPart;
     };
 
     for (MapObjectRecord& objectRecord : outMapObjects)
@@ -1156,25 +1138,10 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
             if (loadedSceneFiles.insert(resolvedObjectPath).second)
             {
                 ++outDescriptor.LoadedSceneFileCount;
-                ExtractEmbeddedPathHints(sceneBytes, pathHints);
-                for (const std::string& hintPath : pathHints)
-                {
-                    std::string resolvedHintPath;
-                    if (!resolveMapObjectPath(hintPath, resolvedHintPath))
-                    {
-                        continue;
-                    }
-
-                    if (EndsWithInsensitive(resolvedHintPath, ".part"))
-                    {
-                        registerScenePart(resolvedHintPath);
-                    }
-                }
             }
 
-            if (objectRecord.ObjectType == static_cast<uint16_t>(kLegacyMapObjTerrain))
+            if (appendTerrainCompositeParts(objectRecord, resolvedObjectPath, sceneBytes))
             {
-                appendTerrainCompositeParts(objectRecord, resolvedObjectPath, sceneBytes);
                 objectRecord.ResourcePath.clear();
             }
 
@@ -1183,15 +1150,14 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
 
         if (EndsWithInsensitive(resolvedObjectPath, ".part"))
         {
-            registerScenePart(resolvedObjectPath);
-            if (objectRecord.ObjectType == static_cast<uint16_t>(kLegacyMapObjTerrain))
+            const std::vector<uint8_t> partBytes = vfs.ReadAll(resolvedObjectPath);
+            if (!registerScenePart(resolvedObjectPath, &partBytes))
             {
-                const std::vector<uint8_t> partBytes = vfs.ReadAll(resolvedObjectPath);
-                if (!partBytes.empty())
-                {
-                    appendTerrainCompositeParts(objectRecord, resolvedObjectPath, partBytes);
-                }
+                continue;
+            }
 
+            if (appendTerrainCompositeParts(objectRecord, resolvedObjectPath, partBytes))
+            {
                 objectRecord.ResourcePath.clear();
             }
             continue;
@@ -1355,7 +1321,6 @@ bool MapLoader::ParseInteractiveObjectBlock(const std::vector<uint8_t>&   bytes,
     std::vector<uint8_t> payload;
     uint32_t             alignmentRecoveries     = 0;
     constexpr uint32_t   kMaxAlignmentRecoveries = 16;
-    size_t               coverRecordBytesHint    = 0;
 
     const auto assignWorldPosition = [&descriptor](MapObjectRecord& objectRecord, int32_t worldX, int32_t worldY)
     {
@@ -1394,44 +1359,10 @@ bool MapLoader::ParseInteractiveObjectBlock(const std::vector<uint8_t>&   bytes,
         {
             case kLegacyMapObjCover:
             {
-                constexpr size_t kCoverTileRecordBytes             = kLegacyMapPathBytes + kLegacyMapTitleBytes + sizeof(int32_t) * 5;
-                constexpr size_t kCoverTileRecordWithShowModeBytes = kLegacyMapPathBytes + kLegacyMapTitleBytes + sizeof(int32_t) * 6;
-                constexpr size_t kCoverSceneRecordBytes            = kLegacyMapPathBytes + kLegacyMapTitleBytes + sizeof(int32_t) * 7;
-
-                if (coverRecordBytesHint == 0)
-                {
-                    size_t detectedRecordBytes = kCoverSceneRecordBytes;
-                    if (objectIndex + 1 < objectCount)
-                    {
-                        const auto nextTypeLooksValid = [&](size_t candidateRecordBytes) -> bool
-                        {
-                            if (ioCursor + candidateRecordBytes + sizeof(uint32_t) > bytes.size())
-                            {
-                                return false;
-                            }
-
-                            return IsLikelyInteractiveObjectType(ReadI32(bytes, ioCursor + candidateRecordBytes));
-                        };
-
-                        if (nextTypeLooksValid(kCoverSceneRecordBytes))
-                        {
-                            detectedRecordBytes = kCoverSceneRecordBytes;
-                        }
-                        else if (nextTypeLooksValid(kCoverTileRecordWithShowModeBytes))
-                        {
-                            detectedRecordBytes = kCoverTileRecordWithShowModeBytes;
-                        }
-                        else if (nextTypeLooksValid(kCoverTileRecordBytes))
-                        {
-                            detectedRecordBytes = kCoverTileRecordBytes;
-                        }
-                    }
-
-                    coverRecordBytesHint = detectedRecordBytes;
-                }
-
-                const size_t recordBytes = coverRecordBytesHint;
-                if (!ReadFixedBlock(bytes, ioCursor, recordBytes, "MAP_COVER payload", payload, outWarnings))
+                // Legacy MAP_COVER binary layout is fixed at 416 bytes after type:
+                // path[260] + title[128] + cell(x,y) + base(w,h) + offset(x,y) + frameInterval.
+                constexpr size_t kRecordBytes = kLegacyMapPathBytes + kLegacyMapTitleBytes + sizeof(int32_t) * 7;
+                if (!ReadFixedBlock(bytes, ioCursor, kRecordBytes, "MAP_COVER payload", payload, outWarnings))
                 {
                     outAborted = true;
                     break;
@@ -1441,30 +1372,15 @@ bool MapLoader::ParseInteractiveObjectBlock(const std::vector<uint8_t>&   bytes,
                 objectRecord.ResourceTag  = ReadFixedCString(payload, kLegacyMapPathBytes, kLegacyMapTitleBytes);
                 const size_t kFieldBase   = kLegacyMapPathBytes + kLegacyMapTitleBytes;
 
-                const int32_t objectWorldX = ReadI32(payload, kFieldBase + 0);
-                const int32_t objectWorldY = ReadI32(payload, kFieldBase + 4);
-                assignWorldPosition(objectRecord, objectWorldX, objectWorldY);
-
-                if (recordBytes == kCoverSceneRecordBytes)
-                {
-                    const int32_t frameWidth  = std::max(1, ReadI32(payload, kFieldBase + 8));
-                    const int32_t frameHeight = std::max(1, ReadI32(payload, kFieldBase + 12));
-                    objectRecord.OffsetX      = ReadI32(payload, kFieldBase + 16);
-                    objectRecord.OffsetY      = ReadI32(payload, kFieldBase + 20);
-                    objectRecord.FrameCount   = frameWidth * frameHeight;
-                    objectRecord.ShowMode     = ReadI32(payload, kFieldBase + 24);
-                }
-                else
-                {
-                    objectRecord.OffsetX    = ReadI32(payload, kFieldBase + 8);
-                    objectRecord.OffsetY    = ReadI32(payload, kFieldBase + 12);
-                    objectRecord.FrameCount = ReadI32(payload, kFieldBase + 16);
-                    if (recordBytes == kCoverTileRecordWithShowModeBytes)
-                    {
-                        objectRecord.ShowMode = ReadI32(payload, kFieldBase + 20);
-                    }
-                }
-
+                objectRecord.TileX         = std::clamp(ReadI32(payload, kFieldBase + 0), 0, static_cast<int32_t>(descriptor.WidthInTiles) - 1);
+                objectRecord.TileY         = std::clamp(ReadI32(payload, kFieldBase + 4), 0, static_cast<int32_t>(descriptor.HeightInTiles) - 1);
+                objectRecord.BaseWidth     = std::max(1, ReadI32(payload, kFieldBase + 8));
+                objectRecord.BaseHeight    = std::max(1, ReadI32(payload, kFieldBase + 12));
+                objectRecord.OffsetX       = ReadI32(payload, kFieldBase + 16);
+                objectRecord.OffsetY       = ReadI32(payload, kFieldBase + 20);
+                objectRecord.FrameInterval = std::max(1, ReadI32(payload, kFieldBase + 24));
+                objectRecord.FrameCount    = 0;
+                objectRecord.ShowMode      = 0;
                 objectRecord.VisibilityFlags = 1u;
                 ++outParsedCount;
                 outMapObjects.push_back(std::move(objectRecord));
@@ -1482,7 +1398,8 @@ bool MapLoader::ParseInteractiveObjectBlock(const std::vector<uint8_t>&   bytes,
 
                 objectRecord.ResourcePath = NormalizeResourcePath(ReadFixedCString(payload, 0, kLegacyMapPathBytes));
                 objectRecord.ResourceTag  = "TerrainObject";
-                assignWorldPosition(objectRecord, ReadI32(payload, kLegacyMapPathBytes + 0), ReadI32(payload, kLegacyMapPathBytes + 4));
+                objectRecord.TileX        = std::clamp(ReadI32(payload, kLegacyMapPathBytes + 0), 0, static_cast<int32_t>(descriptor.WidthInTiles) - 1);
+                objectRecord.TileY        = std::clamp(ReadI32(payload, kLegacyMapPathBytes + 4), 0, static_cast<int32_t>(descriptor.HeightInTiles) - 1);
                 objectRecord.VisibilityFlags = 1u;
                 ++outParsedCount;
                 outMapObjects.push_back(std::move(objectRecord));
@@ -1491,7 +1408,9 @@ bool MapLoader::ParseInteractiveObjectBlock(const std::vector<uint8_t>&   bytes,
 
             case kLegacyMapObjScene:
             {
-                constexpr size_t kRecordBytes = kLegacyMapPathBytes + kLegacyMapTitleBytes + sizeof(int32_t) * 7;
+                // Legacy MAP_SCENE binary layout is fixed at 412 bytes after type:
+                // path[260] + title[128] + cell(x,y) + offset(x,y) + frameInterval + showWay.
+                constexpr size_t kRecordBytes = kLegacyMapPathBytes + kLegacyMapTitleBytes + sizeof(int32_t) * 6;
                 if (!ReadFixedBlock(bytes, ioCursor, kRecordBytes, "MAP_SCENE payload", payload, outWarnings))
                 {
                     outAborted = true;
@@ -1501,13 +1420,13 @@ bool MapLoader::ParseInteractiveObjectBlock(const std::vector<uint8_t>&   bytes,
                 objectRecord.ResourcePath = NormalizeResourcePath(ReadFixedCString(payload, 0, kLegacyMapPathBytes));
                 objectRecord.ResourceTag  = ReadFixedCString(payload, kLegacyMapPathBytes, kLegacyMapTitleBytes);
                 const size_t kFieldBase   = kLegacyMapPathBytes + kLegacyMapTitleBytes;
-                assignWorldPosition(objectRecord, ReadI32(payload, kFieldBase + 0), ReadI32(payload, kFieldBase + 4));
-                const int32_t frameWidth  = std::max(1, ReadI32(payload, kFieldBase + 8));
-                const int32_t frameHeight = std::max(1, ReadI32(payload, kFieldBase + 12));
-                objectRecord.OffsetX      = ReadI32(payload, kFieldBase + 16);
-                objectRecord.OffsetY      = ReadI32(payload, kFieldBase + 20);
-                objectRecord.FrameCount   = frameWidth * frameHeight;
-                objectRecord.ShowMode     = ReadI32(payload, kFieldBase + 24);
+                objectRecord.TileX        = std::clamp(ReadI32(payload, kFieldBase + 0), 0, static_cast<int32_t>(descriptor.WidthInTiles) - 1);
+                objectRecord.TileY        = std::clamp(ReadI32(payload, kFieldBase + 4), 0, static_cast<int32_t>(descriptor.HeightInTiles) - 1);
+                objectRecord.OffsetX      = ReadI32(payload, kFieldBase + 8);
+                objectRecord.OffsetY      = ReadI32(payload, kFieldBase + 12);
+                objectRecord.FrameInterval = std::max(1, ReadI32(payload, kFieldBase + 16));
+                objectRecord.ShowMode     = ReadI32(payload, kFieldBase + 20);
+                objectRecord.FrameCount   = 0;
                 ++outParsedCount;
                 outMapObjects.push_back(std::move(objectRecord));
                 break;
@@ -1782,9 +1701,8 @@ bool MapLoader::ParseSceneLayerBlock(const std::vector<uint8_t>&   bytes,
             switch (sceneObjectType)
             {
                 case kLegacyMapObjScene:
-                case kLegacyMapObjCover:
                 {
-                    constexpr size_t kRecordBytes = kLegacyMapPathBytes + kLegacyMapTitleBytes + sizeof(int32_t) * 7;
+                    constexpr size_t kRecordBytes = kLegacyMapPathBytes + kLegacyMapTitleBytes + sizeof(int32_t) * 6;
                     if (!ReadFixedBlock(bytes, ioCursor, kRecordBytes, "MAP_SCENE payload", payload, outWarnings))
                     {
                         outAborted = true;
@@ -1799,13 +1717,45 @@ bool MapLoader::ParseSceneLayerBlock(const std::vector<uint8_t>&   bytes,
                     }
 
                     const size_t kFieldBase = kLegacyMapPathBytes + kLegacyMapTitleBytes;
-                    assignWorldPosition(objectRecord, ReadI32(payload, kFieldBase + 0), ReadI32(payload, kFieldBase + 4));
-                    const int32_t frameWidth  = std::max(1, ReadI32(payload, kFieldBase + 8));
-                    const int32_t frameHeight = std::max(1, ReadI32(payload, kFieldBase + 12));
-                    objectRecord.OffsetX      = ReadI32(payload, kFieldBase + 16);
-                    objectRecord.OffsetY      = ReadI32(payload, kFieldBase + 20);
-                    objectRecord.FrameCount   = frameWidth * frameHeight;
-                    objectRecord.ShowMode     = ReadI32(payload, kFieldBase + 24);
+                    objectRecord.TileX         = std::clamp(ReadI32(payload, kFieldBase + 0), 0, static_cast<int32_t>(descriptor.WidthInTiles) - 1);
+                    objectRecord.TileY         = std::clamp(ReadI32(payload, kFieldBase + 4), 0, static_cast<int32_t>(descriptor.HeightInTiles) - 1);
+                    objectRecord.OffsetX       = ReadI32(payload, kFieldBase + 8);
+                    objectRecord.OffsetY       = ReadI32(payload, kFieldBase + 12);
+                    objectRecord.FrameInterval = std::max(1, ReadI32(payload, kFieldBase + 16));
+                    objectRecord.ShowMode      = ReadI32(payload, kFieldBase + 20);
+                    objectRecord.FrameCount    = 0;
+
+                    ++outParsedCount;
+                    outMapObjects.push_back(std::move(objectRecord));
+                    break;
+                }
+
+                case kLegacyMapObjCover:
+                {
+                    constexpr size_t kRecordBytes = kLegacyMapPathBytes + kLegacyMapTitleBytes + sizeof(int32_t) * 7;
+                    if (!ReadFixedBlock(bytes, ioCursor, kRecordBytes, "MAP_COVER payload", payload, outWarnings))
+                    {
+                        outAborted = true;
+                        break;
+                    }
+
+                    objectRecord.ResourcePath    = NormalizeResourcePath(ReadFixedCString(payload, 0, kLegacyMapPathBytes));
+                    const std::string sceneTitle = ReadFixedCString(payload, kLegacyMapPathBytes, kLegacyMapTitleBytes);
+                    if (!sceneTitle.empty())
+                    {
+                        objectRecord.ResourceTag += ":" + sceneTitle;
+                    }
+
+                    const size_t kFieldBase = kLegacyMapPathBytes + kLegacyMapTitleBytes;
+                    objectRecord.TileX         = std::clamp(ReadI32(payload, kFieldBase + 0), 0, static_cast<int32_t>(descriptor.WidthInTiles) - 1);
+                    objectRecord.TileY         = std::clamp(ReadI32(payload, kFieldBase + 4), 0, static_cast<int32_t>(descriptor.HeightInTiles) - 1);
+                    objectRecord.BaseWidth     = std::max(1, ReadI32(payload, kFieldBase + 8));
+                    objectRecord.BaseHeight    = std::max(1, ReadI32(payload, kFieldBase + 12));
+                    objectRecord.OffsetX       = ReadI32(payload, kFieldBase + 16);
+                    objectRecord.OffsetY       = ReadI32(payload, kFieldBase + 20);
+                    objectRecord.FrameInterval = std::max(1, ReadI32(payload, kFieldBase + 24));
+                    objectRecord.FrameCount    = 0;
+                    objectRecord.ShowMode      = 0;
 
                     ++outParsedCount;
                     outMapObjects.push_back(std::move(objectRecord));
@@ -1956,16 +1906,15 @@ bool MapLoader::ParsePuzzle(const std::string&                                  
     const uint32_t mapHeight = inOutTileGrid.GetHeight();
     if (mapWidth > 0 && mapHeight > 0 && inOutDescriptor.CellWidth > 0 && inOutDescriptor.CellHeight > 0)
     {
-        const float cellW                  = static_cast<float>(inOutDescriptor.CellWidth);
-        const float cellH                  = static_cast<float>(inOutDescriptor.CellHeight);
-        const float originX                = static_cast<float>(inOutDescriptor.OriginX);
-        const float originY                = static_cast<float>(inOutDescriptor.OriginY);
-        const float bgWorldWidth           = static_cast<float>(gridWidth) * kPuzzleGridSize;
-        const float bgWorldHeight          = static_cast<float>(gridHeight) * kPuzzleGridSize;
-        const float mapHalfHeightWorld     = cellH * static_cast<float>(mapHeight) * 0.5f;
-        const float legacyEvenHeightOffset = ((mapHeight + 1u) % 2u) != 0u ? cellH * 0.5f : 0.0f;
-        const float bgWorldX               = originX - bgWorldWidth * 0.5f;
-        const float bgWorldY               = originY + mapHalfHeightWorld - bgWorldHeight * 0.5f - legacyEvenHeightOffset;
+        const float cellW              = static_cast<float>(inOutDescriptor.CellWidth);
+        const float cellH              = static_cast<float>(inOutDescriptor.CellHeight);
+        const float originX            = static_cast<float>(inOutDescriptor.OriginX);
+        const float originY            = static_cast<float>(inOutDescriptor.OriginY);
+        const float bgWorldWidth       = static_cast<float>(gridWidth) * kPuzzleGridSize;
+        const float bgWorldHeight      = static_cast<float>(gridHeight) * kPuzzleGridSize;
+        const float bgCenterWorldY     = cellH * static_cast<float>(mapHeight) * 0.5f;
+        const float bgWorldX           = originX - bgWorldWidth * 0.5f;
+        const float bgWorldY           = bgCenterWorldY - bgWorldHeight * 0.5f;
 
         for (uint32_t y = 0; y < mapHeight; ++y)
         {
@@ -2287,7 +2236,6 @@ bool MapLoader::ResolveMapPath(const std::string&        dMapPath,
             return;
         }
 
-        std::vector<std::string> candidatePaths;
         for (const MapCatalogEntry& entry : entries)
         {
             if (entry.Path.empty())
@@ -2295,8 +2243,7 @@ bool MapLoader::ResolveMapPath(const std::string&        dMapPath,
                 continue;
             }
 
-            const std::string normalizedCandidate = NormalizeCatalogDmapPath(entry.Path);
-            if (!normalizedCandidate.empty() && normalizedCandidate == outResolvedPath)
+            if (CatalogPathMatchesResolvedDmap(entry.Path, outResolvedPath))
             {
                 outMapId    = entry.MapId;
                 outMapFlags = entry.Flags;
@@ -2351,6 +2298,7 @@ bool MapLoader::ResolveMapPath(const std::string&        dMapPath,
     const std::string mapNameNoExt = BaseFileNameWithoutExtension(normalizedRequested);
     if (!mapNameNoExt.empty() && tryResolveMapAssetPath(mapNameNoExt + ".dmap"))
     {
+        applyCatalogMetadataForResolvedPath();
         return true;
     }
 
@@ -2593,10 +2541,10 @@ bool MapLoader::TryResolveTexturePath(const std::string&   framePath,
 {
     outResolvedPath.clear();
 
-    static uint32_t s_TextureResolveFailureLogCount = 0;
+    static std::atomic<uint32_t> s_TextureResolveFailureLogCount{0};
     auto logTextureResolveFailure = [](const std::string& candidatePath, const char* reason, const std::vector<uint8_t>* bytes = nullptr)
     {
-        if (s_TextureResolveFailureLogCount >= 8)
+        if (s_TextureResolveFailureLogCount.load(std::memory_order_relaxed) >= 8)
         {
             return;
         }
@@ -2621,7 +2569,7 @@ bool MapLoader::TryResolveTexturePath(const std::string&   framePath,
             LX_MAP_WARN("[Map] Texture resolve failed at {} for '{}'", reason, candidatePath);
         }
 
-        ++s_TextureResolveFailureLogCount;
+        s_TextureResolveFailureLogCount.fetch_add(1, std::memory_order_relaxed);
     };
 
     const std::string normalizedFramePath = NormalizeResourcePath(framePath);
