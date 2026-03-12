@@ -21,6 +21,9 @@
 #endif
 
 #include <array>
+#include <algorithm>
+#include <cctype>
+#include <cstring>
 #include <memory>
 
 #include "Input/InputSystem.h"
@@ -156,6 +159,7 @@ private:
         Scene& scene = engine.GetScene();
         TextureManager& textureManager = engine.GetTextureManager();
         CVirtualFileSystem& vfs = engine.GetVFS();
+        bool mapLoaded = false;
 
         auto rootNode = std::make_unique<SceneNode>();
         rootNode->SetName("ValidationRoot");
@@ -205,6 +209,38 @@ private:
         }
 
         scene.AddNode(std::move(rootNode));
+
+        constexpr std::array<const char*, 12> mapCandidates = {
+            "map/map/newplain.dmap",
+            "map/map/desert.dmap",
+            "map/map/island.dmap",
+        };
+
+        for (const char* candidate : mapCandidates)
+        {
+            const bool isMapId = std::all_of(candidate,
+                                             candidate + std::strlen(candidate),
+                                             [](unsigned char ch)
+                                             {
+                                                 return std::isdigit(ch) != 0;
+                                             });
+            if (!isMapId && !vfs.Exists(candidate))
+            {
+                continue;
+            }
+
+            if (engine.LoadMap(candidate))
+            {
+                LX_INFO("[ValidationScene] Map attached to engine map system (source: {})", candidate);
+                mapLoaded = true;
+                break;
+            }
+        }
+
+        if (!mapLoaded)
+        {
+            LX_WARN("[ValidationScene] No compatible .dmap map package found in mounted VFS paths");
+        }
 
         Camera& camera = scene.GetActiveCamera();
         camera.SetPosition({0.0f, 0.0f, -5.0f});

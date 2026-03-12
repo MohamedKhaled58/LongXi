@@ -101,8 +101,8 @@ void Application::ConfigureVirtualFileSystem()
         m_Engine->MountDirectory(exeDir);
 
         // Mount WDF archives after directories (lower priority)
-        m_Engine->MountWdf(exeDir + "/Data/C3.wdf");
-        m_Engine->MountWdf(exeDir + "/Data/data.wdf");
+        m_Engine->MountWdf(exeDir + "/C3.wdf");
+        m_Engine->MountWdf(exeDir + "/data.wdf");
 
         LX_ENGINE_INFO("[Application] VFS configuration complete");
     }

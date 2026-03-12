@@ -21,6 +21,9 @@ struct EngineMetricsSnapshot
     float FrameTimeMs = 0.0f;
     int ProfileScopeCount = 0;
     int DrawCallCount = 0;
+    int MapVisibleTiles = 0;
+    int MapVisibleObjects = 0;
+    int MapAnimatedTiles = 0;
     std::string GpuDeviceName = "Unknown";
 };
 

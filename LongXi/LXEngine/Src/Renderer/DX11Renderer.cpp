@@ -339,6 +339,7 @@ void DX11Renderer::BeginFrame()
     }
 
     ++m_FrameIndex;
+    m_HasLoggedInvalidDrawStateThisFrame = false;
 
     if (m_LifecyclePhase != FrameLifecyclePhase::NotStarted && m_LifecyclePhase != FrameLifecyclePhase::FrameEnded)
     {
@@ -447,7 +448,57 @@ void DX11Renderer::DrawIndexed(uint32_t indexCount, uint32_t startIndex, int32_t
         return;
     }
 
+#if defined(LX_DEBUG) || defined(LX_DEV)
+    if (!ValidateDrawState())
+    {
+        if (!m_HasLoggedInvalidDrawStateThisFrame)
+        {
+            LX_ENGINE_ERROR("[Renderer] DrawIndexed skipped due to invalid pipeline state (missing shader/topology/input layout)");
+            m_HasLoggedInvalidDrawStateThisFrame = true;
+        }
+        return;
+    }
+#endif
+
     m_Context->DrawIndexed(indexCount, startIndex, baseVertex);
+}
+
+bool DX11Renderer::ValidateDrawState() const
+{
+    if (!m_Context)
+    {
+        return false;
+    }
+
+    D3D11_PRIMITIVE_TOPOLOGY topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
+    m_Context->IAGetPrimitiveTopology(&topology);
+    if (topology == D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED)
+    {
+        return false;
+    }
+
+    ID3D11VertexShader* vertexShader = nullptr;
+    m_Context->VSGetShader(&vertexShader, nullptr, nullptr);
+    const bool hasVertexShader = vertexShader != nullptr;
+    if (vertexShader)
+    {
+        vertexShader->Release();
+    }
+
+    if (!hasVertexShader)
+    {
+        return false;
+    }
+
+    ID3D11InputLayout* inputLayout = nullptr;
+    m_Context->IAGetInputLayout(&inputLayout);
+    const bool hasInputLayout = inputLayout != nullptr;
+    if (inputLayout)
+    {
+        inputLayout->Release();
+    }
+
+    return hasInputLayout;
 }
 
 void DX11Renderer::ApplyPassState(RenderPassType passType)

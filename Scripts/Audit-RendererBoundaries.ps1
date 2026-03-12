@@ -5,6 +5,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $targetRoot = "LongXi/LXEngine/Src"
+$mapTargetRoot = "LongXi/LXGameMap/Src/Map"
 $allowedDirectXRegex = @(
     "LongXi[\\/]LXEngine[\\/]Src[\\/]Renderer[\\/]DX11Renderer\.h$",
     "LongXi[\\/]LXEngine[\\/]Src[\\/]Renderer[\\/]DX11Renderer\.cpp$",
@@ -22,6 +23,11 @@ try {
     $rawMatches = & rg --no-heading --line-number --color never $directXPattern $targetRoot
 } catch {
     $rawMatches = @()
+}
+
+try {
+    $rawMatches += (& rg --no-heading --line-number --color never $directXPattern $mapTargetRoot)
+} catch {
 }
 
 try {

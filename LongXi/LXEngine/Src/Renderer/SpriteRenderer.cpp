@@ -217,12 +217,12 @@ void SpriteRenderer::End()
     m_InBatch = false;
 }
 
-void SpriteRenderer::DrawSprite(Texture* texture, Vector2 position, Vector2 size)
+void SpriteRenderer::DrawSprite(const Texture* texture, Vector2 position, Vector2 size)
 {
     DrawSprite(texture, position, size, {0.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f});
 }
 
-void SpriteRenderer::DrawSprite(Texture* texture, Vector2 position, Vector2 size, Vector2 uvMin, Vector2 uvMax, LongXi::Color color)
+void SpriteRenderer::DrawSprite(const Texture* texture, Vector2 position, Vector2 size, Vector2 uvMin, Vector2 uvMax, LongXi::Color color)
 {
     if (!m_Initialized || !m_InBatch)
     {

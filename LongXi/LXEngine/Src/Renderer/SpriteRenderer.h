@@ -35,8 +35,8 @@ public:
     void OnResize(int width, int height);
 
     void Begin();
-    void DrawSprite(Texture* texture, Vector2 position, Vector2 size);
-    void DrawSprite(Texture* texture, Vector2 position, Vector2 size, Vector2 uvMin, Vector2 uvMax, LongXi::Color color);
+    void DrawSprite(const Texture* texture, Vector2 position, Vector2 size);
+    void DrawSprite(const Texture* texture, Vector2 position, Vector2 size, Vector2 uvMin, Vector2 uvMax, LongXi::Color color);
     void End();
 
 private:
@@ -52,7 +52,7 @@ private:
     SpriteVertex m_VertexData[MAX_SPRITES_PER_BATCH * 4];
 
     int m_SpriteCount = 0;
-    Texture* m_CurrentTexture = nullptr;
+    const Texture* m_CurrentTexture = nullptr;
 
     bool m_Initialized = false;
     bool m_InBatch = false;

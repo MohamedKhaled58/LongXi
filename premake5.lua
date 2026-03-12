@@ -17,6 +17,8 @@ IncludeDir["LXCore"]        = path.getabsolute("LongXi/LXCore")
 IncludeDir["LXCoreSrc"]     = path.getabsolute("LongXi/LXCore/Src")
 IncludeDir["LXEngine"]      = path.getabsolute("LongXi/LXEngine")
 IncludeDir["LXEngineSrc"]   = path.getabsolute("LongXi/LXEngine/Src")
+IncludeDir["LXGameMap"]     = path.getabsolute("LongXi/LXGameMap")
+IncludeDir["LXGameMapSrc"]  = path.getabsolute("LongXi/LXGameMap/Src")
 
 	configurations
 	{
@@ -72,6 +74,7 @@ group "Core"
 		include "LongXi/LXCore"
 		-- LXEngine contains renderer backend modules under Src/Renderer/Backend/DX11 (including resource system files).
 		include "LongXi/LXEngine"
+		include "LongXi/LXGameMap"
 	group ""
 
 	group "Executables"

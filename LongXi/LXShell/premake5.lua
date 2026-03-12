@@ -16,12 +16,15 @@ project "LXShell"
 		"%{IncludeDir.LXCore}",
 		"%{IncludeDir.LXCoreSrc}",
 		"%{IncludeDir.LXEngine}",
-		"%{IncludeDir.LXEngineSrc}"
+		"%{IncludeDir.LXEngineSrc}",
+		"%{IncludeDir.LXGameMap}",
+		"%{IncludeDir.LXGameMapSrc}"
 	}
 
 	links
 	{
 		"LXEngine",
+		"LXGameMap",
 		"LXCore"
 	}
 
