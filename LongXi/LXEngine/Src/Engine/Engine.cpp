@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cmath>
 
+#include "Assets/ResourceManager.h"
 #include "Core/FileSystem/VirtualFileSystem.h"
 #include "Core/Logging/LogMacros.h"
 #include "Core/Profiling/IProfileSink.h"
@@ -63,6 +64,9 @@ bool Engine::Initialize(HWND windowHandle, int width, int height)
 
     LX_ENGINE_INFO("[Engine] Initializing texture manager");
     m_TextureManager = std::make_unique<TextureManager>(*m_Renderer, *m_VFS);
+
+    // ResourceManager initialized later by Application after VFS is mounted
+    // m_ResourceManager = std::make_unique<ResourceManager>();
 
     LX_ENGINE_INFO("[Engine] Initializing sprite renderer");
     m_SpriteRenderer = std::make_unique<SpriteRenderer>();
@@ -133,6 +137,11 @@ void Engine::Shutdown()
     {
         m_MapSystem->Shutdown();
         m_MapSystem.reset();
+    }
+
+    if (m_ResourceManager)
+    {
+        m_ResourceManager.reset();
     }
 
     if (m_SpriteRenderer)
@@ -465,6 +474,23 @@ void Engine::MountWdf(const std::string& path)
     }
 }
 
+bool Engine::InitializeResourceManager()
+{
+    if (m_ResourceManager)
+    {
+        return true; // Already initialized
+    }
+
+    m_ResourceManager = std::make_unique<ResourceManager>();
+    if (!m_ResourceManager->Initialize(*m_VFS, *m_Renderer, *m_TextureManager))
+    {
+        LX_ENGINE_WARN("[Engine] ResourceManager initialization failed — asset loading may not work");
+        return false;
+    }
+
+    return true;
+}
+
 Renderer& Engine::GetRenderer()
 {
     return *m_Renderer;
@@ -493,6 +519,12 @@ SpriteRenderer& Engine::GetSpriteRenderer()
 Scene& Engine::GetScene()
 {
     return *m_Scene;
+}
+
+ResourceManager& Engine::GetResourceManager()
+{
+    static ResourceManager s_FallbackResourceManager;
+    return m_ResourceManager ? *m_ResourceManager : s_FallbackResourceManager;
 }
 
 MapSystem& Engine::GetMapSystem()

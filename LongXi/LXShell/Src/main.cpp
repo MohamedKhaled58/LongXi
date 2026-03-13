@@ -4,13 +4,14 @@
 
 #include <Application/Application.h>
 #include <Application/EntryPoint.h>
-#include <Assets/C3/C3RuntimeLoader.h>
 #include <Assets/C3/RuntimeMesh.h>
+#include <Assets/ResourceManager.h>
 #include <Core/FileSystem/VirtualFileSystem.h>
 #include <Core/Logging/LogMacros.h>
 #include <Engine/Engine.h>
 #include <Hero/LXHero.h>
 #include <Renderer/LXHeroRenderer.h>
+#include <Renderer/RendererTypes.h>
 #include <Renderer/SpriteRenderer.h>
 #include <Scene/Camera.h>
 #include <Scene/Scene.h>
@@ -40,13 +41,11 @@ namespace LXShell
 
 using LXCore::CVirtualFileSystem;
 using LXEngine::Camera;
-using LXEngine::C3LoadRequest;
-using LXEngine::C3LoadResult;
-using LXEngine::C3RuntimeLoader;
 using LXEngine::Engine;
+using LXEngine::Key;
 using LXEngine::LXHero;
 using LXEngine::LXHeroRenderer;
-using LXEngine::Key;
+using LXEngine::ResourceManager;
 using LXEngine::RuntimeMesh;
 using LXEngine::Scene;
 using LXEngine::SceneNode;
@@ -147,10 +146,8 @@ public:
         Engine& engine = GetEngine();
         if (engine.IsInitialized())
         {
-            if (m_HeroMesh.IsValid())
-            {
-                m_HeroMesh.Release(engine.GetRenderer());
-            }
+            // m_HeroMesh is owned by ResourceManager cache, no need to release
+            m_HeroMesh = nullptr;
             m_HeroRenderer.Shutdown();
         }
 #if defined(LX_DEBUG) || defined(LX_DEV)
@@ -203,9 +200,8 @@ private:
 
         while (offset < content.size())
         {
-            const size_t lineEnd = content.find('\n', offset);
-            std::string_view line =
-                (lineEnd == std::string_view::npos) ? content.substr(offset) : content.substr(offset, lineEnd - offset);
+            const size_t     lineEnd = content.find('\n', offset);
+            std::string_view line = (lineEnd == std::string_view::npos) ? content.substr(offset) : content.substr(offset, lineEnd - offset);
             if (!line.empty() && line.back() == '\r')
             {
                 line.remove_suffix(1);
@@ -326,60 +322,37 @@ private:
             return;
         }
 
-        constexpr uint32_t   kHeroMeshId       = 1111000;
-        constexpr uint32_t   kHeroTextureId    = 2111300;
-        constexpr const char kMeshMapIni[]     = "ini/3dobj.ini";
-        constexpr const char kTextureMapIni[]  = "ini/3dtexture.ini";
+        ResourceManager&   resourceManager = engine.GetResourceManager();
+        constexpr uint32_t kHeroMeshId     = 4000000;
+        constexpr uint32_t kHeroTextureId  = 4000000;
 
-        std::string meshPath;
-        if (!TryLookupIniPath(vfs, kMeshMapIni, kHeroMeshId, meshPath))
+        // Load mesh using ResourceManager (cache owns the mesh, we store pointer)
+        m_HeroMesh = resourceManager.GetMesh(kHeroMeshId);
+        if (!m_HeroMesh)
         {
-            LX_WARN("[HeroTest] Mesh id {} not found in {}", kHeroMeshId, kMeshMapIni);
+            LX_WARN("[HeroTest] Failed to load mesh id {} from ResourceManager", kHeroMeshId);
             return;
         }
 
-        C3RuntimeLoader loader;
-        C3LoadRequest   request;
-        request.virtualPath = meshPath;
-
-        C3LoadResult result;
-        if (!loader.LoadFromVfs(vfs, request, result) || result.meshes.empty())
+        // Load texture using ResourceManager and apply to mesh
+        LXEngine::RendererTextureHandle textureHandle = resourceManager.GetTexture(kHeroTextureId);
+        if (textureHandle.IsValid())
         {
-            LX_WARN("[HeroTest] Failed to load C3 mesh (id={}, path={})", kHeroMeshId, meshPath);
-            return;
-        }
-
-        if (!m_HeroMesh.Initialize(engine.GetRenderer(), result.meshes[0]))
-        {
-            LX_WARN("[HeroTest] Failed to initialize runtime mesh from C3 data");
-            return;
-        }
-
-        std::string texturePath;
-        if (TryLookupIniPath(vfs, kTextureMapIni, kHeroTextureId, texturePath))
-        {
-            auto texture = textureManager.LoadTexture(texturePath);
-            if (texture)
-            {
-                m_HeroMesh.SetDefaultTexture(texture->GetHandle());
-            }
-            else
-            {
-                LX_WARN("[HeroTest] Failed to load texture '{}'", texturePath);
-            }
+            // Apply texture override to the cached mesh
+            m_HeroMesh->SetDefaultTexture(textureHandle);
         }
         else
         {
-            LX_WARN("[HeroTest] Texture id {} not found in {}", kHeroTextureId, kTextureMapIni);
+            LX_WARN("[HeroTest] Texture id {} not found or failed to load (using fallback)", kHeroTextureId);
         }
 
         m_Hero           = LXHero{};
-        m_Hero.bodyMesh  = &m_HeroMesh;
+        m_Hero.bodyMesh  = m_HeroMesh;
         m_Hero.direction = 0;
-        m_Hero.scale     = 0.75f;
-        m_Hero.worldX    = 0.0f;
-        m_Hero.worldY    = 0.0f;
-        m_Hero.height    = 0.0f;
+        m_Hero.scale     = 1.0f;
+        m_Hero.worldX    = 1000.0f;
+        m_Hero.worldY    = 1000.0f;
+        m_Hero.height    = 10.0f;
         m_HeroReady      = true;
 
         LX_INFO("[HeroTest] Hero setup complete (meshId={}, textureId={})", kHeroMeshId, kHeroTextureId);
@@ -407,7 +380,7 @@ private:
     }
 
     LXHeroRenderer m_HeroRenderer;
-    RuntimeMesh    m_HeroMesh;
+    RuntimeMesh*   m_HeroMesh = nullptr;
     LXHero         m_Hero;
     bool           m_HeroReady = false;
 

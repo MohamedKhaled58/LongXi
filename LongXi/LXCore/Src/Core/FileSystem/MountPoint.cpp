@@ -63,6 +63,13 @@ static bool PathMatchesArchiveRoot(const std::string& normalizedPath, const std:
 CDirectoryMountPoint::CDirectoryMountPoint(const std::string& rootDirectory)
     : m_Root(rootDirectory)
 {
+    // Convert all backslashes to forward slashes for consistency
+    for (char& c : m_Root)
+    {
+        if (c == '\\')
+            c = '/';
+    }
+
     // Strip trailing slash(es)
     while (!m_Root.empty() && (m_Root.back() == '/' || m_Root.back() == '\\'))
         m_Root.pop_back();
