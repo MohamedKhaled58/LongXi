@@ -27,13 +27,13 @@ Application* CreateApplication();
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
     // Bootstrap: console + logging before anything else.
-    LXCore::DebugConsoleGuard debugConsoleGuard;
+    LXEngine::DebugConsoleGuard debugConsoleGuard;
 
     LXCore::Log::Initialize();
     LX_ENGINE_INFO("LongXi Engine starting...");
 
     // Client creates the application
-    auto* app = LXCore::CreateApplication();
+    auto* app = LXEngine::CreateApplication();
     if (!app)
     {
         LX_ENGINE_ERROR("CreateApplication() returned nullptr");

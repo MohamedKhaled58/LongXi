@@ -25,7 +25,7 @@ public:
         return m_TimeSeconds;
     }
 
-    const std::vector<Matrix4>& GetModelSpaceTransforms() const
+    const std::vector<LXCore::Matrix4>& GetModelSpaceTransforms() const
     {
         return m_ModelTransforms;
     }
@@ -42,9 +42,9 @@ private:
     float                   m_TimeSeconds       = 0.0f;
     bool                    m_HasLoggedMismatch = false;
 
-    std::vector<Matrix4> m_LocalTransforms;
-    std::vector<Matrix4> m_ModelTransforms;
-    std::vector<uint8_t> m_Resolved;
+    std::vector<LXCore::Matrix4> m_LocalTransforms;
+    std::vector<LXCore::Matrix4> m_ModelTransforms;
+    std::vector<uint8_t>         m_Resolved;
 };
 
 } // namespace LXEngine

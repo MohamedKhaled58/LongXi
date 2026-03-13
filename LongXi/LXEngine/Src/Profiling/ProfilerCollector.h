@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "Core/Profiling/IProfileSink.h"
 #include "Core/Profiling/ProfilerTypes.h"
 
 namespace LXEngine
@@ -16,7 +17,7 @@ namespace LXEngine
 using LXCore::FrameProfileEntry;
 using LXCore::FrameProfileSnapshot;
 
-class ProfilerCollector
+class ProfilerCollector : public LXCore::IProfileSink
 {
 public:
     void Initialize();
@@ -28,7 +29,7 @@ public:
     void BeginFrame(uint64_t frameIndex);
     void EndFrame(uint64_t frameIndex, double frameTimeSeconds);
 
-    void RecordScope(const char* scopeName, uint64_t durationMicroseconds);
+    void RecordScope(const char* scopeName, uint64_t durationMicroseconds) override;
 
     const FrameProfileSnapshot& GetLastFrameSnapshot() const;
 

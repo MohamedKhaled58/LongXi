@@ -232,7 +232,7 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
     }
 
     size_t cursor = 0;
-    if (!ParseDmap(mapPath, bytes, outDescriptor, outTileGrid, cursor, outWarnings))
+    if (!::LXMap::ParseDmap(mapPath, bytes, outDescriptor, outTileGrid, cursor, outWarnings))
     {
         return false;
     }
@@ -1427,7 +1427,7 @@ bool MapLoader::TryResolveTexturePath(const std::string&   framePath,
             return true;
         }
 
-        const std::string loweredFramePath = ToLowerAscii(normalizedFramePath);
+        const std::string loweredFramePath = LXCore::ToLowerAscii(normalizedFramePath);
         if (loweredFramePath.rfind("map/", 0) == 0)
         {
             return tryTextureWithExtension("data/" + normalizedFramePath);

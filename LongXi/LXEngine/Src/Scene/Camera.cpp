@@ -18,13 +18,13 @@ constexpr float kMinNearPlane  = 0.01f;
 constexpr float kMinDepthRange = 0.01f;
 constexpr float kEpsilon       = 0.000001f;
 
-Matrix4 MakeIdentity()
+LXCore::Matrix4 MakeIdentity()
 {
-    Matrix4 matrix = {};
-    matrix.m[0]    = 1.0f;
-    matrix.m[5]    = 1.0f;
-    matrix.m[10]   = 1.0f;
-    matrix.m[15]   = 1.0f;
+    LXCore::Matrix4 matrix = {};
+    matrix.m[0]            = 1.0f;
+    matrix.m[5]            = 1.0f;
+    matrix.m[10]           = 1.0f;
+    matrix.m[15]           = 1.0f;
     return matrix;
 }
 
@@ -43,12 +43,12 @@ float NormalizeDegrees(float degrees)
     return normalized;
 }
 
-float Dot(const Vector3& lhs, const Vector3& rhs)
+float Dot(const LXCore::Vector3& lhs, const LXCore::Vector3& rhs)
 {
     return lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z;
 }
 
-Vector3 Cross(const Vector3& lhs, const Vector3& rhs)
+LXCore::Vector3 Cross(const LXCore::Vector3& lhs, const LXCore::Vector3& rhs)
 {
     return {
         lhs.y * rhs.z - lhs.z * rhs.y,
@@ -57,7 +57,7 @@ Vector3 Cross(const Vector3& lhs, const Vector3& rhs)
     };
 }
 
-Vector3 Normalize(const Vector3& value)
+LXCore::Vector3 Normalize(const LXCore::Vector3& value)
 {
     const float lengthSq = Dot(value, value);
     if (lengthSq <= kEpsilon)
@@ -77,18 +77,18 @@ Camera::Camera()
     m_ProjectionMatrix = MakeIdentity();
 }
 
-void Camera::SetPosition(Vector3 position)
+void Camera::SetPosition(LXCore::Vector3 position)
 {
     m_Position  = position;
     m_ViewDirty = true;
 }
 
-Vector3 Camera::GetPosition() const
+LXCore::Vector3 Camera::GetPosition() const
 {
     return m_Position;
 }
 
-void Camera::SetRotation(Vector3 rotationDegrees)
+void Camera::SetRotation(LXCore::Vector3 rotationDegrees)
 {
     rotationDegrees.x = NormalizeDegrees(rotationDegrees.x);
     rotationDegrees.y = NormalizeDegrees(rotationDegrees.y);
@@ -98,7 +98,7 @@ void Camera::SetRotation(Vector3 rotationDegrees)
     m_ViewDirty       = true;
 }
 
-Vector3 Camera::GetRotation() const
+LXCore::Vector3 Camera::GetRotation() const
 {
     return m_RotationDegrees;
 }
@@ -151,26 +151,26 @@ void Camera::UpdateViewMatrix()
     const float pitchRadians = DegreesToRadians(m_RotationDegrees.x);
     const float rollRadians  = DegreesToRadians(m_RotationDegrees.z);
 
-    Vector3 forward = {
+    LXCore::Vector3 forward = {
         std::cos(pitchRadians) * std::sin(yawRadians),
         std::sin(pitchRadians),
         std::cos(pitchRadians) * std::cos(yawRadians),
     };
     forward = Normalize(forward);
 
-    Vector3 right = Normalize(Cross({0.0f, 1.0f, 0.0f}, forward));
+    LXCore::Vector3 right = Normalize(Cross({0.0f, 1.0f, 0.0f}, forward));
     if (Dot(right, right) <= kEpsilon)
     {
         right = {1.0f, 0.0f, 0.0f};
     }
 
-    Vector3 up = Normalize(Cross(forward, right));
+    LXCore::Vector3 up = Normalize(Cross(forward, right));
 
     if (std::fabs(rollRadians) > kEpsilon)
     {
-        const float   cosRoll  = std::cos(rollRadians);
-        const float   sinRoll  = std::sin(rollRadians);
-        const Vector3 oldRight = right;
+        const float           cosRoll  = std::cos(rollRadians);
+        const float           sinRoll  = std::sin(rollRadians);
+        const LXCore::Vector3 oldRight = right;
 
         right = Normalize({
             oldRight.x * cosRoll + up.x * sinRoll,
@@ -234,12 +234,12 @@ void Camera::UpdateProjectionMatrix(int viewportWidth, int viewportHeight)
     LX_ENGINE_INFO("[Camera] Projection updated");
 }
 
-const Matrix4& Camera::GetViewMatrix() const
+const LXCore::Matrix4& Camera::GetViewMatrix() const
 {
     return m_ViewMatrix;
 }
 
-const Matrix4& Camera::GetProjectionMatrix() const
+const LXCore::Matrix4& Camera::GetProjectionMatrix() const
 {
     return m_ProjectionMatrix;
 }

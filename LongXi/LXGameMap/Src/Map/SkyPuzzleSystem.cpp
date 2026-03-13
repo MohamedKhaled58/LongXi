@@ -27,12 +27,12 @@ namespace
 
 bool IsTextureAssetPath(const std::string& path)
 {
-    return EndsWithInsensitive(path, ".dds") || EndsWithInsensitive(path, ".tga");
+    return LXCore::EndsWithInsensitive(path, ".dds") || LXCore::EndsWithInsensitive(path, ".tga");
 }
 
 bool IsVirtualRootedPath(const std::string& path)
 {
-    const std::string normalizedPath = ToLowerAscii(LXCore::NormalizeVirtualResourcePath(path, true));
+    const std::string normalizedPath = LXCore::ToLowerAscii(LXCore::NormalizeVirtualResourcePath(path, true));
     if (normalizedPath.empty())
     {
         return false;
@@ -48,12 +48,12 @@ bool IsVirtualRootedPath(const std::string& path)
 
 bool LooksLikeTexturePayload(const std::string& normalizedPath, const std::vector<uint8_t>& bytes)
 {
-    if (EndsWithInsensitive(normalizedPath, ".dds"))
+    if (LXCore::EndsWithInsensitive(normalizedPath, ".dds"))
     {
         return bytes.size() >= 4 && bytes[0] == 'D' && bytes[1] == 'D' && bytes[2] == 'S' && bytes[3] == ' ';
     }
 
-    if (EndsWithInsensitive(normalizedPath, ".tga"))
+    if (LXCore::EndsWithInsensitive(normalizedPath, ".tga"))
     {
         if (bytes.size() < 18)
         {
@@ -212,7 +212,7 @@ bool TryResolveTexturePath(const std::string&  framePath,
             return;
         }
 
-        const std::string loweredCandidate = ToLowerAscii(normalizedCandidate);
+        const std::string loweredCandidate = LXCore::ToLowerAscii(normalizedCandidate);
         if (loweredCandidate.rfind("data/", 0) == 0)
         {
             pushPathAttempt(normalizedCandidate);
@@ -245,7 +245,7 @@ bool TryResolveTexturePath(const std::string&  framePath,
             return false;
         }
 
-        const std::string loweredCandidate = ToLowerAscii(normalizedCandidate);
+        const std::string loweredCandidate = LXCore::ToLowerAscii(normalizedCandidate);
         if (loweredCandidate.rfind("map/", 0) != 0 && loweredCandidate.rfind("data/map/", 0) != 0)
         {
             return false;
@@ -300,7 +300,7 @@ bool TryResolveTexturePath(const std::string&  framePath,
             continue;
         }
 
-        const std::string extension = ToLowerAscii(attempt.substr(dotPos));
+        const std::string extension = LXCore::ToLowerAscii(attempt.substr(dotPos));
         if (extension == ".dds")
         {
             if (tryTexturePath(attempt))
@@ -376,7 +376,7 @@ bool ParseAniFrames(const std::string&                                      aniP
         {
             currentPuzzleIndex       = kInvalidPuzzleIndex;
             std::string section      = Trim(trimmed.substr(1, trimmed.size() - 2));
-            std::string sectionLower = ToLowerAscii(section);
+            std::string sectionLower = LXCore::ToLowerAscii(section);
             if (sectionLower.rfind("puzzle", 0) == 0)
             {
                 const std::string idPart = sectionLower.substr(6);
@@ -410,7 +410,7 @@ bool ParseAniFrames(const std::string&                                      aniP
             continue;
         }
 
-        std::string       key   = ToLowerAscii(Trim(trimmed.substr(0, equalsPos)));
+        std::string       key   = LXCore::ToLowerAscii(Trim(trimmed.substr(0, equalsPos)));
         const std::string value = Trim(trimmed.substr(equalsPos + 1));
         if (value.empty() || key == "frameamount")
         {
@@ -419,7 +419,7 @@ bool ParseAniFrames(const std::string&                                      aniP
 
         if (key.rfind("frame", 0) == 0)
         {
-            if (value.size() >= 4 && ToLowerAscii(value.substr(value.size() - 4)) == ".msk")
+            if (value.size() >= 4 && LXCore::ToLowerAscii(value.substr(value.size() - 4)) == ".msk")
             {
                 continue;
             }
@@ -683,8 +683,8 @@ uint32_t SkyPuzzleSystem::Render(SpriteRenderer&      spriteRenderer,
                     continue;
                 }
 
-                const Vector2 drawPosition = {screenX, screenY};
-                const Vector2 drawSize     = {puzzleCellScreenSize, puzzleCellScreenSize};
+                const LXCore::Vector2 drawPosition = {screenX, screenY};
+                const LXCore::Vector2 drawSize     = {puzzleCellScreenSize, puzzleCellScreenSize};
                 spriteRenderer.DrawSprite(selectedTexture, drawPosition, drawSize);
                 ++drawCalls;
             }

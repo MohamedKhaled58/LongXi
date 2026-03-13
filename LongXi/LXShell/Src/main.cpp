@@ -31,6 +31,16 @@
 namespace LXShell
 {
 
+using LXCore::CVirtualFileSystem;
+using LXEngine::Camera;
+using LXEngine::Engine;
+using LXEngine::Key;
+using LXEngine::Scene;
+using LXEngine::SceneNode;
+using LXEngine::SpriteRenderer;
+using LXEngine::Texture;
+using LXEngine::TextureManager;
+
 class TestApplication : public LXEngine::Application
 {
 public:
@@ -94,7 +104,7 @@ public:
             {
                 RenderValidationSprite(engine);
 
-                const bool isF6Down = engine.GetInput().IsKeyDown(Key::F6);
+                const bool isF6Down = engine.GetInput().IsKeyDown(LXEngine::Key::F6);
                 if (isF6Down && !m_F6WasDown)
                 {
                     m_DebugUI.ToggleProfilerPanel();
@@ -156,18 +166,18 @@ private:
         LX_INFO("VALIDATION SCENE SETUP");
         LX_INFO("==============================================");
 
-        Engine&             engine         = GetEngine();
-        Scene&              scene          = engine.GetScene();
-        TextureManager&     textureManager = engine.GetTextureManager();
-        CVirtualFileSystem& vfs            = engine.GetVFS();
-        bool                mapLoaded      = false;
+        Engine&                     engine         = GetEngine();
+        LXEngine::Scene&            scene          = engine.GetScene();
+        LXEngine::TextureManager&   textureManager = engine.GetTextureManager();
+        LXCore::CVirtualFileSystem& vfs            = engine.GetVFS();
+        bool                        mapLoaded      = false;
 
         auto rootNode = std::make_unique<SceneNode>();
         rootNode->SetName("ValidationRoot");
         rootNode->SetPosition({0.0f, 0.0f, 0.0f});
         LX_INFO("[ValidationScene] Validation root created");
 
-        std::shared_ptr<Texture> testTexture;
+        std::shared_ptr<LXEngine::Texture> testTexture;
         const char*              resolvedPath = nullptr;
 
         if (testTexture)
@@ -233,30 +243,30 @@ private:
             return;
         }
 
-        SpriteRenderer& spriteRenderer = engine.GetSpriteRenderer();
+        LXEngine::SpriteRenderer& spriteRenderer = engine.GetSpriteRenderer();
         if (!spriteRenderer.IsInitialized())
         {
             return;
         }
 
         engine.ExecuteSpritePass(
-            [this](SpriteRenderer& activeSpriteRenderer)
+            [this](LXEngine::SpriteRenderer& activeSpriteRenderer)
             {
                 // Draw one visible debug sprite so texture/VFS/render validation is immediate.
                 activeSpriteRenderer.DrawSprite(m_ValidationTexture.get(), {100.0f, 100.0f}, {256.0f, 256.0f});
             });
     }
 
-    ImGuiLayer               m_ImGuiLayer;
-    DebugUI                  m_DebugUI;
-    std::shared_ptr<Texture> m_ValidationTexture;
-    bool                     m_F6WasDown = false;
+    ImGuiLayer                         m_ImGuiLayer;
+    DebugUI                            m_DebugUI;
+    std::shared_ptr<LXEngine::Texture> m_ValidationTexture;
+    bool                               m_F6WasDown = false;
 #endif
 };
 
 } // namespace LXShell
 
-LXCore::Application* LXCore::CreateApplication()
+LXEngine::Application* LXEngine::CreateApplication()
 {
-    return new LXCore::TestApplication();
+    return new LXShell::TestApplication();
 }

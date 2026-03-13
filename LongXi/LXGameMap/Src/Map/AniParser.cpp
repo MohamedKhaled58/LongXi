@@ -109,7 +109,7 @@ bool TryParseTerrainPartRecord(const std::vector<uint8_t>& bytes,
 } // namespace
 
 bool ParseAni(const std::string&                                      aniPath,
-              CVirtualFileSystem&                                     vfs,
+              LXCore::CVirtualFileSystem&                             vfs,
               std::unordered_map<uint16_t, std::vector<std::string>>& outFramesByPuzzle,
               std::vector<std::string>&                               outWarnings)
 {

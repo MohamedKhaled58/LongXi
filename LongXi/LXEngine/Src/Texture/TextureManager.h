@@ -12,11 +12,17 @@
 // Loads textures from VFS, decodes DDS/TGA, uploads to GPU, and caches by path
 // =============================================================================
 
+namespace LXCore
+{
+class CVirtualFileSystem;
+}
+
 namespace LXEngine
 {
 
 class Renderer;
-class CVirtualFileSystem;
+
+using LXCore::CVirtualFileSystem;
 
 class TextureManager
 {

@@ -65,7 +65,7 @@ bool C3CameParser::Parse(const std::vector<uint8_t>& data, CameraPathResource& o
     outCamera.keyframes.resize(frameCount);
     for (uint32_t i = 0; i < frameCount; ++i)
     {
-        Vector3 from{};
+        LXCore::Vector3 from{};
         if (!reader.Read(from))
         {
             LX_C3_WARN("CAME: Failed to read from position (frame={})", i);
@@ -78,7 +78,7 @@ bool C3CameParser::Parse(const std::vector<uint8_t>& data, CameraPathResource& o
 
     for (uint32_t i = 0; i < frameCount; ++i)
     {
-        Vector3 to{};
+        LXCore::Vector3 to{};
         if (!reader.Read(to))
         {
             LX_C3_WARN("CAME: Failed to read target position (frame={})", i);

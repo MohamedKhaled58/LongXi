@@ -4,10 +4,15 @@
 
 #include "../DebugUI.h"
 
+namespace LXEngine
+{
+class Scene;
+}
+
 namespace LXShell
 {
 
-class Scene;
+using LXEngine::Scene;
 
 class SceneInspector
 {

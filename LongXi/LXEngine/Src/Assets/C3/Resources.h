@@ -18,16 +18,16 @@ struct BoneInfluence
 
 struct Vertex
 {
-    Vector3       position{0.0f, 0.0f, 0.0f};
-    Vector3       normal{0.0f, 0.0f, 0.0f};
-    Vector2       uv{0.0f, 0.0f};
-    BoneInfluence skinning{};
-    bool          hasNormal = false;
+    LXCore::Vector3 position{0.0f, 0.0f, 0.0f};
+    LXCore::Vector3 normal{0.0f, 0.0f, 0.0f};
+    LXCore::Vector2 uv{0.0f, 0.0f};
+    BoneInfluence   skinning{};
+    bool            hasNormal = false;
 };
 
 struct MorphTargetSet
 {
-    std::vector<Vector3> positions;
+    std::vector<LXCore::Vector3> positions;
 };
 
 struct MeshResource
@@ -39,20 +39,20 @@ struct MeshResource
 
 struct SkeletonResource
 {
-    uint32_t             boneCount = 0;
-    std::vector<int32_t> parentIndices;
-    std::vector<Matrix4> bindPose;
+    uint32_t                     boneCount = 0;
+    std::vector<int32_t>         parentIndices;
+    std::vector<LXCore::Matrix4> bindPose;
 };
 
 struct AnimationClipResource
 {
-    uint32_t              frameCount      = 0;
-    uint32_t              boneCount       = 0;
-    float                 durationSeconds = 0.0f;
-    std::vector<uint32_t> keyframePositions;
-    std::vector<Matrix4>  boneTransforms;
-    uint32_t              morphCount = 0;
-    std::vector<float>    morphWeights;
+    uint32_t                     frameCount      = 0;
+    uint32_t                     boneCount       = 0;
+    float                        durationSeconds = 0.0f;
+    std::vector<uint32_t>        keyframePositions;
+    std::vector<LXCore::Matrix4> boneTransforms;
+    uint32_t                     morphCount = 0;
+    std::vector<float>           morphWeights;
 
     const LXCore::Matrix4* GetTransform(uint32_t frameIndex, uint32_t boneIndex) const
     {

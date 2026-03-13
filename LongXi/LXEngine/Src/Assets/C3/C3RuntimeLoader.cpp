@@ -31,7 +31,7 @@ std::string ResolvePath(const C3LoadRequest& request, bool& usedFileId)
 
 } // namespace
 
-bool C3RuntimeLoader::LoadFromVfs(CVirtualFileSystem& vfs, const C3LoadRequest& request, C3LoadResult& outResult)
+bool C3RuntimeLoader::LoadFromVfs(LXCore::CVirtualFileSystem& vfs, const C3LoadRequest& request, C3LoadResult& outResult)
 {
     outResult = C3LoadResult{};
 

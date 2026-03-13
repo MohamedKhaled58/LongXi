@@ -10,11 +10,11 @@ namespace
 
 struct RuntimeVertex
 {
-    Vector3  position{0.0f, 0.0f, 0.0f};
-    Vector3  normal{0.0f, 0.0f, 1.0f};
-    Vector2  uv{0.0f, 0.0f};
-    uint32_t boneIndices[4] = {0, 0, 0, 0};
-    float    boneWeights[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+    LXCore::Vector3 position{0.0f, 0.0f, 0.0f};
+    LXCore::Vector3 normal{0.0f, 0.0f, 1.0f};
+    LXCore::Vector2 uv{0.0f, 0.0f};
+    uint32_t        boneIndices[4] = {0, 0, 0, 0};
+    float           boneWeights[4] = {0.0f, 0.0f, 0.0f, 0.0f};
 };
 
 } // namespace

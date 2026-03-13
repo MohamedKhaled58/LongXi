@@ -8,14 +8,26 @@
 
 #include "Map/MapTypes.h"
 
+namespace LXCore
+{
+class CVirtualFileSystem;
+}
+
+namespace LXEngine
+{
+class Texture;
+class TextureManager;
+} // namespace LXEngine
+
 namespace LXMap
 {
 
-class CVirtualFileSystem;
-class Texture;
-class TextureManager;
 class TileGrid;
 struct MapAnimationState;
+
+using LXCore::CVirtualFileSystem;
+using LXEngine::Texture;
+using LXEngine::TextureManager;
 
 // Parse a .pul puzzle texture-atlas file.
 // Populates inOutDescriptor with puzzle grid dimensions, indices, and ANI path.

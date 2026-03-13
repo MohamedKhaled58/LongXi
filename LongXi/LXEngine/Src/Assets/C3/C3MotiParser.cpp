@@ -5,6 +5,7 @@
 #include "Assets/C3/C3BinaryReader.h"
 #include "Assets/C3/C3Log.h"
 #include "Assets/C3/C3Types.h"
+#include "Renderer/Renderer.h"
 
 namespace LXEngine
 {
@@ -22,9 +23,9 @@ struct ZKeyBoneData
 #pragma pack(pop)
 static_assert(sizeof(ZKeyBoneData) == 28, "ZKeyBoneData must be 28 bytes");
 
-Matrix4 IdentityMatrix()
+LXCore::Matrix4 IdentityMatrix()
 {
-    Matrix4 m{};
+    LXCore::Matrix4 m{};
     m.m[0]  = 1.0f;
     m.m[5]  = 1.0f;
     m.m[10] = 1.0f;
@@ -32,7 +33,7 @@ Matrix4 IdentityMatrix()
     return m;
 }
 
-Matrix4 QuaternionTranslationToMatrix(const float q[4], const float t[3])
+LXCore::Matrix4 QuaternionTranslationToMatrix(const float q[4], const float t[3])
 {
     const float x = q[0];
     const float y = q[1];
@@ -49,7 +50,7 @@ Matrix4 QuaternionTranslationToMatrix(const float q[4], const float t[3])
     const float wy = w * y;
     const float wz = w * z;
 
-    Matrix4 m{};
+    LXCore::Matrix4 m{};
     m.m[0] = 1.0f - 2.0f * (yy + zz);
     m.m[1] = 2.0f * (xy + wz);
     m.m[2] = 2.0f * (xz - wy);
@@ -130,7 +131,7 @@ bool C3MotiParser::Parse(const std::vector<uint8_t>& data, SkeletonResource& out
 
             for (uint32_t b = 0; b < boneCount; ++b)
             {
-                Matrix4 matrix{};
+                LXCore::Matrix4 matrix{};
                 if (!reader.Read(matrix))
                 {
                     LX_C3_WARN("MOTI: Failed to read KKEY matrix (frame={}, bone={})", framePos, b);
@@ -160,7 +161,7 @@ bool C3MotiParser::Parse(const std::vector<uint8_t>& data, SkeletonResource& out
                     LX_C3_WARN("MOTI: Failed to read ZKEY bone data (frame={}, bone={})", framePos, b);
                     return false;
                 }
-                Matrix4 matrix = QuaternionTranslationToMatrix(zdata.rotation, zdata.translation);
+                LXCore::Matrix4 matrix = QuaternionTranslationToMatrix(zdata.rotation, zdata.translation);
                 outClip.boneTransforms.push_back(matrix);
             }
         }

@@ -5,6 +5,8 @@
 namespace LXEngine
 {
 
+using LXCore::TextureFormat;
+
 namespace
 {
 

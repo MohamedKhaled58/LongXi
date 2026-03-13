@@ -37,7 +37,7 @@ public:
     void                         SetViewport(const RendererViewport& viewport) override;
     void                         SetRenderTarget() override;
     void                         DrawIndexed(uint32_t indexCount, uint32_t startIndex = 0, int32_t baseVertex = 0) override;
-    void                         SetViewProjection(const Matrix4& view, const Matrix4& projection) override;
+    void                         SetViewProjection(const LXCore::Matrix4& view, const LXCore::Matrix4& projection) override;
     RendererTextureHandle        CreateTexture(const RendererTextureDesc& desc) override;
     bool                         DestroyTexture(RendererTextureHandle handle) override;
     RendererVertexBufferHandle   CreateVertexBuffer(const RendererBufferDesc& desc) override;
@@ -158,8 +158,8 @@ private:
     int  m_ViewportWidth  = 0;
     int  m_ViewportHeight = 0;
 
-    Matrix4 m_CurrentViewMatrix       = {};
-    Matrix4 m_CurrentProjectionMatrix = {};
+    LXCore::Matrix4 m_CurrentViewMatrix       = {};
+    LXCore::Matrix4 m_CurrentProjectionMatrix = {};
 
     FrameLifecyclePhase  m_LifecyclePhase = FrameLifecyclePhase::NotStarted;
     RenderPassType       m_ActivePass     = RenderPassType::None;

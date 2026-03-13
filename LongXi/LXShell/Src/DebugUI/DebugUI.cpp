@@ -6,6 +6,7 @@
 #include <Core/Logging/LogMacros.h>
 #include <Engine/Engine.h>
 #include <Input/InputSystem.h>
+#include <Map/MapTypes.h>
 #include <Scene/Camera.h>
 #include <Scene/Scene.h>
 #include <Texture/Texture.h>
@@ -22,6 +23,17 @@
 
 namespace LXShell
 {
+
+using LXCore::FrameProfileEntry;
+using LXCore::FrameProfileSnapshot;
+using LXCore::TextureFormat;
+using LXCore::TimingSnapshot;
+using LXEngine::InputSystem;
+using LXEngine::Key;
+using LXEngine::MouseButton;
+using LXEngine::Scene;
+using LXEngine::Texture;
+using LXMap::MapRenderSnapshot;
 
 namespace
 {

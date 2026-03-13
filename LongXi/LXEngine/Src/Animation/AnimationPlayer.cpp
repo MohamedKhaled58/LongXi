@@ -10,20 +10,19 @@ namespace LXEngine
 
 namespace
 {
-
-Matrix4 MakeIdentity()
+LXCore::Matrix4 MakeIdentity()
 {
-    Matrix4 matrix = {};
-    matrix.m[0]    = 1.0f;
-    matrix.m[5]    = 1.0f;
-    matrix.m[10]   = 1.0f;
-    matrix.m[15]   = 1.0f;
+    LXCore::Matrix4 matrix = {};
+    matrix.m[0]            = 1.0f;
+    matrix.m[5]            = 1.0f;
+    matrix.m[10]           = 1.0f;
+    matrix.m[15]           = 1.0f;
     return matrix;
 }
 
-Matrix4 Multiply(const Matrix4& lhs, const Matrix4& rhs)
+LXCore::Matrix4 Multiply(const LXCore::Matrix4& lhs, const LXCore::Matrix4& rhs)
 {
-    Matrix4 result = {};
+    LXCore::Matrix4 result = {};
     for (int row = 0; row < 4; ++row)
     {
         for (int col = 0; col < 4; ++col)
@@ -39,10 +38,10 @@ Matrix4 Multiply(const Matrix4& lhs, const Matrix4& rhs)
     return result;
 }
 
-Matrix4 LerpMatrix(const Matrix4& a, const Matrix4& b, float t)
+LXCore::Matrix4 LerpMatrix(const LXCore::Matrix4& a, const LXCore::Matrix4& b, float t)
 {
-    Matrix4     result  = {};
-    const float clamped = std::clamp(t, 0.0f, 1.0f);
+    LXCore::Matrix4 result  = {};
+    const float     clamped = std::clamp(t, 0.0f, 1.0f);
     for (int i = 0; i < 16; ++i)
     {
         result.m[i] = a.m[i] + (b.m[i] - a.m[i]) * clamped;
@@ -178,11 +177,11 @@ bool AnimationPlayer::Sample()
 
     for (uint32_t boneIndex = 0; boneIndex < m_Skeleton->boneCount; ++boneIndex)
     {
-        const Matrix4* a             = m_Clip->GetTransform(static_cast<uint32_t>(lowerKey), boneIndex);
-        const Matrix4* b             = m_Clip->GetTransform(static_cast<uint32_t>(upperKey), boneIndex);
-        const Matrix4  localA        = a ? *a : MakeIdentity();
-        const Matrix4  localB        = b ? *b : MakeIdentity();
-        m_LocalTransforms[boneIndex] = LerpMatrix(localA, localB, blend);
+        const LXCore::Matrix4* a      = m_Clip->GetTransform(static_cast<uint32_t>(lowerKey), boneIndex);
+        const LXCore::Matrix4* b      = m_Clip->GetTransform(static_cast<uint32_t>(upperKey), boneIndex);
+        const LXCore::Matrix4  localA = a ? *a : MakeIdentity();
+        const LXCore::Matrix4  localB = b ? *b : MakeIdentity();
+        m_LocalTransforms[boneIndex]  = LerpMatrix(localA, localB, blend);
     }
 
     std::fill(m_Resolved.begin(), m_Resolved.end(), 0);

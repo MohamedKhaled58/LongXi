@@ -169,8 +169,8 @@ bool TileRenderer::RenderTiles(const MapDescriptor&                             
                 continue;
             }
 
-            const Vector2 drawPosition = {screenX, screenY};
-            const Vector2 drawSize     = {puzzleCellScreenSize, puzzleCellScreenSize};
+            const LXCore::Vector2 drawPosition = {screenX, screenY};
+            const LXCore::Vector2 drawSize     = {puzzleCellScreenSize, puzzleCellScreenSize};
             spriteRenderer.DrawSprite(selectedTexture, drawPosition, drawSize);
             ++inOutSnapshot.DrawCalls;
             ++inOutSnapshot.VisibleTiles;

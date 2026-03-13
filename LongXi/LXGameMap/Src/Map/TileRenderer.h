@@ -6,13 +6,21 @@
 
 #include "Map/MapTypes.h"
 
+namespace LXEngine
+{
+class Renderer;
+class SpriteRenderer;
+class Texture;
+} // namespace LXEngine
+
 namespace LXMap
 {
 
 class MapCamera;
-class Renderer;
-class SpriteRenderer;
-class Texture;
+
+using LXEngine::Renderer;
+using LXEngine::SpriteRenderer;
+using LXEngine::Texture;
 
 class TileRenderer
 {

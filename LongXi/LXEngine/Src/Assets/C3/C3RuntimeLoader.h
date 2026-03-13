@@ -8,10 +8,12 @@
 namespace LXEngine
 {
 
+using LXCore::CVirtualFileSystem;
+
 class C3RuntimeLoader
 {
 public:
-    bool LoadFromVfs(CVirtualFileSystem& vfs, const C3LoadRequest& request, C3LoadResult& outResult);
+    bool LoadFromVfs(LXCore::CVirtualFileSystem& vfs, const C3LoadRequest& request, C3LoadResult& outResult);
     bool LoadFromBuffer(const std::vector<uint8_t>& data, C3LoadResult& outResult);
 };
 

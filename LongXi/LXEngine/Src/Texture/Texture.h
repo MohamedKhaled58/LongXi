@@ -14,6 +14,8 @@
 namespace LXEngine
 {
 
+using LXCore::TextureFormat;
+
 class Texture
 {
 public:

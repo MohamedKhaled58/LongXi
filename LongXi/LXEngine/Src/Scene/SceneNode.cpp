@@ -47,35 +47,35 @@ void SceneNode::RemoveChild(SceneNode* child)
     LX_ENGINE_INFO("[Scene] Node removed");
 }
 
-void SceneNode::SetPosition(Vector3 position)
+void SceneNode::SetPosition(LXCore::Vector3 position)
 {
     m_Position       = position;
     m_TransformDirty = true;
 }
 
-void SceneNode::SetRotation(Vector3 rotationDegrees)
+void SceneNode::SetRotation(LXCore::Vector3 rotationDegrees)
 {
     m_Rotation       = rotationDegrees;
     m_TransformDirty = true;
 }
 
-void SceneNode::SetScale(Vector3 scale)
+void SceneNode::SetScale(LXCore::Vector3 scale)
 {
     m_Scale          = scale;
     m_TransformDirty = true;
 }
 
-const Vector3& SceneNode::GetPosition() const
+const LXCore::Vector3& SceneNode::GetPosition() const
 {
     return m_Position;
 }
 
-const Vector3& SceneNode::GetRotation() const
+const LXCore::Vector3& SceneNode::GetRotation() const
 {
     return m_Rotation;
 }
 
-const Vector3& SceneNode::GetScale() const
+const LXCore::Vector3& SceneNode::GetScale() const
 {
     return m_Scale;
 }
@@ -90,17 +90,17 @@ const std::string& SceneNode::GetName() const
     return m_Name;
 }
 
-const Vector3& SceneNode::GetWorldPosition() const
+const LXCore::Vector3& SceneNode::GetWorldPosition() const
 {
     return m_WorldPosition;
 }
 
-const Vector3& SceneNode::GetWorldRotation() const
+const LXCore::Vector3& SceneNode::GetWorldRotation() const
 {
     return m_WorldRotation;
 }
 
-const Vector3& SceneNode::GetWorldScale() const
+const LXCore::Vector3& SceneNode::GetWorldScale() const
 {
     return m_WorldScale;
 }

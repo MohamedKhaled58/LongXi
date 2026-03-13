@@ -9,16 +9,31 @@
 #include "Map/MapTypes.h"
 #include "Texture/Texture.h"
 
+namespace LXCore
+{
+class CVirtualFileSystem;
+struct TimingSnapshot;
+} // namespace LXCore
+
+namespace LXEngine
+{
+class SpriteRenderer;
+class Texture;
+class TextureManager;
+} // namespace LXEngine
+
 namespace LXMap
 {
 
-class CVirtualFileSystem;
 class MapCamera;
-class SpriteRenderer;
-class TextureManager;
 struct MapDescriptor;
 struct MapObjectRecord;
-struct TimingSnapshot;
+
+using LXCore::CVirtualFileSystem;
+using LXCore::TimingSnapshot;
+using LXEngine::SpriteRenderer;
+using LXEngine::Texture;
+using LXEngine::TextureManager;
 
 class SkyPuzzleSystem
 {

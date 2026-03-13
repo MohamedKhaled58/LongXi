@@ -81,9 +81,9 @@ public:
     void   SetMaxDeltaTime(double maxDeltaSeconds);
     double GetMaxDeltaTime() const;
 
-    const LXCore::TimingSnapshot&       GetTimingSnapshot() const;
-    const LXCore::FrameProfileSnapshot& GetLastFrameProfileSnapshot() const;
-    static bool                         IsProfilingEnabled();
+    const LXCore::TimingSnapshot& GetTimingSnapshot() const;
+    const FrameProfileSnapshot&   GetLastFrameProfileSnapshot() const;
+    static bool                   IsProfilingEnabled();
 
 private:
     std::unique_ptr<Renderer>           m_Renderer;

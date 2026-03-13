@@ -15,12 +15,12 @@ namespace
 
 struct PhyVertexFile
 {
-    Vector3  positions[4];
-    float    u;
-    float    v;
-    uint32_t color;
-    uint32_t boneIndices[2];
-    float    boneWeights[2];
+    LXCore::Vector3 positions[4];
+    float           u;
+    float           v;
+    uint32_t        color;
+    uint32_t        boneIndices[2];
+    float           boneWeights[2];
 };
 
 #pragma pack(pop)
@@ -30,12 +30,12 @@ static_assert(sizeof(PhyVertexFile) == 76, "PhyVertexFile must be 76 bytes");
 
 struct Phy4VertexFile
 {
-    Vector3  position;
-    float    u;
-    float    v;
-    uint32_t color;
-    uint32_t boneIndices[2];
-    float    boneWeights[2];
+    LXCore::Vector3 position;
+    float           u;
+    float           v;
+    uint32_t        color;
+    uint32_t        boneIndices[2];
+    float           boneWeights[2];
 };
 
 #pragma pack(pop)

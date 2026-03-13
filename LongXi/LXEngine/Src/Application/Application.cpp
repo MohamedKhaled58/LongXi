@@ -3,8 +3,6 @@
 #include <memory>
 #include <windows.h>
 
-#include
-#include
 #include "Core/FileSystem/ResourceSystem.h"
 #include "Core/Logging/LogMacros.h"
 #include "Engine/Engine.h"
@@ -92,7 +90,7 @@ bool Application::CreateEngine()
 
 void Application::ConfigureVirtualFileSystem()
 {
-    std::string exeDir = ResourceSystem::GetExecutableDirectory();
+    std::string exeDir = LXCore::ResourceSystem::GetExecutableDirectory();
 
     if (!exeDir.empty())
     {

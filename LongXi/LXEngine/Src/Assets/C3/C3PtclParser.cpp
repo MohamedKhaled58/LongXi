@@ -10,9 +10,9 @@ namespace LXEngine
 
 namespace
 {
-Matrix4 IdentityMatrix()
+LXCore::Matrix4 IdentityMatrix()
 {
-    Matrix4 m{};
+    LXCore::Matrix4 m{};
     m.m[0]  = 1.0f;
     m.m[5]  = 1.0f;
     m.m[10] = 1.0f;
@@ -102,7 +102,7 @@ bool C3PtclParser::Parse(const std::vector<uint8_t>& data, ParticleResource& out
                 frame.ages.resize(frame.count);
                 frame.sizes.resize(frame.count);
 
-                if (!reader.ReadBytes(frame.count * sizeof(Vector3), reinterpret_cast<uint8_t*>(frame.positions.data())))
+                if (!reader.ReadBytes(frame.count * sizeof(LXCore::Vector3), reinterpret_cast<uint8_t*>(frame.positions.data())))
                 {
                     LX_C3_WARN("PTCL: Failed to read positions (frame={})", f);
                     return false;
@@ -220,7 +220,7 @@ bool C3PtclParser::Parse(const std::vector<uint8_t>& data, ParticleResource& out
             frame.ages.resize(frame.count);
             frame.sizes.resize(frame.count);
 
-            if (!reader.ReadBytes(frame.count * sizeof(Vector3), reinterpret_cast<uint8_t*>(frame.positions.data())))
+            if (!reader.ReadBytes(frame.count * sizeof(LXCore::Vector3), reinterpret_cast<uint8_t*>(frame.positions.data())))
             {
                 LX_C3_WARN("PTC3: Failed to read positions (frame={})", f);
                 return false;

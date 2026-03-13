@@ -12,7 +12,6 @@
 #include "Scene/Scene.h"
 #include "Texture/TextureManager.h"
 
-using LXCore::Vector3;
 
 namespace LXEngine
 {
@@ -80,7 +79,7 @@ bool Engine::Initialize(HWND windowHandle, int width, int height)
     }
     else
     {
-        const Vector3 cameraPosition = m_Scene->GetActiveCamera().GetPosition();
+        const LXCore::Vector3 cameraPosition = m_Scene->GetActiveCamera().GetPosition();
         m_LastSceneCameraX           = cameraPosition.x;
         m_LastSceneCameraY           = cameraPosition.y;
         m_LastSceneCameraZ           = cameraPosition.z;

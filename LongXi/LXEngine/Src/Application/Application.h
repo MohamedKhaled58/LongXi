@@ -3,9 +3,6 @@
 #include <Windows.h>
 #include <memory>
 
-#include
-#include
-
 // =============================================================================
 // Application — Central lifecycle owner
 // Coordinates window creation and owns Engine instance.
