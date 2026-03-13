@@ -108,6 +108,7 @@ private:
     bool m_ShowCameraPanel            = true;
     bool m_ShowInputMonitor           = true;
     bool m_ShowProfilerPanel          = true;
+    bool m_ShowC3AssetViewer          = true;
     bool m_LastInputConsumedByDebugUI = false;
 };
 

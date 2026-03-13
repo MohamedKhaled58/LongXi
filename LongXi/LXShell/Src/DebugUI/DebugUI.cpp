@@ -12,6 +12,7 @@
 #include <Texture/TextureManager.h>
 #include <algorithm>
 
+#include "Panels/C3AssetViewer.h"
 #include "Panels/CameraPanel.h"
 #include "Panels/EnginePanel.h"
 #include "Panels/InputMonitor.h"
@@ -248,6 +249,7 @@ void DebugUI::RenderPanels(Engine& engine)
     static bool loggedTextureViewerOpen  = false;
     static bool loggedInputMonitorOpen   = false;
     static bool loggedProfilerPanelOpen  = false;
+    static bool loggedC3AssetViewerOpen  = false;
 
     if (m_ShowEnginePanel)
     {
@@ -302,6 +304,16 @@ void DebugUI::RenderPanels(Engine& engine)
             loggedProfilerPanelOpen = true;
         }
         ProfilerPanel::Render(m_ProfilerPanel);
+    }
+
+    if (m_ShowC3AssetViewer)
+    {
+        if (!loggedC3AssetViewerOpen)
+        {
+            LX_INFO("[DebugUI] C3 asset viewer opened");
+            loggedC3AssetViewerOpen = true;
+        }
+        C3AssetViewer::Render(engine);
     }
 }
 

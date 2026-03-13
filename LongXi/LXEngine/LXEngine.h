@@ -5,6 +5,8 @@
 // Engine/runtime systems library
 // =============================================================================
 
+#include "Animation/AnimationClip.h"
+#include "Animation/AnimationPlayer.h"
 #include "Application/Application.h"
 #include "Core/Logging/LogMacros.h"
 #include "Engine/Engine.h"
@@ -13,6 +15,8 @@
 #include "Profiling/ProfileScope.h"
 #include "Profiling/ProfilerCollector.h"
 #include "Renderer/SpriteRenderer.h"
+#include "Resource/C3RuntimeLoader.h"
+#include "Resource/RuntimeMesh.h"
 #include "Scene/Camera.h"
 #include "Scene/Scene.h"
 #include "Scene/SceneNode.h"
