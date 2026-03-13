@@ -30,6 +30,7 @@ public:
 
     // Returns true if ImGui consumed the input message.
     bool HandleWin32Message(uint32_t msg, uint64_t wParam, int64_t lParam);
+    bool WantsMouseCapture() const;
 
 private:
     bool m_Initialized    = false;

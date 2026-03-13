@@ -136,6 +136,17 @@ bool ImGuiLayer::HandleWin32Message(uint32_t msg, uint64_t wParam, int64_t lPara
                m_WindowHandle, static_cast<UINT>(msg), static_cast<WPARAM>(wParam), static_cast<LPARAM>(lParam)) != 0;
 }
 
+bool ImGuiLayer::WantsMouseCapture() const
+{
+    if (!m_Initialized)
+    {
+        return false;
+    }
+
+    const ImGuiIO& io = ImGui::GetIO();
+    return io.WantCaptureMouse;
+}
+
 } // namespace LongXi
 
 #endif // defined(LX_DEBUG) || defined(LX_DEV)

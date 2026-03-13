@@ -148,6 +148,20 @@ private:
             }
             m_ImGuiLayer.OnResize(w, h);
         };
+
+        GetWindow().OnMouseWheel = [this](int delta)
+        {
+            if (m_ImGuiLayer.WantsMouseCapture())
+            {
+                return;
+            }
+
+            Engine& engine = GetEngine();
+            if (engine.IsInitialized())
+            {
+                engine.GetInput().OnMouseWheel(delta);
+            }
+        };
     }
 
     void SetupValidationScene()
