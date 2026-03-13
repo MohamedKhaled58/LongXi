@@ -8,10 +8,10 @@
 #include "Core/Profiling/IProfileSink.h"
 #include "Core/Profiling/ProfileScope.h"
 #include "Input/InputSystem.h"
+#include "Map/MapSystem.h"
 #include "Renderer/SpriteRenderer.h"
 #include "Scene/Scene.h"
 #include "Texture/TextureManager.h"
-
 
 namespace LXEngine
 {
@@ -80,10 +80,10 @@ bool Engine::Initialize(HWND windowHandle, int width, int height)
     else
     {
         const LXCore::Vector3 cameraPosition = m_Scene->GetActiveCamera().GetPosition();
-        m_LastSceneCameraX           = cameraPosition.x;
-        m_LastSceneCameraY           = cameraPosition.y;
-        m_LastSceneCameraZ           = cameraPosition.z;
-        m_HasLastSceneCameraState    = true;
+        m_LastSceneCameraX                   = cameraPosition.x;
+        m_LastSceneCameraY                   = cameraPosition.y;
+        m_LastSceneCameraZ                   = cameraPosition.z;
+        m_HasLastSceneCameraState            = true;
     }
 
     LX_ENGINE_INFO("[Engine] Initializing map system");
@@ -218,7 +218,7 @@ void Engine::Update()
 
         if (m_Scene && m_Scene->IsInitialized())
         {
-            const Vector3 sceneCameraPosition = m_Scene->GetActiveCamera().GetPosition();
+            const LXCore::Vector3 sceneCameraPosition = m_Scene->GetActiveCamera().GetPosition();
             if (!m_HasLastSceneCameraState)
             {
                 m_LastSceneCameraX        = sceneCameraPosition.x;

@@ -1,5 +1,6 @@
 #include "Texture/TextureManager.h"
 
+#include <atomic>
 #include <ctype.h>
 
 #include "Core/FileSystem/PathUtils.h"
@@ -13,6 +14,25 @@ namespace LXEngine
 {
 
 using LXCore::TextureFormat;
+
+namespace
+{
+constexpr uint32_t kMaxTextureLogCount = 2;
+std::atomic<uint32_t> s_TextureLogCount{0};
+
+bool ShouldLogTextureEvent()
+{
+    uint32_t current = s_TextureLogCount.load(std::memory_order_relaxed);
+    while (current < kMaxTextureLogCount)
+    {
+        if (s_TextureLogCount.compare_exchange_weak(current, current + 1u, std::memory_order_relaxed))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+} // namespace
 
 // ============================================================================
 // Constructor / Destructor
@@ -60,7 +80,10 @@ std::shared_ptr<Texture> TextureManager::LoadTexture(const std::string& path)
     auto it = m_Cache.find(normalized);
     if (it != m_Cache.end())
     {
-        LX_ENGINE_INFO("[Texture] Cache hit: {}", normalized);
+        if (ShouldLogTextureEvent())
+        {
+            LX_ENGINE_INFO("[Texture] Cache hit: {}", normalized);
+        }
         return it->second;
     }
 
@@ -227,7 +250,10 @@ std::shared_ptr<Texture> TextureManager::LoadTexture(const std::string& path)
             break;
     }
 
-    LX_ENGINE_INFO("[Texture] Loaded: {} ({}x{} {})", normalized, texData.Width, texData.Height, formatStr);
+    if (ShouldLogTextureEvent())
+    {
+        LX_ENGINE_INFO("[Texture] Loaded: {} ({}x{} {})", normalized, texData.Width, texData.Height, formatStr);
+    }
 
     return texture;
 }

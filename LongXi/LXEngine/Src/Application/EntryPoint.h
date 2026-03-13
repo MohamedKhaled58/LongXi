@@ -8,6 +8,7 @@
 // =============================================================================
 
 #include <windows.h>
+#include <conio.h>
 
 #include "Application/Application.h"
 #include "Application/DebugConsoleGuard.h"
@@ -54,6 +55,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     LX_ENGINE_INFO("LongXi Engine exited with code {}", exitCode);
 
     delete app;
+
+#if defined(LX_DEBUG) || defined(LX_DEV)
+    std::puts("Press any key to close this console...");
+    _getch();
+#endif
+
     LXCore::Log::Shutdown();
 
     return exitCode;

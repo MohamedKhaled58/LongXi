@@ -51,10 +51,11 @@ public:
             return false;
         }
 
-#if defined(LX_DEBUG) || defined(LX_DEV)
         Engine& engine = GetEngine();
         if (engine.IsInitialized())
         {
+            SetupValidationScene();
+#if defined(LX_DEBUG) || defined(LX_DEV)
             if (!m_ImGuiLayer.Initialize(engine, GetWindowHandle()))
             {
                 LX_WARN("[Application] ImGuiLayer initialization failed, running without developer UI");
@@ -62,10 +63,9 @@ public:
             else
             {
                 WireImGuiCallbacks();
-                SetupValidationScene();
             }
-        }
 #endif
+        }
 
         return true;
     }
@@ -137,29 +137,6 @@ public:
     }
 
 private:
-#if defined(LX_DEBUG) || defined(LX_DEV)
-    void WireImGuiCallbacks()
-    {
-        GetWindow().OnRawMessage = [this](UINT msg, WPARAM wParam, LPARAM lParam) -> bool
-        {
-            const bool consumed =
-                m_ImGuiLayer.HandleWin32Message(static_cast<uint32_t>(msg), static_cast<uint64_t>(wParam), static_cast<int64_t>(lParam));
-            m_DebugUI.SetLastInputConsumedByDebugUI(consumed);
-            return consumed;
-        };
-
-        // Resize order: Engine first, then ImGui viewport-dependent state.
-        GetWindow().OnResize = [this](int w, int h)
-        {
-            Engine& engine = GetEngine();
-            if (engine.IsInitialized())
-            {
-                engine.OnResize(w, h);
-            }
-            m_ImGuiLayer.OnResize(w, h);
-        };
-    }
-
     void SetupValidationScene()
     {
         LX_INFO("==============================================");
@@ -177,8 +154,9 @@ private:
         rootNode->SetPosition({0.0f, 0.0f, 0.0f});
         LX_INFO("[ValidationScene] Validation root created");
 
+#if defined(LX_DEBUG) || defined(LX_DEV)
         std::shared_ptr<LXEngine::Texture> testTexture;
-        const char*              resolvedPath = nullptr;
+        const char*                        resolvedPath = nullptr;
 
         if (testTexture)
         {
@@ -190,10 +168,11 @@ private:
             rootNode->AddChild(std::move(spriteNode));
             LX_INFO("[ValidationScene] Test sprite node attached (texture: {})", resolvedPath ? resolvedPath : "unknown");
         }
+#endif
 
         scene.AddNode(std::move(rootNode));
 
-        constexpr std::array<const char*, 12> mapCandidates = {
+        constexpr std::array<const char*, 2> mapCandidates = {
             //"map/map/newplain.dmap",
             "map/map/desert.dmap",
             "map/map/island.dmap",
@@ -234,6 +213,29 @@ private:
         LX_INFO("==============================================");
         LX_INFO("VALIDATION SCENE SETUP COMPLETE");
         LX_INFO("==============================================");
+    }
+
+#if defined(LX_DEBUG) || defined(LX_DEV)
+    void WireImGuiCallbacks()
+    {
+        GetWindow().OnRawMessage = [this](UINT msg, WPARAM wParam, LPARAM lParam) -> bool
+        {
+            const bool consumed =
+                m_ImGuiLayer.HandleWin32Message(static_cast<uint32_t>(msg), static_cast<uint64_t>(wParam), static_cast<int64_t>(lParam));
+            m_DebugUI.SetLastInputConsumedByDebugUI(consumed);
+            return consumed;
+        };
+
+        // Resize order: Engine first, then ImGui viewport-dependent state.
+        GetWindow().OnResize = [this](int w, int h)
+        {
+            Engine& engine = GetEngine();
+            if (engine.IsInitialized())
+            {
+                engine.OnResize(w, h);
+            }
+            m_ImGuiLayer.OnResize(w, h);
+        };
     }
 
     void RenderValidationSprite(Engine& engine)

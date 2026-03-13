@@ -21,9 +21,11 @@ project "LXEngine"
 		".",
 		"Src",
 		"%{IncludeDir.LXCore}",
-		"%{IncludeDir.LXCoreSrc}"
-		-- FR-002: LXEngine MUST NOT depend on LXGameMap (downward dependency forbidden)
-		-- No LXGameMap or LXGameMapSrc include paths here
+		"%{IncludeDir.LXCoreSrc}",
+		-- TODO: Engine owns MapSystem today, so include LXGameMap headers for now.
+		-- Revisit FR-002 once MapSystem ownership is moved out of LXEngine.
+		"%{IncludeDir.LXGameMap}",
+		"%{IncludeDir.LXGameMapSrc}"
 	}
 
 	links
