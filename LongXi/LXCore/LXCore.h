@@ -8,3 +8,4 @@
 #include "Core/FileSystem/VirtualFileSystem.h"
 #include "Core/Logging/Log.h"
 #include "Core/Logging/LogMacros.h"
+#include "Core/StringUtils.h"

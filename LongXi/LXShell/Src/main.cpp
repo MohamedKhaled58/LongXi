@@ -167,31 +167,8 @@ private:
         rootNode->SetPosition({0.0f, 0.0f, 0.0f});
         LX_INFO("[ValidationScene] Validation root created");
 
-        constexpr std::array<const char*, 6> textureCandidates = {
-            "Data/texture/test.dds",
-            "texture/test.dds",
-            "data/texture/test.dds",
-            "Data/texture/1.dds",
-            "texture/1.dds",
-            "1.dds",
-        };
-
         std::shared_ptr<Texture> testTexture;
         const char*              resolvedPath = nullptr;
-        for (const char* candidate : textureCandidates)
-        {
-            if (!vfs.Exists(candidate))
-            {
-                continue;
-            }
-
-            testTexture = textureManager.LoadTexture(candidate);
-            if (testTexture)
-            {
-                resolvedPath = candidate;
-                break;
-            }
-        }
 
         if (testTexture)
         {
@@ -203,16 +180,11 @@ private:
             rootNode->AddChild(std::move(spriteNode));
             LX_INFO("[ValidationScene] Test sprite node attached (texture: {})", resolvedPath ? resolvedPath : "unknown");
         }
-        else
-        {
-            LX_WARN("[ValidationScene] No test texture available in mounted VFS paths (tried {} candidates)", textureCandidates.size());
-            m_ValidationTexture.reset();
-        }
 
         scene.AddNode(std::move(rootNode));
 
         constexpr std::array<const char*, 12> mapCandidates = {
-            "map/map/newplain.dmap",
+            //"map/map/newplain.dmap",
             "map/map/desert.dmap",
             "map/map/island.dmap",
         };

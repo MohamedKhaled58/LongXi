@@ -37,20 +37,6 @@ private:
                           std::vector<MapObjectRecord>& outMapObjects,
                           std::vector<std::string>&     outWarnings);
 
-    static bool ParsePuzzle(const std::string&                                      mapPath,
-                            CVirtualFileSystem&                                     vfs,
-                            TextureManager&                                         textureManager,
-                            MapDescriptor&                                          inOutDescriptor,
-                            TileGrid&                                               inOutTileGrid,
-                            std::vector<MapAnimationState>&                         outAnimations,
-                            std::unordered_map<uint16_t, std::shared_ptr<Texture>>& outTextureRefs,
-                            std::vector<std::string>&                               outWarnings);
-
-    static bool ParseAni(const std::string&                                      aniPath,
-                         CVirtualFileSystem&                                     vfs,
-                         std::unordered_map<uint16_t, std::vector<std::string>>& outFramesByPuzzle,
-                         std::vector<std::string>&                               outWarnings);
-
     static bool ResolveMapPath(const std::string&        requestedMapPath,
                                CVirtualFileSystem&       vfs,
                                std::string&              outResolvedPath,

@@ -69,7 +69,6 @@ private:
     void UpdateSkyPuzzleScroll(const TimingSnapshot& timingSnapshot);
     bool LoadSkyPuzzleLayer(const MapObjectRecord& skyPuzzleObject, SkyPuzzleLayer& outLayer, std::vector<std::string>& outWarnings);
     void RenderSkyPuzzleLayers(SpriteRenderer& spriteRenderer, uint32_t renderPass);
-    void RenderWaterReflection(SpriteRenderer& spriteRenderer);
     void RenderMapObjects(SpriteRenderer& spriteRenderer);
     void ResetSnapshot(uint64_t frameIndex);
 
