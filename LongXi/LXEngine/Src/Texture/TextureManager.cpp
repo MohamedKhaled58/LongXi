@@ -17,7 +17,7 @@ using LXCore::TextureFormat;
 
 namespace
 {
-constexpr uint32_t kMaxTextureLogCount = 2;
+constexpr uint32_t    kMaxTextureLogCount = 2;
 std::atomic<uint32_t> s_TextureLogCount{0};
 
 bool ShouldLogTextureEvent()

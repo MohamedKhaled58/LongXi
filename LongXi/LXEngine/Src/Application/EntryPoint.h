@@ -7,8 +7,8 @@
 // CreateApplication() and includes this header exactly once.
 // =============================================================================
 
-#include <windows.h>
 #include <conio.h>
+#include <windows.h>
 
 #include "Application/Application.h"
 #include "Application/DebugConsoleGuard.h"

@@ -49,6 +49,37 @@ LXCore::Matrix4 LerpMatrix(const LXCore::Matrix4& a, const LXCore::Matrix4& b, f
     return result;
 }
 
+LXCore::Matrix4 InvertRigidTransform(const LXCore::Matrix4& matrix)
+{
+    LXCore::Matrix4 inverse = {};
+
+    inverse.m[0] = matrix.m[0];
+    inverse.m[1] = matrix.m[4];
+    inverse.m[2] = matrix.m[8];
+    inverse.m[3] = 0.0f;
+
+    inverse.m[4] = matrix.m[1];
+    inverse.m[5] = matrix.m[5];
+    inverse.m[6] = matrix.m[9];
+    inverse.m[7] = 0.0f;
+
+    inverse.m[8]  = matrix.m[2];
+    inverse.m[9]  = matrix.m[6];
+    inverse.m[10] = matrix.m[10];
+    inverse.m[11] = 0.0f;
+
+    const float tx = matrix.m[12];
+    const float ty = matrix.m[13];
+    const float tz = matrix.m[14];
+
+    inverse.m[12] = -(tx * inverse.m[0] + ty * inverse.m[4] + tz * inverse.m[8]);
+    inverse.m[13] = -(tx * inverse.m[1] + ty * inverse.m[5] + tz * inverse.m[9]);
+    inverse.m[14] = -(tx * inverse.m[2] + ty * inverse.m[6] + tz * inverse.m[10]);
+    inverse.m[15] = 1.0f;
+
+    return inverse;
+}
+
 } // namespace
 
 void AnimationPlayer::SetClip(const AnimationClip* clip)
@@ -65,6 +96,30 @@ void AnimationPlayer::SetSkeleton(const SkeletonResource* skeleton)
     m_TimeSeconds       = 0.0f;
     m_HasLoggedMismatch = false;
     EnsureOutputSize();
+
+    if (!m_Skeleton || m_Skeleton->boneCount == 0)
+    {
+        m_InverseBindPose.clear();
+        m_FinalBoneMatrices.clear();
+        return;
+    }
+
+    const uint32_t boneCount = m_Skeleton->boneCount;
+    m_InverseBindPose.resize(boneCount, MakeIdentity());
+    m_FinalBoneMatrices.resize(boneCount, MakeIdentity());
+
+    const size_t bindPoseCount = m_Skeleton->bindPose.size();
+    for (uint32_t i = 0; i < boneCount; ++i)
+    {
+        if (i < bindPoseCount)
+        {
+            m_InverseBindPose[i] = InvertRigidTransform(m_Skeleton->bindPose[i]);
+        }
+        else
+        {
+            m_InverseBindPose[i] = MakeIdentity();
+        }
+    }
 }
 
 void AnimationPlayer::SetLooping(bool looping)
@@ -190,6 +245,18 @@ bool AnimationPlayer::Sample()
         ResolveModelSpace(boneIndex);
     }
 
+    const uint32_t boneCount = m_Skeleton->boneCount;
+    if (m_FinalBoneMatrices.size() != boneCount)
+    {
+        m_FinalBoneMatrices.assign(boneCount, MakeIdentity());
+    }
+
+    for (uint32_t boneIndex = 0; boneIndex < boneCount; ++boneIndex)
+    {
+        const LXCore::Matrix4& inverseBind = (boneIndex < m_InverseBindPose.size()) ? m_InverseBindPose[boneIndex] : MakeIdentity();
+        m_FinalBoneMatrices[boneIndex]     = Multiply(m_ModelTransforms[boneIndex], inverseBind);
+    }
+
     return true;
 }
 
@@ -200,12 +267,19 @@ void AnimationPlayer::EnsureOutputSize()
     {
         m_LocalTransforms.clear();
         m_ModelTransforms.clear();
+        m_InverseBindPose.clear();
+        m_FinalBoneMatrices.clear();
         m_Resolved.clear();
         return;
     }
 
     m_LocalTransforms.assign(boneCount, MakeIdentity());
     m_ModelTransforms.assign(boneCount, MakeIdentity());
+    m_FinalBoneMatrices.assign(boneCount, MakeIdentity());
+    if (m_InverseBindPose.size() != boneCount)
+    {
+        m_InverseBindPose.assign(boneCount, MakeIdentity());
+    }
     m_Resolved.assign(boneCount, 0);
 }
 
@@ -215,10 +289,12 @@ void AnimationPlayer::FillIdentity()
     if (boneCount == 0)
     {
         m_ModelTransforms.clear();
+        m_FinalBoneMatrices.clear();
         return;
     }
 
     m_ModelTransforms.assign(boneCount, MakeIdentity());
+    m_FinalBoneMatrices.assign(boneCount, MakeIdentity());
 }
 
 void AnimationPlayer::ResolveModelSpace(uint32_t boneIndex)

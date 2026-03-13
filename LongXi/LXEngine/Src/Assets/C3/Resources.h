@@ -30,11 +30,21 @@ struct MorphTargetSet
     std::vector<LXCore::Vector3> positions;
 };
 
+struct MeshSubset
+{
+    uint32_t startIndex    = 0;
+    uint32_t indexCount    = 0;
+    bool     isTransparent = false;
+};
+
 struct MeshResource
 {
     std::vector<Vertex>         vertices;
     std::vector<uint32_t>       indices;
     std::vector<MorphTargetSet> morphTargets;
+    std::string                 name;
+    std::string                 textureName;
+    std::vector<MeshSubset>     subsets;
 };
 
 struct SkeletonResource

@@ -79,6 +79,7 @@ bool C3PhyParser::Parse(const std::vector<uint8_t>& data, MeshResource& outMesh,
         LX_C3_WARN("PHY: Failed to read mesh name");
         return false;
     }
+    outMesh.name = name;
 
     uint32_t blendCount = 0;
     if (!reader.Read(blendCount))
@@ -172,6 +173,21 @@ bool C3PhyParser::Parse(const std::vector<uint8_t>& data, MeshResource& outMesh,
     {
         outMesh.indices[i] = indices16[i];
     }
+
+    outMesh.subsets.clear();
+    outMesh.subsets.push_back({0, normalTriCount * 3, false});
+    if (alphaTriCount > 0)
+    {
+        outMesh.subsets.push_back({normalTriCount * 3, alphaTriCount * 3, true});
+    }
+
+    std::string textureName;
+    if (!ReadLengthPrefixedString(reader, textureName))
+    {
+        LX_C3_WARN("PHY: Failed to read texture name (name='{}')", name);
+        return false;
+    }
+    outMesh.textureName = textureName;
 
     return true;
 }

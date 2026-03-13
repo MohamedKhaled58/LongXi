@@ -30,6 +30,11 @@ public:
         return m_ModelTransforms;
     }
 
+    const std::vector<LXCore::Matrix4>& GetFinalBoneMatrices() const
+    {
+        return m_FinalBoneMatrices;
+    }
+
 private:
     void EnsureOutputSize();
     void FillIdentity();
@@ -44,6 +49,8 @@ private:
 
     std::vector<LXCore::Matrix4> m_LocalTransforms;
     std::vector<LXCore::Matrix4> m_ModelTransforms;
+    std::vector<LXCore::Matrix4> m_InverseBindPose;
+    std::vector<LXCore::Matrix4> m_FinalBoneMatrices;
     std::vector<uint8_t>         m_Resolved;
 };
 
