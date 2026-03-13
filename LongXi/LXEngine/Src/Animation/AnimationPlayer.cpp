@@ -49,35 +49,79 @@ LXCore::Matrix4 LerpMatrix(const LXCore::Matrix4& a, const LXCore::Matrix4& b, f
     return result;
 }
 
-LXCore::Matrix4 InvertRigidTransform(const LXCore::Matrix4& matrix)
+bool InvertMatrix(const LXCore::Matrix4& matrix, LXCore::Matrix4& out)
 {
-    LXCore::Matrix4 inverse = {};
+    float aug[4][8] = {};
+    for (int row = 0; row < 4; ++row)
+    {
+        for (int col = 0; col < 4; ++col)
+        {
+            aug[row][col]     = matrix.m[row * 4 + col];
+            aug[row][col + 4] = (row == col) ? 1.0f : 0.0f;
+        }
+    }
 
-    inverse.m[0] = matrix.m[0];
-    inverse.m[1] = matrix.m[4];
-    inverse.m[2] = matrix.m[8];
-    inverse.m[3] = 0.0f;
+    for (int col = 0; col < 4; ++col)
+    {
+        int   pivotRow = col;
+        float pivotAbs = std::fabs(aug[pivotRow][col]);
+        for (int row = col + 1; row < 4; ++row)
+        {
+            const float candidate = std::fabs(aug[row][col]);
+            if (candidate > pivotAbs)
+            {
+                pivotAbs = candidate;
+                pivotRow = row;
+            }
+        }
 
-    inverse.m[4] = matrix.m[1];
-    inverse.m[5] = matrix.m[5];
-    inverse.m[6] = matrix.m[9];
-    inverse.m[7] = 0.0f;
+        if (pivotAbs < 1e-8f)
+        {
+            return false;
+        }
 
-    inverse.m[8]  = matrix.m[2];
-    inverse.m[9]  = matrix.m[6];
-    inverse.m[10] = matrix.m[10];
-    inverse.m[11] = 0.0f;
+        if (pivotRow != col)
+        {
+            for (int k = 0; k < 8; ++k)
+            {
+                std::swap(aug[col][k], aug[pivotRow][k]);
+            }
+        }
 
-    const float tx = matrix.m[12];
-    const float ty = matrix.m[13];
-    const float tz = matrix.m[14];
+        const float invPivot = 1.0f / aug[col][col];
+        for (int k = 0; k < 8; ++k)
+        {
+            aug[col][k] *= invPivot;
+        }
 
-    inverse.m[12] = -(tx * inverse.m[0] + ty * inverse.m[4] + tz * inverse.m[8]);
-    inverse.m[13] = -(tx * inverse.m[1] + ty * inverse.m[5] + tz * inverse.m[9]);
-    inverse.m[14] = -(tx * inverse.m[2] + ty * inverse.m[6] + tz * inverse.m[10]);
-    inverse.m[15] = 1.0f;
+        for (int row = 0; row < 4; ++row)
+        {
+            if (row == col)
+            {
+                continue;
+            }
 
-    return inverse;
+            const float factor = aug[row][col];
+            if (factor == 0.0f)
+            {
+                continue;
+            }
+            for (int k = 0; k < 8; ++k)
+            {
+                aug[row][k] -= factor * aug[col][k];
+            }
+        }
+    }
+
+    for (int row = 0; row < 4; ++row)
+    {
+        for (int col = 0; col < 4; ++col)
+        {
+            out.m[row * 4 + col] = aug[row][col + 4];
+        }
+    }
+
+    return true;
 }
 
 } // namespace
@@ -109,16 +153,26 @@ void AnimationPlayer::SetSkeleton(const SkeletonResource* skeleton)
     m_FinalBoneMatrices.resize(boneCount, MakeIdentity());
 
     const size_t bindPoseCount = m_Skeleton->bindPose.size();
+    uint32_t     failedCount   = 0;
     for (uint32_t i = 0; i < boneCount; ++i)
     {
         if (i < bindPoseCount)
         {
-            m_InverseBindPose[i] = InvertRigidTransform(m_Skeleton->bindPose[i]);
+            if (!InvertMatrix(m_Skeleton->bindPose[i], m_InverseBindPose[i]))
+            {
+                m_InverseBindPose[i] = MakeIdentity();
+                ++failedCount;
+            }
         }
         else
         {
             m_InverseBindPose[i] = MakeIdentity();
         }
+    }
+
+    if (failedCount > 0)
+    {
+        LX_ENGINE_WARN("[AnimationPlayer] Failed to invert {} bind pose matrices; using identity fallback", failedCount);
     }
 }
 
@@ -254,7 +308,7 @@ bool AnimationPlayer::Sample()
     for (uint32_t boneIndex = 0; boneIndex < boneCount; ++boneIndex)
     {
         const LXCore::Matrix4& inverseBind = (boneIndex < m_InverseBindPose.size()) ? m_InverseBindPose[boneIndex] : MakeIdentity();
-        m_FinalBoneMatrices[boneIndex]     = Multiply(m_ModelTransforms[boneIndex], inverseBind);
+        m_FinalBoneMatrices[boneIndex]     = Multiply(inverseBind, m_ModelTransforms[boneIndex]);
     }
 
     return true;

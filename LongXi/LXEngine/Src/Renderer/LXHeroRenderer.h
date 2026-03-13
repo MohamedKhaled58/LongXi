@@ -42,8 +42,10 @@ private:
     DX11HeroPipeline             m_Pipeline;
     RendererConstantBufferHandle m_CbPerObject{};
     RendererConstantBufferHandle m_CbBones{};
+    RendererTextureHandle        m_FallbackTexture{};
     Renderer*                    m_Renderer    = nullptr;
     bool                         m_Initialized = false;
+    bool                         m_LoggedMissingTexture = false;
 };
 
 } // namespace LXEngine

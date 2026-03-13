@@ -198,7 +198,8 @@ bool DX11HeroPipeline::Initialize(Renderer& renderer)
             return false;
         }
 
-        hr = device->CreateDepthStencilState(&dsDesc, &m_TransparentDepthState);
+        dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+        hr                    = device->CreateDepthStencilState(&dsDesc, &m_TransparentDepthState);
         if (FAILED(hr))
         {
             LX_ENGINE_ERROR("[HeroRenderer] CreateTransparentDepthState failed (hr={})", hr);

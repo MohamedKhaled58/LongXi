@@ -6,6 +6,7 @@
 
 #include "Assets/C3/RuntimeMesh.h"
 #include "Animation/AnimationPlayer.h"
+#include "Core/Graphics/TextureFormat.h"
 #include "Core/Logging/LogMacros.h"
 #include "Renderer/Renderer.h"
 
@@ -140,6 +141,23 @@ bool LXHeroRenderer::Initialize(Renderer& renderer)
         return false;
     }
 
+    const uint32_t whitePixel = 0xFFFFFFFFu;
+    RendererTextureDesc fallbackDesc = {};
+    fallbackDesc.Width               = 1;
+    fallbackDesc.Height              = 1;
+    fallbackDesc.Format              = LXCore::TextureFormat::RGBA8;
+    fallbackDesc.Usage               = RendererResourceUsage::Static;
+    fallbackDesc.BindFlags           = RendererBindFlags::ShaderResource;
+    fallbackDesc.InitialData         = &whitePixel;
+    fallbackDesc.InitialDataSize     = sizeof(whitePixel);
+    fallbackDesc.InitialRowPitch     = sizeof(whitePixel);
+
+    m_FallbackTexture = renderer.CreateTexture(fallbackDesc);
+    if (!m_FallbackTexture.IsValid())
+    {
+        LX_ENGINE_WARN("[HeroRenderer] Failed to create fallback texture");
+    }
+
     m_Renderer    = &renderer;
     m_Initialized = true;
     return true;
@@ -157,13 +175,19 @@ void LXHeroRenderer::Shutdown()
         {
             m_Renderer->DestroyBuffer(ToBufferHandle(m_CbBones));
         }
+        if (m_FallbackTexture.IsValid())
+        {
+            m_Renderer->DestroyTexture(m_FallbackTexture);
+        }
     }
 
     m_CbPerObject = {};
     m_CbBones     = {};
+    m_FallbackTexture = {};
     m_Renderer    = nullptr;
     m_Pipeline.Shutdown();
     m_Initialized = false;
+    m_LoggedMissingTexture = false;
 }
 
 bool LXHeroRenderer::IsInitialized() const
@@ -253,10 +277,56 @@ void LXHeroRenderer::RenderMesh(RuntimeMesh& mesh, bool transparentPass)
         return;
     }
 
-    if (!m_Renderer->BindTexture(mesh.GetActiveTexture(), RendererShaderStage::Pixel, 0))
+    RendererTextureHandle textureHandle = mesh.GetActiveTexture();
+    bool usingFallback                  = false;
+
+    if (!textureHandle.IsValid())
     {
-        LX_ENGINE_ERROR("[HeroRenderer] Failed to bind texture");
-        return;
+        textureHandle  = m_FallbackTexture;
+        usingFallback = true;
+    }
+
+    if (!m_Renderer->BindTexture(textureHandle, RendererShaderStage::Pixel, 0))
+    {
+        if (!usingFallback && m_FallbackTexture.IsValid())
+        {
+            if (m_Renderer->BindTexture(m_FallbackTexture, RendererShaderStage::Pixel, 0))
+            {
+                usingFallback = true;
+            }
+            else
+            {
+                if (!m_LoggedMissingTexture)
+                {
+                    LX_ENGINE_WARN("[HeroRenderer] Failed to bind mesh texture or fallback texture");
+                    m_LoggedMissingTexture = true;
+                }
+                return;
+            }
+        }
+        else
+        {
+            if (!m_LoggedMissingTexture)
+            {
+                LX_ENGINE_WARN("[HeroRenderer] Failed to bind mesh texture or fallback texture");
+                m_LoggedMissingTexture = true;
+            }
+            return;
+        }
+    }
+
+    if (usingFallback && !m_LoggedMissingTexture)
+    {
+        const std::string& slotName = mesh.GetSlotName();
+        if (!slotName.empty())
+        {
+            LX_ENGINE_WARN("[HeroRenderer] Missing texture for mesh '{}'; using fallback", slotName);
+        }
+        else
+        {
+            LX_ENGINE_WARN("[HeroRenderer] Missing mesh texture; using fallback");
+        }
+        m_LoggedMissingTexture = true;
     }
 
     const auto& subMeshes = mesh.GetSubMeshes();
