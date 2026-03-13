@@ -177,7 +177,8 @@ RendererTextureHandle DX11Textures::CreateTexture(const RendererTextureDesc& des
 
     if (desc.Format == TextureFormat::Depth24Stencil8 && HasAnyBindFlag(desc.BindFlags, RendererBindFlags::ShaderResource))
     {
-        LX_ENGINE_ERROR("[Renderer] Invalid texture descriptor: TextureFormat::Depth24Stencil8 cannot be used with D3D11_BIND_SHADER_RESOURCE");
+        LX_ENGINE_ERROR(
+            "[Renderer] Invalid texture descriptor: TextureFormat::Depth24Stencil8 cannot be used with D3D11_BIND_SHADER_RESOURCE");
         outResult.Code = RendererResultCode::InvalidDescriptor;
         return {};
     }

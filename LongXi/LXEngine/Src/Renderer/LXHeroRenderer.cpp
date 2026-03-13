@@ -107,8 +107,8 @@ LXHeroRenderer::HeroRenderLighting LXHeroRenderer::HeroRenderLighting::Flat()
 LXHeroRenderer::HeroRenderLighting LXHeroRenderer::HeroRenderLighting::Portrait()
 {
     HeroRenderLighting lighting;
-    LXCore::Vector3 direction = {-0.3f, -0.5f, -0.8f};
-    const float     lengthSq  = direction.x * direction.x + direction.y * direction.y + direction.z * direction.z;
+    LXCore::Vector3    direction = {-0.3f, -0.5f, -0.8f};
+    const float        lengthSq  = direction.x * direction.x + direction.y * direction.y + direction.z * direction.z;
     if (lengthSq > 0.000001f)
     {
         const float invLength = 1.0f / std::sqrt(lengthSq);

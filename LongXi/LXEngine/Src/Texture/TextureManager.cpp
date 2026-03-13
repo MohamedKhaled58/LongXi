@@ -215,25 +215,24 @@ std::shared_ptr<Texture> TextureManager::LoadTexture(const std::string& path)
 
     // Create Texture object with custom deleter that returns the GPU resource
     // to the renderer when the last CPU-side reference is released.
-    Renderer*               renderer = &m_Renderer;
-    std::weak_ptr<void>     lifetime = m_LifetimeToken;
-    auto texture = std::shared_ptr<Texture>(
-        new Texture(handle, texData.Width, texData.Height, texData.Format),
-        [renderer, lifetime](Texture* tex)
-        {
-            if (tex)
-            {
-                if (lifetime.lock())
-                {
-                    const RendererTextureHandle& textureHandle = tex->GetHandle();
-                    if (renderer && textureHandle.IsValid())
-                    {
-                        renderer->DestroyTexture(textureHandle);
-                    }
-                }
-                delete tex;
-            }
-        });
+    Renderer*           renderer = &m_Renderer;
+    std::weak_ptr<void> lifetime = m_LifetimeToken;
+    auto                texture  = std::shared_ptr<Texture>(new Texture(handle, texData.Width, texData.Height, texData.Format),
+                                            [renderer, lifetime](Texture* tex)
+                                            {
+                                                if (tex)
+                                                {
+                                                    if (lifetime.lock())
+                                                    {
+                                                        const RendererTextureHandle& textureHandle = tex->GetHandle();
+                                                        if (renderer && textureHandle.IsValid())
+                                                        {
+                                                            renderer->DestroyTexture(textureHandle);
+                                                        }
+                                                    }
+                                                    delete tex;
+                                                }
+                                            });
 
     // Insert into cache
     m_Cache[normalized] = texture;
