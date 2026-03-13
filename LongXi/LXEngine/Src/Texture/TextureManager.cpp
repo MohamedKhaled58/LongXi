@@ -186,8 +186,23 @@ std::shared_ptr<Texture> TextureManager::LoadTexture(const std::string& path)
         return nullptr;
     }
 
-    // Create Texture object
-    auto texture = std::shared_ptr<Texture>(new Texture(handle, texData.Width, texData.Height, texData.Format));
+    // Create Texture object with custom deleter that returns the GPU resource
+    // to the renderer when the last CPU-side reference is released.
+    Renderer* renderer = &m_Renderer;
+    auto      texture  = std::shared_ptr<Texture>(
+        new Texture(handle, texData.Width, texData.Height, texData.Format),
+        [renderer](Texture* tex)
+        {
+            if (renderer && tex)
+            {
+                const RendererTextureHandle& textureHandle = tex->GetHandle();
+                if (textureHandle.IsValid())
+                {
+                    renderer->DestroyTexture(textureHandle);
+                }
+            }
+            delete tex;
+        });
 
     // Insert into cache
     m_Cache[normalized] = texture;

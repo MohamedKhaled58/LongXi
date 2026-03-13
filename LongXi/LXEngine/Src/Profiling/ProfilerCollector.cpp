@@ -148,7 +148,7 @@ void ProfilerCollector::RecordScope(const char* scopeName, uint64_t durationMicr
         return;
     }
 
-    FrameProfileEntry& entry = m_ActiveEntries[scopeName];
+    FrameProfileEntry& entry = m_ActiveEntries[std::string_view(scopeName)];
     if (entry.ScopeName.empty())
     {
         entry.ScopeName = scopeName;

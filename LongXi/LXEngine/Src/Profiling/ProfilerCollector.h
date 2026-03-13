@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <mutex>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -50,9 +51,9 @@ private:
     uint64_t m_ActiveFrameIndex = 0;
 
     // Scope names are expected to be static literals from LX_PROFILE_SCOPE.
-    std::unordered_map<const char*, FrameProfileEntry> m_ActiveEntries;
-    mutable std::mutex                                 m_EntriesMutex;
-    FrameProfileSnapshot                               m_LastFrameSnapshot = {};
+    std::unordered_map<std::string_view, FrameProfileEntry> m_ActiveEntries;
+    mutable std::mutex                                      m_EntriesMutex;
+    FrameProfileSnapshot                                    m_LastFrameSnapshot = {};
 
     static std::atomic<ProfilerCollector*> s_ActiveCollector;
 };

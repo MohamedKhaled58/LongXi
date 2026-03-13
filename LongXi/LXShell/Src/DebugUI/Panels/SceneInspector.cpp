@@ -22,6 +22,24 @@ void SceneInspector::Render(const std::vector<SceneNodeViewModel>& nodes, Scene&
         return;
     }
 
+    // Validate the currently selected node against the latest hierarchy snapshot.
+    // If the engine removed the node from the scene, clear the selection so that
+    // subsequent frames do not dereference a dangling pointer.
+    bool selectionValid = false;
+    for (const auto& nodeViewModel : nodes)
+    {
+        if (nodeViewModel.Node == s_SelectedNode)
+        {
+            selectionValid = true;
+            break;
+        }
+    }
+
+    if (!selectionValid)
+    {
+        s_SelectedNode = nullptr;
+    }
+
     // Hierarchy section
     if (ImGui::CollapsingHeader("Hierarchy", ImGuiTreeNodeFlags_DefaultOpen))
     {
@@ -30,14 +48,8 @@ void SceneInspector::Render(const std::vector<SceneNodeViewModel>& nodes, Scene&
             ImGui::TextDisabled("No scene node data available");
         }
 
-        bool selectedNodeExists = false;
         for (const auto& nodeViewModel : nodes)
         {
-            if (nodeViewModel.Node == s_SelectedNode)
-            {
-                selectedNodeExists = true;
-            }
-
             ImGui::PushID(nodeViewModel.Node);
             const std::string indentedLabel(static_cast<size_t>(nodeViewModel.Depth) * 2u, ' ');
             const std::string label = indentedLabel + nodeViewModel.NodeName;
@@ -50,11 +62,6 @@ void SceneInspector::Render(const std::vector<SceneNodeViewModel>& nodes, Scene&
             }
 
             ImGui::PopID();
-        }
-
-        if (!selectedNodeExists)
-        {
-            s_SelectedNode = nullptr;
         }
     }
 
