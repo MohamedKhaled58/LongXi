@@ -5,20 +5,32 @@
 #include <memory>
 #include <string>
 
-#include "LXGameMap.h"
+#include "Core/Profiling/ProfilerTypes.h"
+#include "Core/Timing/TimingService.h"
 #include "Profiling/ProfilerCollector.h"
 #include "Renderer/Renderer.h"
-#include "Timing/TimingService.h"
 
-namespace LongXi
+namespace LXMap
+{
+struct MapRenderSnapshot;
+class MapSystem;
+} // namespace LXMap
+
+namespace LXCore
+{
+class CVirtualFileSystem;
+}
+
+namespace LXEngine
 {
 
 class InputSystem;
-class CVirtualFileSystem;
 class TextureManager;
 class SpriteRenderer;
 class Scene;
-class MapSystem;
+
+using LXCore::CVirtualFileSystem;
+using LXMap::MapSystem;
 
 class Engine
 {
@@ -46,16 +58,16 @@ public:
     void MountDirectory(const std::string& path);
     void MountWdf(const std::string& path);
 
-    Renderer&                GetRenderer();
-    InputSystem&             GetInput();
-    CVirtualFileSystem&      GetVFS();
-    TextureManager&          GetTextureManager();
-    SpriteRenderer&          GetSpriteRenderer();
-    Scene&                   GetScene();
-    MapSystem&               GetMapSystem();
-    bool                     LoadMap(const std::string& mapPath);
-    bool                     IsMapReady() const;
-    const MapRenderSnapshot& GetMapRenderSnapshot() const;
+    Renderer&                       GetRenderer();
+    InputSystem&                    GetInput();
+    CVirtualFileSystem&             GetVFS();
+    TextureManager&                 GetTextureManager();
+    SpriteRenderer&                 GetSpriteRenderer();
+    Scene&                          GetScene();
+    MapSystem&                      GetMapSystem();
+    bool                            LoadMap(const std::string& mapPath);
+    bool                            IsMapReady() const;
+    const LXMap::MapRenderSnapshot& GetMapRenderSnapshot() const;
 
     void* GetRendererDeviceHandle() const;
     void* GetRendererContextHandle() const;
@@ -69,9 +81,9 @@ public:
     void   SetMaxDeltaTime(double maxDeltaSeconds);
     double GetMaxDeltaTime() const;
 
-    const TimingSnapshot&       GetTimingSnapshot() const;
-    const FrameProfileSnapshot& GetLastFrameProfileSnapshot() const;
-    static bool                 IsProfilingEnabled();
+    const LXCore::TimingSnapshot& GetTimingSnapshot() const;
+    const FrameProfileSnapshot&   GetLastFrameProfileSnapshot() const;
+    static bool                   IsProfilingEnabled();
 
 private:
     std::unique_ptr<Renderer>           m_Renderer;
@@ -81,7 +93,7 @@ private:
     std::unique_ptr<SpriteRenderer>     m_SpriteRenderer;
     std::unique_ptr<Scene>              m_Scene;
     std::unique_ptr<MapSystem>          m_MapSystem;
-    TimingService                       m_TimingService;
+    LXCore::TimingService               m_TimingService;
     ProfilerCollector                   m_ProfilerCollector;
     bool                                m_HasLastSceneCameraState = false;
     float                               m_LastSceneCameraX        = 0.0f;
@@ -91,4 +103,4 @@ private:
     bool m_Initialized = false;
 };
 
-} // namespace LongXi
+} // namespace LXEngine

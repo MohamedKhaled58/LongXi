@@ -18,7 +18,7 @@
 //   Exists / Open / ReadAll are safe for concurrent use once all mounts complete.
 // =============================================================================
 
-namespace LongXi
+namespace LXCore
 {
 
 class CVirtualFileSystem
@@ -66,4 +66,4 @@ private:
     std::vector<std::unique_ptr<IMountPoint>> m_MountPoints;
 };
 
-} // namespace LongXi
+} // namespace LXCore

@@ -9,7 +9,7 @@
 #include "Input/InputSystem.h"
 #include "Window/Win32Window.h"
 
-namespace LongXi
+namespace LXEngine
 {
 
 // ============================================================================
@@ -62,7 +62,7 @@ void Application::DestroyMainWindow()
     }
 }
 
-Engine& Application::GetEngine()
+LXEngine::Engine& Application::GetEngine()
 {
     return *m_Engine;
 }
@@ -90,7 +90,7 @@ bool Application::CreateEngine()
 
 void Application::ConfigureVirtualFileSystem()
 {
-    std::string exeDir = ResourceSystem::GetExecutableDirectory();
+    std::string exeDir = LXCore::ResourceSystem::GetExecutableDirectory();
 
     if (!exeDir.empty())
     {
@@ -283,4 +283,4 @@ void Application::Shutdown()
     LX_ENGINE_INFO("Application shutdown complete");
 }
 
-} // namespace LongXi
+} // namespace LXEngine

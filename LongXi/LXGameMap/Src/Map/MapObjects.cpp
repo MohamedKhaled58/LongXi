@@ -6,7 +6,7 @@
 
 #include "Core/Logging/LogMacros.h"
 
-namespace LongXi
+namespace LXMap
 {
 
 namespace
@@ -490,4 +490,4 @@ void MapObjects::CollectVisible(const VisibleTileWindow& window, std::vector<con
     }
 }
 
-} // namespace LongXi
+} // namespace LXMap

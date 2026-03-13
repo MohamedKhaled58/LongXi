@@ -2,7 +2,7 @@
 
 #include "Renderer/Backend/DX11/DX11ResourceTables.h"
 
-namespace LongXi
+namespace LXEngine
 {
 
 class DX11Buffers
@@ -32,4 +32,4 @@ private:
     DX11ResourceTables*  m_ResourceTables = nullptr;
 };
 
-} // namespace LongXi
+} // namespace LXEngine

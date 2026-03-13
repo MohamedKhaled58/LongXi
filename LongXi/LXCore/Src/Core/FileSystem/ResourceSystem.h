@@ -18,7 +18,7 @@
 // searched after loose-file lookup in ReadFile().
 // =============================================================================
 
-namespace LongXi
+namespace LXCore
 {
 
 class WdfArchive;
@@ -58,4 +58,4 @@ private:
     std::vector<std::unique_ptr<WdfArchive>> m_Archives;
 };
 
-} // namespace LongXi
+} // namespace LXCore

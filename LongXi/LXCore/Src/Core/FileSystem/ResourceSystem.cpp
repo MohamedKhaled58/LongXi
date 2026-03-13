@@ -8,7 +8,7 @@
 #include "Core/FileSystem/WdfArchive.h"
 #include "Core/Logging/LogMacros.h"
 
-namespace LongXi
+namespace LXCore
 {
 
 // Constructor and destructor defined here so WdfArchive (full type) is visible
@@ -67,7 +67,7 @@ std::string ResourceSystem::GetExecutableDirectory()
 
 std::string ResourceSystem::Normalize(const std::string& path) const
 {
-    std::string normalized = NormalizeVirtualResourcePath(path, false);
+    std::string normalized = LXCore::NormalizeVirtualResourcePath(path, false);
     if (normalized.empty() && !path.empty())
         LX_CORE_WARN("ResourceSystem: rejected invalid path: '{}'", path);
     return normalized;
@@ -230,4 +230,4 @@ std::optional<std::vector<uint8_t>> ResourceSystem::ReadFile(const std::string& 
     return buffer;
 }
 
-} // namespace LongXi
+} // namespace LXCore

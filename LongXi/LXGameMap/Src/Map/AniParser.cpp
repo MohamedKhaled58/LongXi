@@ -14,7 +14,7 @@
 #include "Map/MapBinaryReader.h"
 #include "Map/MapTypes.h"
 
-namespace LongXi
+namespace LXMap
 {
 
 namespace
@@ -71,7 +71,7 @@ bool TryParseTerrainPartRecord(const std::vector<uint8_t>& bytes,
     }
 
     const size_t base           = ioCursor;
-    outDescriptor.AniPath       = NormalizeVirtualResourcePath(ReadFixedCString(bytes, base + 0, kAniPathBytes), true);
+    outDescriptor.AniPath       = LXCore::NormalizeVirtualResourcePath(ReadFixedCString(bytes, base + 0, kAniPathBytes), true);
     outDescriptor.AniTag        = ReadFixedCString(bytes, base + kAniPathBytes, kAniTitleBytes);
     outDescriptor.SpriteOffsetX = ReadI32(bytes, base + kAniPathBytes + kAniTitleBytes + 0);
     outDescriptor.SpriteOffsetY = ReadI32(bytes, base + kAniPathBytes + kAniTitleBytes + 4);
@@ -109,7 +109,7 @@ bool TryParseTerrainPartRecord(const std::vector<uint8_t>& bytes,
 } // namespace
 
 bool ParseAni(const std::string&                                      aniPath,
-              CVirtualFileSystem&                                     vfs,
+              LXCore::CVirtualFileSystem&                             vfs,
               std::unordered_map<uint16_t, std::vector<std::string>>& outFramesByPuzzle,
               std::vector<std::string>&                               outWarnings)
 {
@@ -299,4 +299,4 @@ bool ParseTerrainPartDescriptors(const std::vector<uint8_t>& bytes, std::vector<
     return false;
 }
 
-} // namespace LongXi
+} // namespace LXMap

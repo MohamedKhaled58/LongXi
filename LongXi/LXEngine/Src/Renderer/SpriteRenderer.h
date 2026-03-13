@@ -2,13 +2,15 @@
 
 #include <memory>
 
-#include "Math/Math.h"
+#include "Core/Math/Math.h"
 #include "Renderer/Renderer.h"
 
-namespace LongXi
+namespace LXEngine
 {
 
 class Texture;
+using LXCore::Color;
+using LXCore::Vector2;
 
 static constexpr int MAX_SPRITES_PER_BATCH = 1024;
 
@@ -36,7 +38,7 @@ public:
 
     void Begin();
     void DrawSprite(const Texture* texture, Vector2 position, Vector2 size);
-    void DrawSprite(const Texture* texture, Vector2 position, Vector2 size, Vector2 uvMin, Vector2 uvMax, LongXi::Color color);
+    void DrawSprite(const Texture* texture, Vector2 position, Vector2 size, Vector2 uvMin, Vector2 uvMax, LXCore::Color color);
     void End();
 
 private:
@@ -60,4 +62,4 @@ private:
     float m_ProjectionMatrix[16] = {};
 };
 
-} // namespace LongXi
+} // namespace LXEngine

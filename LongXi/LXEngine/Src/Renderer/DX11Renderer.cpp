@@ -5,7 +5,7 @@
 
 #include "Core/Logging/LogMacros.h"
 
-namespace LongXi
+namespace LXEngine
 {
 
 #ifdef LX_DEBUG
@@ -21,13 +21,13 @@ static bool IsDeviceLost(HRESULT hr)
     return hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET;
 }
 
-static Matrix4 MakeIdentityMatrix()
+static LXCore::Matrix4 MakeIdentityMatrix()
 {
-    Matrix4 matrix = {};
-    matrix.m[0]    = 1.0f;
-    matrix.m[5]    = 1.0f;
-    matrix.m[10]   = 1.0f;
-    matrix.m[15]   = 1.0f;
+    LXCore::Matrix4 matrix = {};
+    matrix.m[0]            = 1.0f;
+    matrix.m[5]            = 1.0f;
+    matrix.m[10]           = 1.0f;
+    matrix.m[15]           = 1.0f;
     return matrix;
 }
 
@@ -1037,7 +1037,7 @@ ID3D11Buffer* DX11Renderer::ResolveBuffer(RendererBufferHandle handle, RendererR
     return m_Buffers.ResolveBuffer(handle, outError);
 }
 
-void DX11Renderer::SetViewProjection(const Matrix4& view, const Matrix4& projection)
+void DX11Renderer::SetViewProjection(const LXCore::Matrix4& view, const LXCore::Matrix4& projection)
 {
     std::memcpy(m_CurrentViewMatrix.m, view.m, sizeof(m_CurrentViewMatrix.m));
     std::memcpy(m_CurrentProjectionMatrix.m, projection.m, sizeof(m_CurrentProjectionMatrix.m));
@@ -1103,4 +1103,4 @@ void DX11Renderer::Shutdown()
     LX_ENGINE_INFO("[Renderer] Shutdown complete");
 }
 
-} // namespace LongXi
+} // namespace LXEngine

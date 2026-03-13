@@ -8,24 +8,16 @@
 #include <unordered_map>
 #include <vector>
 
-namespace LongXi
+#include "Core/Profiling/IProfileSink.h"
+#include "Core/Profiling/ProfilerTypes.h"
+
+namespace LXEngine
 {
 
-struct FrameProfileEntry
-{
-    std::string ScopeName;
-    uint64_t    TotalDurationMicroseconds = 0;
-    uint32_t    CallCount                 = 0;
-};
+using LXCore::FrameProfileEntry;
+using LXCore::FrameProfileSnapshot;
 
-struct FrameProfileSnapshot
-{
-    uint64_t                       FrameIndex            = 0;
-    uint64_t                       FrameTimeMicroseconds = 0;
-    std::vector<FrameProfileEntry> Entries;
-};
-
-class ProfilerCollector
+class ProfilerCollector : public LXCore::IProfileSink
 {
 public:
     void Initialize();
@@ -37,7 +29,7 @@ public:
     void BeginFrame(uint64_t frameIndex);
     void EndFrame(uint64_t frameIndex, double frameTimeSeconds);
 
-    void RecordScope(const char* scopeName, uint64_t durationMicroseconds);
+    void RecordScope(const char* scopeName, uint64_t durationMicroseconds) override;
 
     const FrameProfileSnapshot& GetLastFrameSnapshot() const;
 
@@ -58,4 +50,4 @@ private:
     static std::atomic<ProfilerCollector*> s_ActiveCollector;
 };
 
-} // namespace LongXi
+} // namespace LXEngine

@@ -4,7 +4,7 @@
 
 #include "../DebugUI.h"
 
-namespace LongXi
+namespace LXShell
 {
 
 class TextureViewer
@@ -13,4 +13,4 @@ public:
     static void Render(const std::vector<TextureInfoViewModel>& textures);
 };
 
-} // namespace LongXi
+} // namespace LXShell

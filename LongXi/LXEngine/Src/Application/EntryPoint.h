@@ -8,36 +8,37 @@
 // =============================================================================
 
 #include <windows.h>
+#include <conio.h>
 
 #include "Application/Application.h"
 #include "Application/DebugConsoleGuard.h"
 #include "Core/Logging/Log.h"
 #include "Core/Logging/LogMacros.h"
 
-namespace LongXi
+namespace LXEngine
 {
 
 // Client must implement this function.
 Application* CreateApplication();
 
-} // namespace LongXi
+} // namespace LXEngine
 
 #ifdef LX_PLATFORM_WINDOWS
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
     // Bootstrap: console + logging before anything else.
-    LongXi::DebugConsoleGuard debugConsoleGuard;
+    LXEngine::DebugConsoleGuard debugConsoleGuard;
 
-    LongXi::Log::Initialize();
+    LXCore::Log::Initialize();
     LX_ENGINE_INFO("LongXi Engine starting...");
 
     // Client creates the application
-    auto* app = LongXi::CreateApplication();
+    auto* app = LXEngine::CreateApplication();
     if (!app)
     {
         LX_ENGINE_ERROR("CreateApplication() returned nullptr");
-        LongXi::Log::Shutdown();
+        LXCore::Log::Shutdown();
         return 1;
     }
 
@@ -45,7 +46,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     {
         LX_ENGINE_ERROR("Application initialization failed");
         delete app;
-        LongXi::Log::Shutdown();
+        LXCore::Log::Shutdown();
         return 1;
     }
 
@@ -54,7 +55,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     LX_ENGINE_INFO("LongXi Engine exited with code {}", exitCode);
 
     delete app;
-    LongXi::Log::Shutdown();
+
+#if defined(LX_DEBUG) || defined(LX_DEV)
+    std::puts("Press any key to close this console...");
+    _getch();
+#endif
+
+    LXCore::Log::Shutdown();
 
     return exitCode;
 }

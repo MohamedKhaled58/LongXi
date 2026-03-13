@@ -2,13 +2,14 @@
 
 #if defined(LX_DEBUG) || defined(LX_DEV)
 
+#include <Core/Graphics/TextureFormat.h>
 #include <Core/Logging/LogMacros.h>
 #include <Engine/Engine.h>
 #include <Input/InputSystem.h>
+#include <Map/MapTypes.h>
 #include <Scene/Camera.h>
 #include <Scene/Scene.h>
 #include <Texture/Texture.h>
-#include <Texture/TextureFormat.h>
 #include <Texture/TextureManager.h>
 #include <algorithm>
 
@@ -20,8 +21,19 @@
 #include "Panels/SceneInspector.h"
 #include "Panels/TextureViewer.h"
 
-namespace LongXi
+namespace LXShell
 {
+
+using LXCore::FrameProfileEntry;
+using LXCore::FrameProfileSnapshot;
+using LXCore::TextureFormat;
+using LXCore::TimingSnapshot;
+using LXEngine::InputSystem;
+using LXEngine::Key;
+using LXEngine::MouseButton;
+using LXEngine::Scene;
+using LXEngine::Texture;
+using LXMap::MapRenderSnapshot;
 
 namespace
 {
@@ -332,6 +344,6 @@ void DebugUI::ToggleProfilerPanel()
     m_ShowProfilerPanel = !m_ShowProfilerPanel;
 }
 
-} // namespace LongXi
+} // namespace LXShell
 
 #endif // defined(LX_DEBUG) || defined(LX_DEV)

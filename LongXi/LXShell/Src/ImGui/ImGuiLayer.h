@@ -7,10 +7,15 @@
 struct HWND__;
 using HWND = HWND__*;
 
-namespace LongXi
+namespace LXEngine
+{
+class Engine;
+}
+
+namespace LXShell
 {
 
-class Engine;
+using LXEngine::Engine;
 
 class ImGuiLayer
 {
@@ -39,6 +44,6 @@ private:
     int  m_ViewportHeight = 0;
 };
 
-} // namespace LongXi
+} // namespace LXShell
 
 #endif // defined(LX_DEBUG) || defined(LX_DEV)

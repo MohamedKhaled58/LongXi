@@ -12,7 +12,7 @@
 // All state is cleared on focus loss to prevent stuck input.
 // =============================================================================
 
-namespace LongXi
+namespace LXEngine
 {
 
 // =============================================================================
@@ -222,4 +222,4 @@ private:
     Key  m_VKToKey[256];
 };
 
-} // namespace LongXi
+} // namespace LXEngine

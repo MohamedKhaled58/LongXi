@@ -9,7 +9,7 @@
 // Each module gets a named logger with fixed-width prefixes for aligned output.
 // =============================================================================
 
-namespace LongXi
+namespace LXCore
 {
 
 class Log
@@ -45,4 +45,4 @@ private:
     static std::shared_ptr<spdlog::logger> s_MapLogger;
 };
 
-} // namespace LongXi
+} // namespace LXCore

@@ -5,7 +5,7 @@
 
 #include "Core/Logging/LogMacros.h"
 
-namespace LongXi
+namespace LXEngine
 {
 
 namespace
@@ -537,4 +537,4 @@ ID3D11Buffer* DX11Buffers::ResolveBuffer(RendererBufferHandle handle, RendererRe
     return record->Buffer.Get();
 }
 
-} // namespace LongXi
+} // namespace LXEngine

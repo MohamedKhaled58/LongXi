@@ -4,10 +4,13 @@
 #include <cstring>
 #include <limits>
 
+#include "Core/Graphics/TextureFormat.h"
 #include "Core/Logging/LogMacros.h"
 
-namespace LongXi
+namespace LXEngine
 {
+
+using LXCore::TextureFormat;
 
 namespace
 {
@@ -571,4 +574,4 @@ void TextureLoader::ApplyMSKMask(TextureData& textureData, const std::vector<uin
     LX_ENGINE_INFO("[Texture] Applied MSK mask to texture ({}x{})", textureData.Width, textureData.Height);
 }
 
-} // namespace LongXi
+} // namespace LXEngine

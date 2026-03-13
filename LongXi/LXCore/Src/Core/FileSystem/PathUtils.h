@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace LongXi
+namespace LXCore
 {
 
 // Normalize a virtual resource path.
@@ -16,4 +16,4 @@ namespace LongXi
 // Returns empty string when invalid or empty after normalization.
 std::string NormalizeVirtualResourcePath(const std::string& path, bool lowercase);
 
-} // namespace LongXi
+} // namespace LXCore

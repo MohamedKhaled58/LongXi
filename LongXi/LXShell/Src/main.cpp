@@ -28,10 +28,20 @@
 
 #include "Input/InputSystem.h"
 
-namespace LongXi
+namespace LXShell
 {
 
-class TestApplication : public Application
+using LXCore::CVirtualFileSystem;
+using LXEngine::Camera;
+using LXEngine::Engine;
+using LXEngine::Key;
+using LXEngine::Scene;
+using LXEngine::SceneNode;
+using LXEngine::SpriteRenderer;
+using LXEngine::Texture;
+using LXEngine::TextureManager;
+
+class TestApplication : public LXEngine::Application
 {
 public:
     bool Initialize() override
@@ -41,10 +51,11 @@ public:
             return false;
         }
 
-#if defined(LX_DEBUG) || defined(LX_DEV)
         Engine& engine = GetEngine();
         if (engine.IsInitialized())
         {
+            SetupValidationScene();
+#if defined(LX_DEBUG) || defined(LX_DEV)
             if (!m_ImGuiLayer.Initialize(engine, GetWindowHandle()))
             {
                 LX_WARN("[Application] ImGuiLayer initialization failed, running without developer UI");
@@ -52,10 +63,9 @@ public:
             else
             {
                 WireImGuiCallbacks();
-                SetupValidationScene();
             }
-        }
 #endif
+        }
 
         return true;
     }
@@ -94,7 +104,7 @@ public:
             {
                 RenderValidationSprite(engine);
 
-                const bool isF6Down = engine.GetInput().IsKeyDown(Key::F6);
+                const bool isF6Down = engine.GetInput().IsKeyDown(LXEngine::Key::F6);
                 if (isF6Down && !m_F6WasDown)
                 {
                     m_DebugUI.ToggleProfilerPanel();
@@ -127,62 +137,26 @@ public:
     }
 
 private:
-#if defined(LX_DEBUG) || defined(LX_DEV)
-    void WireImGuiCallbacks()
-    {
-        GetWindow().OnRawMessage = [this](UINT msg, WPARAM wParam, LPARAM lParam) -> bool
-        {
-            const bool consumed =
-                m_ImGuiLayer.HandleWin32Message(static_cast<uint32_t>(msg), static_cast<uint64_t>(wParam), static_cast<int64_t>(lParam));
-            m_DebugUI.SetLastInputConsumedByDebugUI(consumed);
-            return consumed;
-        };
-
-        // Resize order: Engine first, then ImGui viewport-dependent state.
-        GetWindow().OnResize = [this](int w, int h)
-        {
-            Engine& engine = GetEngine();
-            if (engine.IsInitialized())
-            {
-                engine.OnResize(w, h);
-            }
-            m_ImGuiLayer.OnResize(w, h);
-        };
-
-        GetWindow().OnMouseWheel = [this](int delta)
-        {
-            if (m_ImGuiLayer.WantsMouseCapture())
-            {
-                return;
-            }
-
-            Engine& engine = GetEngine();
-            if (engine.IsInitialized())
-            {
-                engine.GetInput().OnMouseWheel(delta);
-            }
-        };
-    }
-
     void SetupValidationScene()
     {
         LX_INFO("==============================================");
         LX_INFO("VALIDATION SCENE SETUP");
         LX_INFO("==============================================");
 
-        Engine&             engine         = GetEngine();
-        Scene&              scene          = engine.GetScene();
-        TextureManager&     textureManager = engine.GetTextureManager();
-        CVirtualFileSystem& vfs            = engine.GetVFS();
-        bool                mapLoaded      = false;
+        Engine&                     engine         = GetEngine();
+        LXEngine::Scene&            scene          = engine.GetScene();
+        LXEngine::TextureManager&   textureManager = engine.GetTextureManager();
+        LXCore::CVirtualFileSystem& vfs            = engine.GetVFS();
+        bool                        mapLoaded      = false;
 
         auto rootNode = std::make_unique<SceneNode>();
         rootNode->SetName("ValidationRoot");
         rootNode->SetPosition({0.0f, 0.0f, 0.0f});
         LX_INFO("[ValidationScene] Validation root created");
 
-        std::shared_ptr<Texture> testTexture;
-        const char*              resolvedPath = nullptr;
+#if defined(LX_DEBUG) || defined(LX_DEV)
+        std::shared_ptr<LXEngine::Texture> testTexture;
+        const char*                        resolvedPath = nullptr;
 
         if (testTexture)
         {
@@ -194,10 +168,11 @@ private:
             rootNode->AddChild(std::move(spriteNode));
             LX_INFO("[ValidationScene] Test sprite node attached (texture: {})", resolvedPath ? resolvedPath : "unknown");
         }
+#endif
 
         scene.AddNode(std::move(rootNode));
 
-        constexpr std::array<const char*, 12> mapCandidates = {
+        constexpr std::array<const char*, 2> mapCandidates = {
             //"map/map/newplain.dmap",
             "map/map/desert.dmap",
             "map/map/island.dmap",
@@ -240,6 +215,43 @@ private:
         LX_INFO("==============================================");
     }
 
+#if defined(LX_DEBUG) || defined(LX_DEV)
+    void WireImGuiCallbacks()
+    {
+        GetWindow().OnRawMessage = [this](UINT msg, WPARAM wParam, LPARAM lParam) -> bool
+        {
+            const bool consumed =
+                m_ImGuiLayer.HandleWin32Message(static_cast<uint32_t>(msg), static_cast<uint64_t>(wParam), static_cast<int64_t>(lParam));
+            m_DebugUI.SetLastInputConsumedByDebugUI(consumed);
+            return consumed;
+        };
+
+        // Resize order: Engine first, then ImGui viewport-dependent state.
+        GetWindow().OnResize = [this](int w, int h)
+        {
+            Engine& engine = GetEngine();
+            if (engine.IsInitialized())
+            {
+                engine.OnResize(w, h);
+            }
+            m_ImGuiLayer.OnResize(w, h);
+        };
+
+        GetWindow().OnMouseWheel = [this](int delta)
+        {
+            if (m_ImGuiLayer.WantsMouseCapture())
+            {
+                return;
+            }
+
+            Engine& engine = GetEngine();
+            if (engine.IsInitialized())
+            {
+                engine.GetInput().OnMouseWheel(delta);
+            }
+        };
+    }
+
     void RenderValidationSprite(Engine& engine)
     {
         if (!m_ValidationTexture)
@@ -247,30 +259,30 @@ private:
             return;
         }
 
-        SpriteRenderer& spriteRenderer = engine.GetSpriteRenderer();
+        LXEngine::SpriteRenderer& spriteRenderer = engine.GetSpriteRenderer();
         if (!spriteRenderer.IsInitialized())
         {
             return;
         }
 
         engine.ExecuteSpritePass(
-            [this](SpriteRenderer& activeSpriteRenderer)
+            [this](LXEngine::SpriteRenderer& activeSpriteRenderer)
             {
                 // Draw one visible debug sprite so texture/VFS/render validation is immediate.
                 activeSpriteRenderer.DrawSprite(m_ValidationTexture.get(), {100.0f, 100.0f}, {256.0f, 256.0f});
             });
     }
 
-    ImGuiLayer               m_ImGuiLayer;
-    DebugUI                  m_DebugUI;
-    std::shared_ptr<Texture> m_ValidationTexture;
-    bool                     m_F6WasDown = false;
+    ImGuiLayer                         m_ImGuiLayer;
+    DebugUI                            m_DebugUI;
+    std::shared_ptr<LXEngine::Texture> m_ValidationTexture;
+    bool                               m_F6WasDown = false;
 #endif
 };
 
-} // namespace LongXi
+} // namespace LXShell
 
-LongXi::Application* LongXi::CreateApplication()
+LXEngine::Application* LXEngine::CreateApplication()
 {
-    return new LongXi::TestApplication();
+    return new LXShell::TestApplication();
 }

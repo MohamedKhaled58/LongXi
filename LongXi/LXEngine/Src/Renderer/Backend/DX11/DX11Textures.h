@@ -2,7 +2,7 @@
 
 #include "Renderer/Backend/DX11/DX11ResourceTables.h"
 
-namespace LongXi
+namespace LXEngine
 {
 
 class DX11Textures
@@ -21,4 +21,4 @@ private:
     DX11ResourceTables* m_ResourceTables = nullptr;
 };
 
-} // namespace LongXi
+} // namespace LXEngine

@@ -2,7 +2,7 @@
 
 #include "../DebugUI.h"
 
-namespace LongXi
+namespace LXShell
 {
 
 class EnginePanel
@@ -11,4 +11,4 @@ public:
     static void Render(const EngineMetricsSnapshot& metrics);
 };
 
-} // namespace LongXi
+} // namespace LXShell

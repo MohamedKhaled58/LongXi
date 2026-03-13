@@ -4,7 +4,7 @@
 
 #include "Core/Logging/LogMacros.h"
 
-namespace LongXi
+namespace LXEngine
 {
 
 bool AnimationClip::Initialize(const AnimationClipResource& resource)
@@ -74,7 +74,7 @@ bool AnimationClip::Initialize(const AnimationClipResource& resource)
     return IsValid();
 }
 
-const Matrix4* AnimationClip::GetTransform(uint32_t keyIndex, uint32_t boneIndex) const
+const LXCore::Matrix4* AnimationClip::GetTransform(uint32_t keyIndex, uint32_t boneIndex) const
 {
     if (m_BoneCount == 0 || keyIndex >= m_KeyframePositions.size() || boneIndex >= m_BoneCount)
     {
@@ -90,4 +90,4 @@ const Matrix4* AnimationClip::GetTransform(uint32_t keyIndex, uint32_t boneIndex
     return &m_BoneTransforms[index];
 }
 
-} // namespace LongXi
+} // namespace LXEngine

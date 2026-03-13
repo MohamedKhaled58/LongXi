@@ -2,7 +2,7 @@
 
 #include "../DebugUI.h"
 
-namespace LongXi
+namespace LXShell
 {
 
 class InputMonitor
@@ -11,4 +11,4 @@ public:
     static void Render(const InputStateViewModel& inputState);
 };
 
-} // namespace LongXi
+} // namespace LXShell

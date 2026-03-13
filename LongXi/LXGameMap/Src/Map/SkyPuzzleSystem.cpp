@@ -12,14 +12,14 @@
 #include "Core/FileSystem/VirtualFileSystem.h"
 #include "Core/Logging/LogMacros.h"
 #include "Core/StringUtils.h"
+#include "Core/Timing/TimingService.h"
 #include "Map/MapBinaryReader.h"
 #include "Map/MapCamera.h"
 #include "Map/MapTypes.h"
 #include "Renderer/SpriteRenderer.h"
 #include "Texture/TextureManager.h"
-#include "Timing/TimingService.h"
 
-namespace LongXi
+namespace LXMap
 {
 
 namespace
@@ -27,12 +27,12 @@ namespace
 
 bool IsTextureAssetPath(const std::string& path)
 {
-    return EndsWithInsensitive(path, ".dds") || EndsWithInsensitive(path, ".tga");
+    return LXCore::EndsWithInsensitive(path, ".dds") || LXCore::EndsWithInsensitive(path, ".tga");
 }
 
 bool IsVirtualRootedPath(const std::string& path)
 {
-    const std::string normalizedPath = ToLowerAscii(NormalizeVirtualResourcePath(path, true));
+    const std::string normalizedPath = LXCore::ToLowerAscii(LXCore::NormalizeVirtualResourcePath(path, true));
     if (normalizedPath.empty())
     {
         return false;
@@ -48,12 +48,12 @@ bool IsVirtualRootedPath(const std::string& path)
 
 bool LooksLikeTexturePayload(const std::string& normalizedPath, const std::vector<uint8_t>& bytes)
 {
-    if (EndsWithInsensitive(normalizedPath, ".dds"))
+    if (LXCore::EndsWithInsensitive(normalizedPath, ".dds"))
     {
         return bytes.size() >= 4 && bytes[0] == 'D' && bytes[1] == 'D' && bytes[2] == 'S' && bytes[3] == ' ';
     }
 
-    if (EndsWithInsensitive(normalizedPath, ".tga"))
+    if (LXCore::EndsWithInsensitive(normalizedPath, ".tga"))
     {
         if (bytes.size() < 18)
         {
@@ -154,7 +154,7 @@ bool ShouldRenderSkyPuzzleLayerInPass(int32_t sceneLayerIndex, uint32_t renderPa
 
 std::string JoinPath(const std::string& basePath, const std::string& relativePath)
 {
-    const std::string normalizedRelative = NormalizeVirtualResourcePath(relativePath, true);
+    const std::string normalizedRelative = LXCore::NormalizeVirtualResourcePath(relativePath, true);
     if (normalizedRelative.empty())
     {
         return {};
@@ -171,7 +171,7 @@ std::string JoinPath(const std::string& basePath, const std::string& relativePat
         return normalizedRelative;
     }
 
-    return NormalizeVirtualResourcePath(basePath.substr(0, slashPos + 1) + normalizedRelative, true);
+    return LXCore::NormalizeVirtualResourcePath(basePath.substr(0, slashPos + 1) + normalizedRelative, true);
 }
 
 bool TryResolveTexturePath(const std::string&  framePath,
@@ -181,7 +181,7 @@ bool TryResolveTexturePath(const std::string&  framePath,
 {
     outResolvedPath.clear();
 
-    const std::string normalizedFramePath = NormalizeVirtualResourcePath(framePath, true);
+    const std::string normalizedFramePath = LXCore::NormalizeVirtualResourcePath(framePath, true);
     if (normalizedFramePath.empty())
     {
         return false;
@@ -190,7 +190,7 @@ bool TryResolveTexturePath(const std::string&  framePath,
     std::vector<std::string> pathAttempts;
     auto                     pushPathAttempt = [&pathAttempts](const std::string& rawCandidate)
     {
-        const std::string normalizedCandidate = NormalizeVirtualResourcePath(rawCandidate, true);
+        const std::string normalizedCandidate = LXCore::NormalizeVirtualResourcePath(rawCandidate, true);
         if (normalizedCandidate.empty())
         {
             return;
@@ -206,13 +206,13 @@ bool TryResolveTexturePath(const std::string&  framePath,
 
     auto pushMapScopedPath = [&pushPathAttempt](const std::string& rawCandidate)
     {
-        const std::string normalizedCandidate = NormalizeVirtualResourcePath(rawCandidate, true);
+        const std::string normalizedCandidate = LXCore::NormalizeVirtualResourcePath(rawCandidate, true);
         if (normalizedCandidate.empty())
         {
             return;
         }
 
-        const std::string loweredCandidate = ToLowerAscii(normalizedCandidate);
+        const std::string loweredCandidate = LXCore::ToLowerAscii(normalizedCandidate);
         if (loweredCandidate.rfind("data/", 0) == 0)
         {
             pushPathAttempt(normalizedCandidate);
@@ -239,13 +239,13 @@ bool TryResolveTexturePath(const std::string&  framePath,
 
     auto tryTexturePath = [&outResolvedPath, &vfs](const std::string& rawCandidate) -> bool
     {
-        const std::string normalizedCandidate = NormalizeVirtualResourcePath(rawCandidate, true);
+        const std::string normalizedCandidate = LXCore::NormalizeVirtualResourcePath(rawCandidate, true);
         if (normalizedCandidate.empty())
         {
             return false;
         }
 
-        const std::string loweredCandidate = ToLowerAscii(normalizedCandidate);
+        const std::string loweredCandidate = LXCore::ToLowerAscii(normalizedCandidate);
         if (loweredCandidate.rfind("map/", 0) != 0 && loweredCandidate.rfind("data/map/", 0) != 0)
         {
             return false;
@@ -300,7 +300,7 @@ bool TryResolveTexturePath(const std::string&  framePath,
             continue;
         }
 
-        const std::string extension = ToLowerAscii(attempt.substr(dotPos));
+        const std::string extension = LXCore::ToLowerAscii(attempt.substr(dotPos));
         if (extension == ".dds")
         {
             if (tryTexturePath(attempt))
@@ -376,7 +376,7 @@ bool ParseAniFrames(const std::string&                                      aniP
         {
             currentPuzzleIndex       = kInvalidPuzzleIndex;
             std::string section      = Trim(trimmed.substr(1, trimmed.size() - 2));
-            std::string sectionLower = ToLowerAscii(section);
+            std::string sectionLower = LXCore::ToLowerAscii(section);
             if (sectionLower.rfind("puzzle", 0) == 0)
             {
                 const std::string idPart = sectionLower.substr(6);
@@ -410,7 +410,7 @@ bool ParseAniFrames(const std::string&                                      aniP
             continue;
         }
 
-        std::string       key   = ToLowerAscii(Trim(trimmed.substr(0, equalsPos)));
+        std::string       key   = LXCore::ToLowerAscii(Trim(trimmed.substr(0, equalsPos)));
         const std::string value = Trim(trimmed.substr(equalsPos + 1));
         if (value.empty() || key == "frameamount")
         {
@@ -419,7 +419,7 @@ bool ParseAniFrames(const std::string&                                      aniP
 
         if (key.rfind("frame", 0) == 0)
         {
-            if (value.size() >= 4 && ToLowerAscii(value.substr(value.size() - 4)) == ".msk")
+            if (value.size() >= 4 && LXCore::ToLowerAscii(value.substr(value.size() - 4)) == ".msk")
             {
                 continue;
             }
@@ -683,8 +683,8 @@ uint32_t SkyPuzzleSystem::Render(SpriteRenderer&      spriteRenderer,
                     continue;
                 }
 
-                const Vector2 drawPosition = {screenX, screenY};
-                const Vector2 drawSize     = {puzzleCellScreenSize, puzzleCellScreenSize};
+                const LXCore::Vector2 drawPosition = {screenX, screenY};
+                const LXCore::Vector2 drawSize     = {puzzleCellScreenSize, puzzleCellScreenSize};
                 spriteRenderer.DrawSprite(selectedTexture, drawPosition, drawSize);
                 ++drawCalls;
             }
@@ -706,7 +706,7 @@ bool SkyPuzzleSystem::LoadLayer(const MapObjectRecord&    sourceObject,
     outLayer.MoveRateX       = sourceObject.MoveRateX;
     outLayer.MoveRateY       = sourceObject.MoveRateY;
 
-    std::string resolvedPuzzlePath = NormalizeVirtualResourcePath(sourceObject.ResourcePath, true);
+    std::string resolvedPuzzlePath = LXCore::NormalizeVirtualResourcePath(sourceObject.ResourcePath, true);
     if (resolvedPuzzlePath.empty())
     {
         outWarnings.push_back("Scene-layer puzzle resource path is empty");
@@ -803,7 +803,7 @@ bool SkyPuzzleSystem::LoadLayer(const MapObjectRecord&    sourceObject,
     outLayer.RollSpeedX    = rollSpeedX;
     outLayer.RollSpeedY    = rollSpeedY;
 
-    std::string resolvedAniPath = NormalizeVirtualResourcePath(aniPathRaw, true);
+    std::string resolvedAniPath = LXCore::NormalizeVirtualResourcePath(aniPathRaw, true);
     if (!resolvedAniPath.empty() && !vfs.Exists(resolvedAniPath))
     {
         const std::string aniRelativeToPuzzle = JoinPath(resolvedPuzzlePath, resolvedAniPath);
@@ -907,4 +907,4 @@ bool SkyPuzzleSystem::LoadLayer(const MapObjectRecord&    sourceObject,
     return true;
 }
 
-} // namespace LongXi
+} // namespace LXMap

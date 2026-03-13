@@ -5,7 +5,7 @@
 
 #include "Core/Logging/LogMacros.h"
 
-namespace LongXi
+namespace LXShell
 {
 
 void InputMonitor::Render(const InputStateViewModel& inputState)
@@ -88,4 +88,4 @@ void InputMonitor::Render(const InputStateViewModel& inputState)
     ImGui::End();
 }
 
-} // namespace LongXi
+} // namespace LXShell

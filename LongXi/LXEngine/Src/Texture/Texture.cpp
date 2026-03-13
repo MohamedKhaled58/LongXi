@@ -1,7 +1,7 @@
 #include "Texture/Texture.h"
 
-namespace LongXi
+namespace LXEngine
 {
 // Texture class implementation is header-only
 // Destruction is renderer-owned via opaque handle lifetime tracking.
-} // namespace LongXi
+} // namespace LXEngine

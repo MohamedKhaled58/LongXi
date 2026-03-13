@@ -4,10 +4,15 @@
 
 #include "../DebugUI.h"
 
-namespace LongXi
+namespace LXEngine
+{
+class Scene;
+}
+
+namespace LXShell
 {
 
-class Scene;
+using LXEngine::Scene;
 
 class SceneInspector
 {
@@ -16,4 +21,4 @@ public:
     static SceneNode* s_SelectedNode;
 };
 
-} // namespace LongXi
+} // namespace LXShell

@@ -13,7 +13,7 @@
 // CWdfMountPoint       : WDF archive source (Spec 005)
 // =============================================================================
 
-namespace LongXi
+namespace LXCore
 {
 
 class WdfArchive; // forward declaration — full type required in .cpp only
@@ -81,4 +81,4 @@ private:
     std::string                 m_ArchiveRoot;
 };
 
-} // namespace LongXi
+} // namespace LXCore

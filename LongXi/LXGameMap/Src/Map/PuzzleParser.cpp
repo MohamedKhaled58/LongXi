@@ -21,7 +21,7 @@
 #include "Texture/Texture.h"
 #include "Texture/TextureManager.h"
 
-namespace LongXi
+namespace LXMap
 {
 
 namespace
@@ -35,7 +35,7 @@ void AddWarning(std::vector<std::string>& warnings, const std::string& message)
 
 std::string NormalizeResourcePath(const std::string& value)
 {
-    return NormalizeVirtualResourcePath(value, true);
+    return LXCore::NormalizeVirtualResourcePath(value, true);
 }
 
 std::string BaseFileNameWithoutExtension(const std::string& path)
@@ -91,12 +91,12 @@ std::string JoinPath(const std::string& basePath, const std::string& relativePat
 
 bool IsSupportedTexturePath(const std::string& path)
 {
-    return EndsWithInsensitive(path, ".dds") || EndsWithInsensitive(path, ".tga");
+    return LXCore::EndsWithInsensitive(path, ".dds") || LXCore::EndsWithInsensitive(path, ".tga");
 }
 
 bool IsVirtualRootedPath(const std::string& path)
 {
-    const std::string normalizedPath = ToLowerAscii(NormalizeVirtualResourcePath(path, true));
+    const std::string normalizedPath = LXCore::ToLowerAscii(LXCore::NormalizeVirtualResourcePath(path, true));
     if (normalizedPath.empty())
     {
         return false;
@@ -112,12 +112,12 @@ bool IsVirtualRootedPath(const std::string& path)
 
 bool LooksLikeTexturePayload(const std::string& normalizedPath, const std::vector<uint8_t>& bytes)
 {
-    if (EndsWithInsensitive(normalizedPath, ".dds"))
+    if (LXCore::EndsWithInsensitive(normalizedPath, ".dds"))
     {
         return bytes.size() >= 4 && bytes[0] == 'D' && bytes[1] == 'D' && bytes[2] == 'S' && bytes[3] == ' ';
     }
 
-    if (EndsWithInsensitive(normalizedPath, ".tga"))
+    if (LXCore::EndsWithInsensitive(normalizedPath, ".tga"))
     {
         if (bytes.size() < 18)
         {
@@ -188,13 +188,13 @@ bool TryResolveTexturePath(const std::string&   framePath,
 
     auto tryTexturePath = [&outResolvedPath, &vfs, &logTextureResolveFailure](const std::string& rawCandidate) -> bool
     {
-        const std::string normalizedCandidate = NormalizeVirtualResourcePath(rawCandidate, true);
+        const std::string normalizedCandidate = LXCore::NormalizeVirtualResourcePath(rawCandidate, true);
         if (normalizedCandidate.empty())
         {
             return false;
         }
 
-        const std::string loweredCandidate = ToLowerAscii(normalizedCandidate);
+        const std::string loweredCandidate = LXCore::ToLowerAscii(normalizedCandidate);
         if (loweredCandidate.rfind("map/", 0) != 0 && loweredCandidate.rfind("data/map/", 0) != 0)
         {
             return false;
@@ -230,7 +230,7 @@ bool TryResolveTexturePath(const std::string&   framePath,
 
     auto tryTextureWithExtension = [&tryTexturePath](const std::string& rawBasePath) -> bool
     {
-        const std::string normalizedBasePath = NormalizeVirtualResourcePath(rawBasePath, true);
+        const std::string normalizedBasePath = LXCore::NormalizeVirtualResourcePath(rawBasePath, true);
         if (normalizedBasePath.empty())
         {
             return false;
@@ -242,7 +242,7 @@ bool TryResolveTexturePath(const std::string&   framePath,
             return tryTexturePath(normalizedBasePath + ".dds") || tryTexturePath(normalizedBasePath + ".tga");
         }
 
-        const std::string extension = ToLowerAscii(normalizedBasePath.substr(dotPos));
+        const std::string extension = LXCore::ToLowerAscii(normalizedBasePath.substr(dotPos));
         if (extension == ".dds")
         {
             return tryTexturePath(normalizedBasePath) || tryTexturePath(normalizedBasePath.substr(0, dotPos) + ".tga");
@@ -264,7 +264,7 @@ bool TryResolveTexturePath(const std::string&   framePath,
             return true;
         }
 
-        const std::string loweredFramePath = ToLowerAscii(normalizedFramePath);
+        const std::string loweredFramePath = LXCore::ToLowerAscii(normalizedFramePath);
         if (loweredFramePath.rfind("map/", 0) == 0)
         {
             return tryTextureWithExtension("data/" + normalizedFramePath);
@@ -397,10 +397,10 @@ bool ParsePuzzle(const std::string&                                      mapPath
     const uint32_t mapHeight = inOutTileGrid.GetHeight();
     if (mapWidth > 0 && mapHeight > 0 && inOutDescriptor.CellWidth > 0 && inOutDescriptor.CellHeight > 0)
     {
-        const float cellW          = static_cast<float>(inOutDescriptor.CellWidth);
-        const float cellH          = static_cast<float>(inOutDescriptor.CellHeight);
-        const float originX        = static_cast<float>(inOutDescriptor.OriginX);
-        const float originY        = static_cast<float>(inOutDescriptor.OriginY);
+        const float cellW         = static_cast<float>(inOutDescriptor.CellWidth);
+        const float cellH         = static_cast<float>(inOutDescriptor.CellHeight);
+        const float originX       = static_cast<float>(inOutDescriptor.OriginX);
+        const float originY       = static_cast<float>(inOutDescriptor.OriginY);
         const float bgWorldWidth  = static_cast<float>(gridWidth) * kPuzzleGridSize;
         const float bgWorldHeight = static_cast<float>(gridHeight) * kPuzzleGridSize;
         const float bgWorldX      = originX - bgWorldWidth * 0.5f;
@@ -544,4 +544,4 @@ bool ParsePuzzle(const std::string&                                      mapPath
     return true;
 }
 
-} // namespace LongXi
+} // namespace LXMap

@@ -20,7 +20,7 @@
 //   [Adopted — verify]    — working interpretation; test against real data
 // =============================================================================
 
-namespace LongXi
+namespace LXCore
 {
 
 // WDF archive header — 12 bytes at offset 0 in the file.
@@ -79,4 +79,4 @@ private:
     mutable std::mutex         m_Mutex;
 };
 
-} // namespace LongXi
+} // namespace LXCore

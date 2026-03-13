@@ -7,7 +7,7 @@
 #include "Core/FileSystem/WdfArchive.h"
 #include "Core/Logging/LogMacros.h"
 
-namespace LongXi
+namespace LXCore
 {
 
 // ============================================================================
@@ -28,7 +28,7 @@ static std::wstring ToWide(const std::string& utf8)
 
 static std::string ExtractArchiveRoot(const std::string& archivePath)
 {
-    const std::string normalizedArchivePath = NormalizeVirtualResourcePath(archivePath, true);
+    const std::string normalizedArchivePath = LXCore::NormalizeVirtualResourcePath(archivePath, true);
     if (normalizedArchivePath.empty())
     {
         return {};
@@ -119,4 +119,4 @@ bool CWdfMountPoint::HandlesPath(const std::string& normalizedPath) const
     return PathMatchesArchiveRoot(normalizedPath, m_ArchiveRoot);
 }
 
-} // namespace LongXi
+} // namespace LXCore

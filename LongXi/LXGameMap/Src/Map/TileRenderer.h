@@ -6,13 +6,21 @@
 
 #include "Map/MapTypes.h"
 
-namespace LongXi
+namespace LXEngine
 {
-
-class MapCamera;
 class Renderer;
 class SpriteRenderer;
 class Texture;
+} // namespace LXEngine
+
+namespace LXMap
+{
+
+class MapCamera;
+
+using LXEngine::Renderer;
+using LXEngine::SpriteRenderer;
+using LXEngine::Texture;
 
 class TileRenderer
 {
@@ -40,4 +48,4 @@ private:
     uint32_t m_ViewportHeight = 1;
 };
 
-} // namespace LongXi
+} // namespace LXMap

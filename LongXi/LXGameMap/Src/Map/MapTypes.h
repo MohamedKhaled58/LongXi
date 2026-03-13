@@ -6,13 +6,22 @@
 #include <string>
 #include <vector>
 
-#include "Math/Math.h"
+#include "Core/Math/Math.h"
 #include "Renderer/RendererTypes.h"
 
-namespace LongXi
+namespace LXEngine
+{
+class Texture;
+}
+
+namespace LXMap
 {
 
-class Texture;
+using LXCore::Color;
+using LXCore::Matrix4;
+using LXEngine::RendererTextureHandle;
+using LXEngine::RendererVertexBufferHandle;
+using LXEngine::Texture;
 
 inline constexpr uint16_t kInvalidPuzzleIndex = (std::numeric_limits<uint16_t>::max)();
 inline constexpr float    kPuzzleGridSize     = 256.0f;
@@ -212,4 +221,4 @@ struct MapRenderSnapshot
     bool                     IsValid = false;
 };
 
-} // namespace LongXi
+} // namespace LXMap

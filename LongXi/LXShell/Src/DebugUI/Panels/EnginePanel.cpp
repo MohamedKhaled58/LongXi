@@ -4,7 +4,7 @@
 
 #include "Core/Logging/LogMacros.h"
 
-namespace LongXi
+namespace LXShell
 {
 
 void EnginePanel::Render(const EngineMetricsSnapshot& metrics)
@@ -30,4 +30,4 @@ void EnginePanel::Render(const EngineMetricsSnapshot& metrics)
     ImGui::End();
 }
 
-} // namespace LongXi
+} // namespace LXShell

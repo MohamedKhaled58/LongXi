@@ -4,7 +4,7 @@
 
 #include "Core/Logging/LogMacros.h"
 
-namespace LongXi
+namespace LXShell
 {
 
 void TextureViewer::Render(const std::vector<TextureInfoViewModel>& textures)
@@ -73,4 +73,4 @@ void TextureViewer::Render(const std::vector<TextureInfoViewModel>& textures)
     ImGui::End();
 }
 
-} // namespace LongXi
+} // namespace LXShell

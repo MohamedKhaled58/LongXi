@@ -5,7 +5,7 @@
 #include "Core/Logging/LogMacros.h"
 #include "Scene/Camera.h"
 
-namespace LongXi
+namespace LXShell
 {
 
 void CameraPanel::Render(const CameraStateViewModel& cameraState, Camera& camera)
@@ -75,4 +75,4 @@ void CameraPanel::Render(const CameraStateViewModel& cameraState, Camera& camera
     ImGui::End();
 }
 
-} // namespace LongXi
+} // namespace LXShell

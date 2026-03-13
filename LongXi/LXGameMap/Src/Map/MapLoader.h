@@ -8,13 +8,24 @@
 
 #include "Map/MapTypes.h"
 
-namespace LongXi
+namespace LXCore
 {
-
 class CVirtualFileSystem;
+}
+
+namespace LXEngine
+{
 class Texture;
 class TextureManager;
+} // namespace LXEngine
+
+namespace LXMap
+{
 class TileGrid;
+
+using LXCore::CVirtualFileSystem;
+using LXEngine::Texture;
+using LXEngine::TextureManager;
 
 class MapLoader
 {
@@ -62,4 +73,4 @@ private:
     static void        AddWarning(std::vector<std::string>& warnings, const std::string& message);
 };
 
-} // namespace LongXi
+} // namespace LXMap

@@ -6,7 +6,7 @@
 
 #include "Renderer/RendererTypes.h"
 
-namespace LongXi
+namespace LXEngine
 {
 
 class Renderer;
@@ -43,4 +43,4 @@ private:
     bool m_Initialized        = false;
 };
 
-} // namespace LongXi
+} // namespace LXEngine

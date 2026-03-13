@@ -24,7 +24,7 @@
 #include "Texture/Texture.h"
 #include "Texture/TextureManager.h"
 
-namespace LongXi
+namespace LXMap
 {
 
 namespace
@@ -33,12 +33,12 @@ constexpr int32_t kLegacyLayerScene = 4;
 
 bool IsSupportedTexturePath(const std::string& path)
 {
-    return EndsWithInsensitive(path, ".dds") || EndsWithInsensitive(path, ".tga");
+    return LXCore::EndsWithInsensitive(path, ".dds") || LXCore::EndsWithInsensitive(path, ".tga");
 }
 
 bool IsVirtualRootedPath(const std::string& path)
 {
-    const std::string normalizedPath = ToLowerAscii(NormalizeVirtualResourcePath(path, true));
+    const std::string normalizedPath = LXCore::ToLowerAscii(LXCore::NormalizeVirtualResourcePath(path, true));
     if (normalizedPath.empty())
     {
         return false;
@@ -54,12 +54,12 @@ bool IsVirtualRootedPath(const std::string& path)
 
 bool LooksLikeTexturePayload(const std::string& normalizedPath, const std::vector<uint8_t>& bytes)
 {
-    if (EndsWithInsensitive(normalizedPath, ".dds"))
+    if (LXCore::EndsWithInsensitive(normalizedPath, ".dds"))
     {
         return bytes.size() >= 4 && bytes[0] == 'D' && bytes[1] == 'D' && bytes[2] == 'S' && bytes[3] == ' ';
     }
 
-    if (EndsWithInsensitive(normalizedPath, ".tga"))
+    if (LXCore::EndsWithInsensitive(normalizedPath, ".tga"))
     {
         if (bytes.size() < 18)
         {
@@ -86,18 +86,18 @@ bool LooksLikeTexturePayload(const std::string& normalizedPath, const std::vecto
 
 std::string NormalizeCatalogDmapPath(const std::string& rawPath)
 {
-    std::string normalizedPath = NormalizeVirtualResourcePath(rawPath, true);
+    std::string normalizedPath = LXCore::NormalizeVirtualResourcePath(rawPath, true);
     if (normalizedPath.empty())
     {
         return {};
     }
 
-    if (!EndsWithInsensitive(normalizedPath, ".dmap"))
+    if (!LXCore::EndsWithInsensitive(normalizedPath, ".dmap"))
     {
         normalizedPath += ".dmap";
     }
 
-    const std::string loweredPath = ToLowerAscii(normalizedPath);
+    const std::string loweredPath = LXCore::ToLowerAscii(normalizedPath);
     if (loweredPath.rfind("map/map/", 0) == 0)
     {
         return normalizedPath;
@@ -156,20 +156,20 @@ std::string StripArchivePrefix(std::string stem)
 
 bool CatalogPathMatchesResolvedDmap(const std::string& catalogPath, const std::string& resolvedPath)
 {
-    const std::string normalizedResolved = NormalizeVirtualResourcePath(resolvedPath, true);
-    const std::string normalizedCatalog  = NormalizeVirtualResourcePath(catalogPath, true);
+    const std::string normalizedResolved = LXCore::NormalizeVirtualResourcePath(resolvedPath, true);
+    const std::string normalizedCatalog  = LXCore::NormalizeVirtualResourcePath(catalogPath, true);
     if (normalizedResolved.empty() || normalizedCatalog.empty())
     {
         return false;
     }
 
-    if (EndsWithInsensitive(normalizedCatalog, ".dmap") && NormalizeCatalogDmapPath(normalizedCatalog) == normalizedResolved)
+    if (LXCore::EndsWithInsensitive(normalizedCatalog, ".dmap") && NormalizeCatalogDmapPath(normalizedCatalog) == normalizedResolved)
     {
         return true;
     }
 
-    const std::string catalogStem  = ToLowerAscii(StripArchivePrefix(FileStem(normalizedCatalog)));
-    const std::string resolvedStem = ToLowerAscii(FileStem(normalizedResolved));
+    const std::string catalogStem  = LXCore::ToLowerAscii(StripArchivePrefix(FileStem(normalizedCatalog)));
+    const std::string resolvedStem = LXCore::ToLowerAscii(FileStem(normalizedResolved));
     return !catalogStem.empty() && catalogStem == resolvedStem;
 }
 
@@ -232,7 +232,7 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
     }
 
     size_t cursor = 0;
-    if (!LongXi::ParseDmap(mapPath, bytes, outDescriptor, outTileGrid, cursor, outWarnings))
+    if (!::LXMap::ParseDmap(mapPath, bytes, outDescriptor, outTileGrid, cursor, outWarnings))
     {
         return false;
     }
@@ -241,15 +241,15 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
     uint32_t parsedInteractiveObjects  = 0;
     uint32_t unknownInteractiveObjects = 0;
     bool     interactiveParsingAborted = false;
-    if (!LongXi::ParseInteractiveObjectBlock(bytes,
-                                             cursor,
-                                             outDescriptor,
-                                             outMapObjects,
-                                             nextObjectId,
-                                             parsedInteractiveObjects,
-                                             unknownInteractiveObjects,
-                                             interactiveParsingAborted,
-                                             outWarnings))
+    if (!ParseInteractiveObjectBlock(bytes,
+                                     cursor,
+                                     outDescriptor,
+                                     outMapObjects,
+                                     nextObjectId,
+                                     parsedInteractiveObjects,
+                                     unknownInteractiveObjects,
+                                     interactiveParsingAborted,
+                                     outWarnings))
     {
         return false;
     }
@@ -332,15 +332,15 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
 
     {
         bool sceneParsingAborted = false;
-        if (!LongXi::ParseSceneLayerBlock(bytes,
-                                          cursor,
-                                          outDescriptor,
-                                          outMapObjects,
-                                          nextObjectId,
-                                          parsedSceneObjects,
-                                          unknownSceneObjects,
-                                          sceneParsingAborted,
-                                          outWarnings))
+        if (!ParseSceneLayerBlock(bytes,
+                                  cursor,
+                                  outDescriptor,
+                                  outMapObjects,
+                                  nextObjectId,
+                                  parsedSceneObjects,
+                                  unknownSceneObjects,
+                                  sceneParsingAborted,
+                                  outWarnings))
         {
             AddWarning(outWarnings, "Scene-layer parsing failed; continuing with partial map data");
         }
@@ -377,7 +377,7 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
     {
         outResolvedPath.clear();
 
-        const std::string normalizedRaw = NormalizeVirtualResourcePath(rawPath, true);
+        const std::string normalizedRaw = LXCore::NormalizeVirtualResourcePath(rawPath, true);
         if (normalizedRaw.empty())
         {
             return false;
@@ -385,7 +385,7 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
 
         auto tryPath = [&outResolvedPath, &vfs](const std::string& rawCandidate) -> bool
         {
-            const std::string normalizedCandidate = NormalizeVirtualResourcePath(rawCandidate, true);
+            const std::string normalizedCandidate = LXCore::NormalizeVirtualResourcePath(rawCandidate, true);
             if (normalizedCandidate.empty())
             {
                 return false;
@@ -400,7 +400,7 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
             return true;
         };
 
-        const std::string loweredRaw = ToLowerAscii(normalizedRaw);
+        const std::string loweredRaw = LXCore::ToLowerAscii(normalizedRaw);
         if (loweredRaw.rfind("ani/", 0) == 0)
         {
             return tryPath(normalizedRaw);
@@ -418,7 +418,7 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
 
         const std::string fileName  = FileNameFromPath(normalizedRaw);
         const size_t      dotPos    = fileName.find_last_of('.');
-        const std::string extension = (dotPos == std::string::npos) ? std::string() : ToLowerAscii(fileName.substr(dotPos));
+        const std::string extension = (dotPos == std::string::npos) ? std::string() : LXCore::ToLowerAscii(fileName.substr(dotPos));
 
         if (extension == ".ani")
         {
@@ -470,7 +470,7 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
 
                 if (trimmed.front() == '[' && trimmed.back() == ']')
                 {
-                    currentSection = ToLowerAscii(Trim(trimmed.substr(1, trimmed.size() - 2)));
+                    currentSection = LXCore::ToLowerAscii(Trim(trimmed.substr(1, trimmed.size() - 2)));
                     continue;
                 }
 
@@ -492,7 +492,7 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
                     continue;
                 }
 
-                key = ToLowerAscii(key);
+                key = LXCore::ToLowerAscii(key);
                 if (key == "frameamount")
                 {
                     continue;
@@ -533,7 +533,7 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
         std::vector<std::string> sampledFramePaths;
         auto                     pushSectionCandidate = [&sectionCandidates](const std::string& rawValue)
         {
-            std::string normalized = ToLowerAscii(Trim(rawValue));
+            std::string normalized = LXCore::ToLowerAscii(Trim(rawValue));
             if (normalized.empty())
             {
                 return;
@@ -682,7 +682,7 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
             objectRecord.ResourcePath = resolvedObjectPath;
         }
 
-        if (objectRecord.ResourcePath.empty() || !EndsWithInsensitive(objectRecord.ResourcePath, ".ani"))
+        if (objectRecord.ResourcePath.empty() || !LXCore::EndsWithInsensitive(objectRecord.ResourcePath, ".ani"))
         {
             return;
         }
@@ -805,13 +805,13 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
         }
 
         objectRecord.ResourcePath = resolvedObjectPath;
-        if (EndsWithInsensitive(resolvedObjectPath, ".ani"))
+        if (LXCore::EndsWithInsensitive(resolvedObjectPath, ".ani"))
         {
             resolveAniObjectToTexture(objectRecord);
             continue;
         }
 
-        if (EndsWithInsensitive(resolvedObjectPath, ".scene"))
+        if (LXCore::EndsWithInsensitive(resolvedObjectPath, ".scene"))
         {
             const std::vector<uint8_t> sceneBytes = vfs.ReadAll(resolvedObjectPath);
             if (sceneBytes.empty())
@@ -833,7 +833,7 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
             continue;
         }
 
-        if (EndsWithInsensitive(resolvedObjectPath, ".part"))
+        if (LXCore::EndsWithInsensitive(resolvedObjectPath, ".part"))
         {
             const std::vector<uint8_t> partBytes = vfs.ReadAll(resolvedObjectPath);
             if (!registerScenePart(resolvedObjectPath, &partBytes))
@@ -958,7 +958,7 @@ bool MapLoader::ResolveMapPath(const std::string&        dMapPath,
             return true;
         }
 
-        if (!EndsWithInsensitive(normalizedPath, ".dmap") && vfs.Exists(normalizedPath + ".dmap"))
+        if (!LXCore::EndsWithInsensitive(normalizedPath, ".dmap") && vfs.Exists(normalizedPath + ".dmap"))
         {
             outResolvedPath = normalizedPath + ".dmap";
             return true;
@@ -980,7 +980,7 @@ bool MapLoader::ResolveMapPath(const std::string&        dMapPath,
             return tryResolveExistingPath(normalizedPath);
         }
 
-        const std::string loweredPath = ToLowerAscii(normalizedPath);
+        const std::string loweredPath = LXCore::ToLowerAscii(normalizedPath);
         if (loweredPath.rfind("map/map/", 0) == 0)
         {
             return tryResolveExistingPath(normalizedPath);
@@ -1251,7 +1251,7 @@ std::string MapLoader::Trim(std::string value)
 
 std::string MapLoader::NormalizeResourcePath(const std::string& value)
 {
-    return NormalizeVirtualResourcePath(value, true);
+    return LXCore::NormalizeVirtualResourcePath(value, true);
 }
 
 std::string MapLoader::JoinPath(const std::string& basePath, const std::string& relativePath)
@@ -1351,13 +1351,13 @@ bool MapLoader::TryResolveTexturePath(const std::string&   framePath,
 
     auto tryTexturePath = [&outResolvedPath, &vfs, &logTextureResolveFailure](const std::string& rawCandidate) -> bool
     {
-        const std::string normalizedCandidate = NormalizeVirtualResourcePath(rawCandidate, true);
+        const std::string normalizedCandidate = LXCore::NormalizeVirtualResourcePath(rawCandidate, true);
         if (normalizedCandidate.empty())
         {
             return false;
         }
 
-        const std::string loweredCandidate = ToLowerAscii(normalizedCandidate);
+        const std::string loweredCandidate = LXCore::ToLowerAscii(normalizedCandidate);
         if (loweredCandidate.rfind("map/", 0) != 0 && loweredCandidate.rfind("data/map/", 0) != 0)
         {
             return false;
@@ -1393,7 +1393,7 @@ bool MapLoader::TryResolveTexturePath(const std::string&   framePath,
 
     auto tryTextureWithExtension = [&tryTexturePath](const std::string& rawBasePath) -> bool
     {
-        const std::string normalizedBasePath = NormalizeVirtualResourcePath(rawBasePath, true);
+        const std::string normalizedBasePath = LXCore::NormalizeVirtualResourcePath(rawBasePath, true);
         if (normalizedBasePath.empty())
         {
             return false;
@@ -1405,7 +1405,7 @@ bool MapLoader::TryResolveTexturePath(const std::string&   framePath,
             return tryTexturePath(normalizedBasePath + ".dds") || tryTexturePath(normalizedBasePath + ".tga");
         }
 
-        const std::string extension = ToLowerAscii(normalizedBasePath.substr(dotPos));
+        const std::string extension = LXCore::ToLowerAscii(normalizedBasePath.substr(dotPos));
         if (extension == ".dds")
         {
             return tryTexturePath(normalizedBasePath) || tryTexturePath(normalizedBasePath.substr(0, dotPos) + ".tga");
@@ -1427,7 +1427,7 @@ bool MapLoader::TryResolveTexturePath(const std::string&   framePath,
             return true;
         }
 
-        const std::string loweredFramePath = ToLowerAscii(normalizedFramePath);
+        const std::string loweredFramePath = LXCore::ToLowerAscii(normalizedFramePath);
         if (loweredFramePath.rfind("map/", 0) == 0)
         {
             return tryTextureWithExtension("data/" + normalizedFramePath);
@@ -1472,4 +1472,4 @@ void MapLoader::AddWarning(std::vector<std::string>& warnings, const std::string
     LX_MAP_WARN("[Map] {}", message);
 }
 
-} // namespace LongXi
+} // namespace LXMap

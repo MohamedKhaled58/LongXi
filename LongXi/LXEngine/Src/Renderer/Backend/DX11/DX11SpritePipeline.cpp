@@ -10,7 +10,7 @@
 #include "Renderer/SpriteRenderer.h"
 #include "Texture/Texture.h"
 
-namespace LongXi
+namespace LXEngine
 {
 
 bool DX11SpritePipeline::Initialize(Renderer&   renderer,
@@ -349,4 +349,4 @@ void DX11SpritePipeline::FlushBatch(Renderer& renderer, const SpriteVertex* vert
     renderer.DrawIndexed(static_cast<uint32_t>(spriteCount) * 6, 0, 0);
 }
 
-} // namespace LongXi
+} // namespace LXEngine

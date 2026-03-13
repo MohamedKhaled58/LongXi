@@ -3,9 +3,11 @@
 #include <cstring>
 
 #include "Core/Logging/LogMacros.h"
-#include "Profiling/ProfileScope.h"
+#include "Core/Profiling/ProfileScope.h"
 #include "Renderer/SpritePipelineBridge.h"
 #include "Texture/Texture.h"
+
+using LXCore::Vector2;
 
 // ============================================================================
 // Embedded HLSL Shaders
@@ -60,7 +62,7 @@ float4 PS(PSInput input) : SV_TARGET
 }
 )";
 
-namespace LongXi
+namespace LXEngine
 {
 
 class SpriteRenderer::Impl
@@ -222,7 +224,7 @@ void SpriteRenderer::DrawSprite(const Texture* texture, Vector2 position, Vector
     DrawSprite(texture, position, size, {0.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f});
 }
 
-void SpriteRenderer::DrawSprite(const Texture* texture, Vector2 position, Vector2 size, Vector2 uvMin, Vector2 uvMax, LongXi::Color color)
+void SpriteRenderer::DrawSprite(const Texture* texture, Vector2 position, Vector2 size, Vector2 uvMin, Vector2 uvMax, LXCore::Color color)
 {
     if (!m_Initialized || !m_InBatch)
     {
@@ -274,4 +276,4 @@ void SpriteRenderer::DrawSprite(const Texture* texture, Vector2 position, Vector
     ++m_SpriteCount;
 }
 
-} // namespace LongXi
+} // namespace LXEngine

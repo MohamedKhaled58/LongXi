@@ -4,11 +4,12 @@
 #include <cstdint>
 #include <memory>
 
-#include "Math/Math.h"
+#include "Core/Math/Math.h"
 #include "Renderer/RendererTypes.h"
 
-namespace LongXi
+namespace LXEngine
 {
+
 
 class Renderer
 {
@@ -29,7 +30,7 @@ public:
     virtual void SetViewport(const RendererViewport& viewport)                                     = 0;
     virtual void SetRenderTarget()                                                                 = 0;
     virtual void DrawIndexed(uint32_t indexCount, uint32_t startIndex = 0, int32_t baseVertex = 0) = 0;
-    virtual void SetViewProjection(const Matrix4& view, const Matrix4& projection)                 = 0;
+    virtual void SetViewProjection(const LXCore::Matrix4& view, const LXCore::Matrix4& projection) = 0;
 
     virtual RendererTextureHandle CreateTexture(const RendererTextureDesc& desc) = 0;
     virtual bool                  DestroyTexture(RendererTextureHandle handle)   = 0;
@@ -68,4 +69,4 @@ public:
 
 std::unique_ptr<Renderer> CreateRenderer();
 
-} // namespace LongXi
+} // namespace LXEngine

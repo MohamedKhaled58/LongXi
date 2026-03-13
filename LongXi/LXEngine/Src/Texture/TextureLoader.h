@@ -10,7 +10,7 @@
 // Zero DX11 dependencies — pure CPU-side decoding
 // =============================================================================
 
-namespace LongXi
+namespace LXEngine
 {
 
 class TextureLoader
@@ -40,4 +40,4 @@ public:
     ~TextureLoader() = delete;
 };
 
-} // namespace LongXi
+} // namespace LXEngine

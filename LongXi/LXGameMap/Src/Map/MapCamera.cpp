@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace LongXi
+namespace LXMap
 {
 
 void MapCamera::SetMapDescriptor(const MapDescriptor& descriptor)
@@ -174,4 +174,4 @@ int32_t MapCamera::ClampTileY(int32_t value) const
     return std::clamp(value, 0, static_cast<int32_t>(m_MapHeight) - 1);
 }
 
-} // namespace LongXi
+} // namespace LXMap

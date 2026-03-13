@@ -13,15 +13,29 @@
 #include "Map/TileGrid.h"
 #include "Map/TileRenderer.h"
 
-namespace LongXi
+namespace LXCore
 {
-
 class CVirtualFileSystem;
+struct TimingSnapshot;
+} // namespace LXCore
+
+namespace LXEngine
+{
 class Renderer;
 class SpriteRenderer;
 class Texture;
 class TextureManager;
-struct TimingSnapshot;
+} // namespace LXEngine
+
+namespace LXMap
+{
+
+using LXCore::CVirtualFileSystem;
+using LXCore::TimingSnapshot;
+using LXEngine::Renderer;
+using LXEngine::SpriteRenderer;
+using LXEngine::Texture;
+using LXEngine::TextureManager;
 
 class MapSystem
 {
@@ -76,4 +90,4 @@ private:
     bool           m_Initialized = false;
 };
 
-} // namespace LongXi
+} // namespace LXMap

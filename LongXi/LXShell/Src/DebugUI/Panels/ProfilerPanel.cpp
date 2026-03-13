@@ -2,7 +2,7 @@
 
 #include <imgui.h>
 
-namespace LongXi
+namespace LXShell
 {
 
 void ProfilerPanel::Render(const ProfilerPanelViewModel& profiler)
@@ -66,4 +66,4 @@ void ProfilerPanel::Render(const ProfilerPanelViewModel& profiler)
     ImGui::End();
 }
 
-} // namespace LongXi
+} // namespace LXShell

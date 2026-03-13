@@ -11,7 +11,7 @@
 #include "Renderer/SpriteRenderer.h"
 #include "Texture/Texture.h"
 
-namespace LongXi
+namespace LXMap
 {
 
 bool TileRenderer::Initialize(Renderer& renderer)
@@ -169,8 +169,8 @@ bool TileRenderer::RenderTiles(const MapDescriptor&                             
                 continue;
             }
 
-            const Vector2 drawPosition = {screenX, screenY};
-            const Vector2 drawSize     = {puzzleCellScreenSize, puzzleCellScreenSize};
+            const LXCore::Vector2 drawPosition = {screenX, screenY};
+            const LXCore::Vector2 drawSize     = {puzzleCellScreenSize, puzzleCellScreenSize};
             spriteRenderer.DrawSprite(selectedTexture, drawPosition, drawSize);
             ++inOutSnapshot.DrawCalls;
             ++inOutSnapshot.VisibleTiles;
@@ -202,4 +202,4 @@ bool TileRenderer::RenderTiles(const MapDescriptor&                             
     return true;
 }
 
-} // namespace LongXi
+} // namespace LXMap

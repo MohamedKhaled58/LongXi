@@ -4,7 +4,7 @@
 
 #include "Core/Logging/LogMacros.h"
 
-namespace LongXi
+namespace LXCore
 {
 
 // Static member definitions
@@ -60,4 +60,4 @@ void Log::Shutdown()
     spdlog::shutdown();
 }
 
-} // namespace LongXi
+} // namespace LXCore

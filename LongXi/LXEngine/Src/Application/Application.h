@@ -9,7 +9,7 @@
 // Clients subclass or instantiate directly via CreateApplication().
 // =============================================================================
 
-namespace LongXi
+namespace LXEngine
 {
 
 class Engine;
@@ -28,7 +28,7 @@ public:
 
 protected:
     // Protected accessors for subclasses
-    Engine& GetEngine();
+    LXEngine::Engine& GetEngine();
 
     HWND GetWindowHandle() const
     {
@@ -53,4 +53,4 @@ private:
     void WireWindowCallbacks();
 };
 
-} // namespace LongXi
+} // namespace LXEngine

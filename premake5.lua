@@ -68,15 +68,23 @@ IncludeDir["LXGameMapSrc"]  = path.getabsolute("LongXi/LXGameMap/Src")
 	group ""
 
 	-- =========================================================================
-	-- Modules/Core  — zero or minimal deps; used by everyone
+	-- Engine Domain — Core library and Engine runtime systems
 	-- =========================================================================
-group "Core"
+	group "Engine"
 		include "LongXi/LXCore"
-		-- LXEngine contains renderer backend modules under Src/Renderer/Backend/DX11 (including resource system files).
 		include "LongXi/LXEngine"
+	group ""
+
+	-- =========================================================================
+	-- Game Domain — Game-specific modules (maps, gameplay)
+	-- =========================================================================
+	group "Game"
 		include "LongXi/LXGameMap"
 	group ""
 
-	group "Executables"
+	-- =========================================================================
+	-- Shell Domain — Application entry points and platform integration
+	-- =========================================================================
+	group "Shell"
 		include "LongXi/LXShell"
 	group ""

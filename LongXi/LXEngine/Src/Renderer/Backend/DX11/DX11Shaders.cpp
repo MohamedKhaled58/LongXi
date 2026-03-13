@@ -2,7 +2,7 @@
 
 #include "Core/Logging/LogMacros.h"
 
-namespace LongXi
+namespace LXEngine
 {
 
 void DX11Shaders::Initialize(ID3D11Device* device, DX11ResourceTables* resourceTables)
@@ -147,4 +147,4 @@ ID3D11PixelShader* DX11Shaders::ResolvePixelShader(RendererShaderHandle handle, 
     return record->PixelShader.Get();
 }
 
-} // namespace LongXi
+} // namespace LXEngine

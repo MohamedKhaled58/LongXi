@@ -7,7 +7,7 @@
 #include "Map/MapTypes.h"
 #include "Map/TileGrid.h"
 
-namespace LongXi
+namespace LXMap
 {
 
 // Parse DMAP binary file format: file header, tile grid, and passage records.
@@ -28,4 +28,4 @@ bool ParsePassageBlock(const std::vector<uint8_t>&    bytes,
                        std::vector<MapPassageRecord>& outPassages,
                        std::vector<std::string>&      outWarnings);
 
-} // namespace LongXi
+} // namespace LXMap

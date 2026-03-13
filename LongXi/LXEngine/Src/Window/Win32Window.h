@@ -10,7 +10,7 @@
 // Provides clean window creation, display, and destruction.
 // =============================================================================
 
-namespace LongXi
+namespace LXEngine
 {
 
 // Forward declaration — defined in Input/InputSystem.h
@@ -78,4 +78,4 @@ private:
     ATOM         m_ClassAtom;
 };
 
-} // namespace LongXi
+} // namespace LXEngine

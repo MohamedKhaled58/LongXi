@@ -7,8 +7,10 @@
 #include "Scene/Scene.h"
 #include "Scene/SceneNode.h"
 
-namespace LongXi
+namespace LXShell
 {
+
+using LXCore::Vector3;
 
 SceneNode* SceneInspector::s_SelectedNode = nullptr;
 
@@ -75,9 +77,9 @@ void SceneInspector::Render(const std::vector<SceneNodeViewModel>& nodes, Scene&
             // Display current transform
             ImGui::Text("Selected: %s", s_SelectedNode->GetName().c_str());
 
-            const Vector3 positionValue = s_SelectedNode->GetPosition();
-            const Vector3 rotationValue = s_SelectedNode->GetRotation();
-            const Vector3 scaleValue    = s_SelectedNode->GetScale();
+            const LXCore::Vector3 positionValue = s_SelectedNode->GetPosition();
+            const LXCore::Vector3 rotationValue = s_SelectedNode->GetRotation();
+            const LXCore::Vector3 scaleValue    = s_SelectedNode->GetScale();
 
             float position[3] = {positionValue.x, positionValue.y, positionValue.z};
             float rotation[3] = {rotationValue.x, rotationValue.y, rotationValue.z};
@@ -115,4 +117,4 @@ void SceneInspector::Render(const std::vector<SceneNodeViewModel>& nodes, Scene&
     ImGui::End();
 }
 
-} // namespace LongXi
+} // namespace LXShell

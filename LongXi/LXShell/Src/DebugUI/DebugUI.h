@@ -6,12 +6,19 @@
 #include <string>
 #include <vector>
 
-namespace LongXi
+namespace LXEngine
 {
-
 class Engine;
 class Camera;
 class SceneNode;
+} // namespace LXEngine
+
+namespace LXShell
+{
+
+using LXEngine::Camera;
+using LXEngine::Engine;
+using LXEngine::SceneNode;
 
 struct EngineMetricsSnapshot
 {
@@ -112,6 +119,6 @@ private:
     bool m_LastInputConsumedByDebugUI = false;
 };
 
-} // namespace LongXi
+} // namespace LXShell
 
 #endif // defined(LX_DEBUG) || defined(LX_DEV)

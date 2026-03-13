@@ -6,7 +6,7 @@
 #include "Scene/Camera.h"
 #include "Scene/SceneNode.h"
 
-namespace LongXi
+namespace LXEngine
 {
 
 class Scene
@@ -43,4 +43,4 @@ private:
     bool      m_Initialized = false;
 };
 
-} // namespace LongXi
+} // namespace LXEngine

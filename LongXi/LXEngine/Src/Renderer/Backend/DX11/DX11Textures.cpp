@@ -1,12 +1,31 @@
 #include "Renderer/Backend/DX11/DX11Textures.h"
 
+#include <atomic>
+
 #include "Core/Logging/LogMacros.h"
 
-namespace LongXi
+namespace LXEngine
 {
+
+using LXCore::TextureFormat;
 
 namespace
 {
+constexpr uint32_t kMaxTextureCreateLogs = 2;
+std::atomic<uint32_t> s_TextureCreateLogCount{0};
+
+bool ShouldLogTextureCreate()
+{
+    uint32_t current = s_TextureCreateLogCount.load(std::memory_order_relaxed);
+    while (current < kMaxTextureCreateLogs)
+    {
+        if (s_TextureCreateLogCount.compare_exchange_weak(current, current + 1u, std::memory_order_relaxed))
+        {
+            return true;
+        }
+    }
+    return false;
+}
 
 DXGI_FORMAT ToDxgiTextureFormat(TextureFormat format)
 {
@@ -216,7 +235,10 @@ RendererTextureHandle DX11Textures::CreateTexture(const RendererTextureDesc& des
         return {};
     }
 
-    LX_ENGINE_INFO("[Renderer] Texture created (slot={}, generation={})", handle.Id.Slot, handle.Id.Generation);
+    if (ShouldLogTextureCreate())
+    {
+        LX_ENGINE_INFO("[Renderer] Texture created (slot={}, generation={})", handle.Id.Slot, handle.Id.Generation);
+    }
     outResult.Code = RendererResultCode::Success;
     return handle;
 }
@@ -260,4 +282,4 @@ ID3D11ShaderResourceView* DX11Textures::ResolveShaderResourceView(RendererTextur
     return record->ShaderResourceView.Get();
 }
 
-} // namespace LongXi
+} // namespace LXEngine
