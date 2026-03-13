@@ -8,7 +8,7 @@
 
 #include "Map/MapTypes.h"
 
-namespace LongXi
+namespace LXMap
 {
 
 class CVirtualFileSystem;
@@ -32,4 +32,4 @@ bool ParsePuzzle(const std::string&                                      mapPath
                  std::unordered_map<uint16_t, std::shared_ptr<Texture>>& outTextureRefs,
                  std::vector<std::string>&                               outWarnings);
 
-} // namespace LongXi
+} // namespace LXMap

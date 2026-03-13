@@ -4,7 +4,7 @@
 
 #include "Core/Logging/LogMacros.h"
 
-namespace LongXi
+namespace LXEngine
 {
 
 std::atomic<ProfilerCollector*> ProfilerCollector::s_ActiveCollector = nullptr;
@@ -173,4 +173,4 @@ ProfilerCollector* ProfilerCollector::GetActiveCollector()
     return s_ActiveCollector.load(std::memory_order_relaxed);
 }
 
-} // namespace LongXi
+} // namespace LXEngine

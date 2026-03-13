@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <utility>
 
-namespace LongXi
+namespace LXMap
 {
 
 bool TileGrid::Initialize(uint32_t width, uint32_t height)
@@ -183,4 +183,4 @@ size_t TileGrid::GetIndex(int32_t x, int32_t y) const
     return static_cast<size_t>(y) * static_cast<size_t>(m_Width) + static_cast<size_t>(x);
 }
 
-} // namespace LongXi
+} // namespace LXMap

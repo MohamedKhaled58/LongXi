@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <memory>
 
-namespace LongXi
+namespace LXEngine
 {
 
 class Renderer;
@@ -25,4 +25,4 @@ public:
 
 std::unique_ptr<SpritePipelineBridge> CreateSpritePipelineBridge();
 
-} // namespace LongXi
+} // namespace LXEngine

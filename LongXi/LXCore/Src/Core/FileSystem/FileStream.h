@@ -15,7 +15,7 @@
 // CFileWdfStream   : in-memory stream; holds extracted WDF entry bytes
 // =============================================================================
 
-namespace LongXi
+namespace LXCore
 {
 
 // =============================================================================
@@ -94,4 +94,4 @@ private:
     size_t               m_Position;
 };
 
-} // namespace LongXi
+} // namespace LXCore

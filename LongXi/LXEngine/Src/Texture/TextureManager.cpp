@@ -4,12 +4,15 @@
 
 #include "Core/FileSystem/PathUtils.h"
 #include "Core/FileSystem/VirtualFileSystem.h"
+#include "Core/Graphics/TextureFormat.h"
 #include "Core/Logging/LogMacros.h"
 #include "Renderer/Renderer.h"
 #include "Texture/TextureLoader.h"
 
-namespace LongXi
+namespace LXEngine
 {
+
+using LXCore::TextureFormat;
 
 // ============================================================================
 // Constructor / Destructor
@@ -33,7 +36,7 @@ TextureManager::~TextureManager()
 
 std::string TextureManager::Normalize(const std::string& path) const
 {
-    std::string normalized = NormalizeVirtualResourcePath(path, true);
+    std::string normalized = LXCore::NormalizeVirtualResourcePath(path, true);
     if (normalized.empty() && !path.empty())
         LX_ENGINE_WARN("[Texture] Path rejected during normalization: {}", path);
     return normalized;
@@ -277,4 +280,4 @@ void TextureManager::ClearCache()
     LX_ENGINE_INFO("[Texture] Cache cleared ({} entries released)", count);
 }
 
-} // namespace LongXi
+} // namespace LXEngine

@@ -4,14 +4,14 @@
 #include <dxgi.h>
 #include <wrl/client.h>
 
-#include "Math/Math.h"
+#include "Core/Math/Math.h"
 #include "Renderer/Backend/DX11/DX11Buffers.h"
 #include "Renderer/Backend/DX11/DX11ResourceTables.h"
 #include "Renderer/Backend/DX11/DX11Shaders.h"
 #include "Renderer/Backend/DX11/DX11Textures.h"
 #include "Renderer/Renderer.h"
 
-namespace LongXi
+namespace LXEngine
 {
 
 class DX11Renderer final : public Renderer
@@ -174,4 +174,4 @@ private:
     mutable bool   m_HasLoggedInvalidDrawStateThisFrame = false;
 };
 
-} // namespace LongXi
+} // namespace LXEngine

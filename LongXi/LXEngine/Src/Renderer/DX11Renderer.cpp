@@ -5,7 +5,7 @@
 
 #include "Core/Logging/LogMacros.h"
 
-namespace LongXi
+namespace LXEngine
 {
 
 #ifdef LX_DEBUG
@@ -1103,4 +1103,4 @@ void DX11Renderer::Shutdown()
     LX_ENGINE_INFO("[Renderer] Shutdown complete");
 }
 
-} // namespace LongXi
+} // namespace LXEngine

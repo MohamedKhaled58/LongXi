@@ -4,11 +4,13 @@
 #include <cstdint>
 #include <memory>
 
-#include "Math/Math.h"
+#include "Core/Math/Math.h"
 #include "Renderer/RendererTypes.h"
 
-namespace LongXi
+namespace LXEngine
 {
+
+using LXCore::Matrix4;
 
 class Renderer
 {
@@ -68,4 +70,4 @@ public:
 
 std::unique_ptr<Renderer> CreateRenderer();
 
-} // namespace LongXi
+} // namespace LXEngine

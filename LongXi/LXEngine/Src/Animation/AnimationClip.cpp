@@ -4,7 +4,7 @@
 
 #include "Core/Logging/LogMacros.h"
 
-namespace LongXi
+namespace LXEngine
 {
 
 bool AnimationClip::Initialize(const AnimationClipResource& resource)
@@ -90,4 +90,4 @@ const Matrix4* AnimationClip::GetTransform(uint32_t keyIndex, uint32_t boneIndex
     return &m_BoneTransforms[index];
 }
 
-} // namespace LongXi
+} // namespace LXEngine

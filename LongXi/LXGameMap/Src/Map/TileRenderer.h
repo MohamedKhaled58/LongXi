@@ -6,7 +6,7 @@
 
 #include "Map/MapTypes.h"
 
-namespace LongXi
+namespace LXMap
 {
 
 class MapCamera;
@@ -40,4 +40,4 @@ private:
     uint32_t m_ViewportHeight = 1;
 };
 
-} // namespace LongXi
+} // namespace LXMap

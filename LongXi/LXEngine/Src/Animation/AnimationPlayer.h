@@ -3,10 +3,10 @@
 #include <vector>
 
 #include "Animation/AnimationClip.h"
-#include "Math/Math.h"
-#include "Resource/Resources.h"
+#include "Assets/C3/Resources.h"
+#include "Core/Math/Math.h"
 
-namespace LongXi
+namespace LXEngine
 {
 
 class AnimationPlayer
@@ -47,4 +47,4 @@ private:
     std::vector<uint8_t> m_Resolved;
 };
 
-} // namespace LongXi
+} // namespace LXEngine

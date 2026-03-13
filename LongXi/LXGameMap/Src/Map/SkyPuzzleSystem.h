@@ -9,7 +9,7 @@
 #include "Map/MapTypes.h"
 #include "Texture/Texture.h"
 
-namespace LongXi
+namespace LXMap
 {
 
 class CVirtualFileSystem;
@@ -90,4 +90,4 @@ private:
     float              m_GroundScrollOffsetY = 0.0f;
 };
 
-} // namespace LongXi
+} // namespace LXMap

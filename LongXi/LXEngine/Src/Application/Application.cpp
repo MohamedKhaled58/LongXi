@@ -3,13 +3,15 @@
 #include <memory>
 #include <windows.h>
 
+#include
+#include
 #include "Core/FileSystem/ResourceSystem.h"
 #include "Core/Logging/LogMacros.h"
 #include "Engine/Engine.h"
 #include "Input/InputSystem.h"
 #include "Window/Win32Window.h"
 
-namespace LongXi
+namespace LXEngine
 {
 
 // ============================================================================
@@ -62,7 +64,7 @@ void Application::DestroyMainWindow()
     }
 }
 
-Engine& Application::GetEngine()
+LXEngine::Engine& Application::GetEngine()
 {
     return *m_Engine;
 }
@@ -283,4 +285,4 @@ void Application::Shutdown()
     LX_ENGINE_INFO("Application shutdown complete");
 }
 
-} // namespace LongXi
+} // namespace LXEngine

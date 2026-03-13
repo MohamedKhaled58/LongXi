@@ -5,7 +5,7 @@
 
 #include "Core/Logging/LogMacros.h"
 
-namespace LongXi
+namespace LXEngine
 {
 
 SceneNode::SceneNode() = default;
@@ -169,4 +169,4 @@ void SceneNode::TraverseRender(Renderer& renderer)
     }
 }
 
-} // namespace LongXi
+} // namespace LXEngine

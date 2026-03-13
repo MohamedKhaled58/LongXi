@@ -5,14 +5,16 @@
 
 #include "Core/FileSystem/VirtualFileSystem.h"
 #include "Core/Logging/LogMacros.h"
+#include "Core/Profiling/IProfileSink.h"
+#include "Core/Profiling/ProfileScope.h"
 #include "Input/InputSystem.h"
-#include "Map/MapSystem.h"
-#include "Profiling/ProfileScope.h"
 #include "Renderer/SpriteRenderer.h"
 #include "Scene/Scene.h"
 #include "Texture/TextureManager.h"
 
-namespace LongXi
+using LXCore::Vector3;
+
+namespace LXEngine
 {
 
 Engine::Engine() = default;
@@ -98,7 +100,7 @@ bool Engine::Initialize(HWND windowHandle, int width, int height)
     m_TimingService.SetFrameRateLimit(60.0);
     m_TimingService.SetMaxDeltaTime(0.100);
     m_ProfilerCollector.Initialize();
-    ProfilerCollector::SetActiveCollector(IsProfilingEnabled() ? &m_ProfilerCollector : nullptr);
+    LXCore::IProfileSink::SetActive(IsProfilingEnabled() ? &m_ProfilerCollector : nullptr);
 
     m_Initialized = true;
 
@@ -162,7 +164,7 @@ void Engine::Shutdown()
         m_Renderer.reset();
     }
 
-    ProfilerCollector::SetActiveCollector(nullptr);
+    LXCore::IProfileSink::SetActive(nullptr);
     m_ProfilerCollector.Shutdown();
     m_TimingService.Shutdown();
 
@@ -398,7 +400,7 @@ void Engine::Present()
     {
         m_TimingService.EndFrame();
 
-        const TimingSnapshot& timingSnapshot = m_TimingService.GetSnapshot();
+        const LXCore::TimingSnapshot& timingSnapshot = m_TimingService.GetSnapshot();
         if (IsProfilingEnabled())
         {
             m_ProfilerCollector.EndFrame(timingSnapshot.FrameIndex, timingSnapshot.FrameTimeSeconds);
@@ -522,9 +524,9 @@ bool Engine::IsMapReady() const
     return m_MapSystem && m_MapSystem->IsMapReady();
 }
 
-const MapRenderSnapshot& Engine::GetMapRenderSnapshot() const
+const LXMap::MapRenderSnapshot& Engine::GetMapRenderSnapshot() const
 {
-    static const MapRenderSnapshot kEmptySnapshot = {};
+    static const LXMap::MapRenderSnapshot kEmptySnapshot = {};
     if (!m_MapSystem)
     {
         return kEmptySnapshot;
@@ -583,12 +585,12 @@ double Engine::GetMaxDeltaTime() const
     return m_TimingService.GetMaxDeltaTime();
 }
 
-const TimingSnapshot& Engine::GetTimingSnapshot() const
+const LXCore::TimingSnapshot& Engine::GetTimingSnapshot() const
 {
     return m_TimingService.GetSnapshot();
 }
 
-const FrameProfileSnapshot& Engine::GetLastFrameProfileSnapshot() const
+const LXCore::FrameProfileSnapshot& Engine::GetLastFrameProfileSnapshot() const
 {
     return m_ProfilerCollector.GetLastFrameSnapshot();
 }
@@ -602,4 +604,4 @@ bool Engine::IsProfilingEnabled()
 #endif
 }
 
-} // namespace LongXi
+} // namespace LXEngine

@@ -21,9 +21,9 @@ project "LXEngine"
 		".",
 		"Src",
 		"%{IncludeDir.LXCore}",
-		"%{IncludeDir.LXCoreSrc}",
-		"%{IncludeDir.LXGameMap}",
-		"%{IncludeDir.LXGameMapSrc}"
+		"%{IncludeDir.LXCoreSrc}"
+		-- FR-002: LXEngine MUST NOT depend on LXGameMap (downward dependency forbidden)
+		-- No LXGameMap or LXGameMapSrc include paths here
 	}
 
 	links

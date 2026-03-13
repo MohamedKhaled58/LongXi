@@ -7,13 +7,13 @@
 #include "Core/FileSystem/VirtualFileSystem.h"
 #include "Core/Logging/LogMacros.h"
 #include "Core/StringUtils.h"
+#include "Core/Timing/TimingService.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/SpriteRenderer.h"
 #include "Texture/Texture.h"
 #include "Texture/TextureManager.h"
-#include "Timing/TimingService.h"
 
-namespace LongXi
+namespace LXMap
 {
 
 namespace
@@ -21,7 +21,7 @@ namespace
 
 bool IsTextureAssetPath(const std::string& path)
 {
-    return EndsWithInsensitive(path, ".dds") || EndsWithInsensitive(path, ".tga");
+    return LXCore::EndsWithInsensitive(path, ".dds") || LXCore::EndsWithInsensitive(path, ".tga");
 }
 
 } // namespace
@@ -154,7 +154,7 @@ bool MapSystem::LoadMap(const std::string& mapPath)
 
                 if (trimmed.front() == '[' && trimmed.back() == ']')
                 {
-                    currentSection = ToLowerAscii(trimmed.substr(1, trimmed.size() - 2));
+                    currentSection = LXCore::ToLowerAscii(trimmed.substr(1, trimmed.size() - 2));
                     continue;
                 }
 
@@ -169,7 +169,7 @@ bool MapSystem::LoadMap(const std::string& mapPath)
                     continue;
                 }
 
-                const std::string key   = ToLowerAscii(trimmed.substr(0, equalsPos));
+                const std::string key   = LXCore::ToLowerAscii(trimmed.substr(0, equalsPos));
                 const std::string value = trimmed.substr(equalsPos + 1);
                 if (value.empty() || key == "frameamount")
                 {
@@ -180,7 +180,7 @@ bool MapSystem::LoadMap(const std::string& mapPath)
                 {
                     // Skip .msk files - they're alpha masks that will be loaded automatically
                     // when the corresponding .dds texture is loaded
-                    if (value.size() >= 4 && ToLowerAscii(value.substr(value.size() - 4)) == ".msk")
+                    if (value.size() >= 4 && LXCore::ToLowerAscii(value.substr(value.size() - 4)) == ".msk")
                     {
                         continue;
                     }
@@ -208,7 +208,7 @@ bool MapSystem::LoadMap(const std::string& mapPath)
                 std::vector<std::string> sectionCandidates;
                 auto                     pushCandidate = [&sectionCandidates](const std::string& raw)
                 {
-                    std::string normalized = ToLowerAscii(raw);
+                    std::string normalized = LXCore::ToLowerAscii(raw);
                     if (!normalized.empty() &&
                         std::find(sectionCandidates.begin(), sectionCandidates.end(), normalized) == sectionCandidates.end())
                     {
@@ -235,7 +235,7 @@ bool MapSystem::LoadMap(const std::string& mapPath)
                     {
                         // Skip .msk files - they're alpha masks that will be loaded automatically
                         // (This is a safety check in case the ANI parsing filter is bypassed)
-                        if (framePath.size() >= 4 && ToLowerAscii(framePath.substr(framePath.size() - 4)) == ".msk")
+                        if (framePath.size() >= 4 && LXCore::ToLowerAscii(framePath.substr(framePath.size() - 4)) == ".msk")
                         {
                             continue;
                         }
@@ -244,7 +244,7 @@ bool MapSystem::LoadMap(const std::string& mapPath)
                         if (!frame)
                         {
                             // Try with map/ prefix variations.
-                            const std::string normalizedFrame = NormalizeVirtualResourcePath(framePath, true);
+                            const std::string normalizedFrame = LXCore::NormalizeVirtualResourcePath(framePath, true);
                             if (!normalizedFrame.empty())
                             {
                                 frame = m_TextureManager->LoadTexture("map/" + normalizedFrame);
@@ -641,16 +641,16 @@ void MapSystem::RenderMapObjects(SpriteRenderer& spriteRenderer)
             drawY = screenY - offsetY;
         }
 
-        const Vector2 drawPosition = Vector2{drawX, drawY};
-        const Vector2 drawSize     = {drawWidth, drawHeight};
+        const LXCore::Vector2 drawPosition = LXCore::Vector2{drawX, drawY};
+        const LXCore::Vector2 drawSize     = {drawWidth, drawHeight};
 
         // Apply legacy ARGB tint color.
-        const uint32_t argb      = objectRecord->TintARGB;
-        const float    tintA     = static_cast<float>((argb >> 24) & 0xFF) / 255.0f;
-        const float    tintR     = static_cast<float>((argb >> 16) & 0xFF) / 255.0f;
-        const float    tintG     = static_cast<float>((argb >> 8) & 0xFF) / 255.0f;
-        const float    tintB     = static_cast<float>(argb & 0xFF) / 255.0f;
-        const Color    tintColor = {tintR, tintG, tintB, tintA};
+        const uint32_t      argb      = objectRecord->TintARGB;
+        const float         tintA     = static_cast<float>((argb >> 24) & 0xFF) / 255.0f;
+        const float         tintR     = static_cast<float>((argb >> 16) & 0xFF) / 255.0f;
+        const float         tintG     = static_cast<float>((argb >> 8) & 0xFF) / 255.0f;
+        const float         tintB     = static_cast<float>(argb & 0xFF) / 255.0f;
+        const LXCore::Color tintColor = {tintR, tintG, tintB, tintA};
         spriteRenderer.DrawSprite(texture, drawPosition, drawSize, {0.0f, 0.0f}, {1.0f, 1.0f}, tintColor);
         ++m_RenderSnapshot.DrawCalls;
     }
@@ -667,4 +667,4 @@ void MapSystem::ResetSnapshot(uint64_t frameIndex)
     m_RenderSnapshot.Warnings.clear();
 }
 
-} // namespace LongXi
+} // namespace LXMap

@@ -12,14 +12,14 @@
 #include "Core/FileSystem/VirtualFileSystem.h"
 #include "Core/Logging/LogMacros.h"
 #include "Core/StringUtils.h"
+#include "Core/Timing/TimingService.h"
 #include "Map/MapBinaryReader.h"
 #include "Map/MapCamera.h"
 #include "Map/MapTypes.h"
 #include "Renderer/SpriteRenderer.h"
 #include "Texture/TextureManager.h"
-#include "Timing/TimingService.h"
 
-namespace LongXi
+namespace LXMap
 {
 
 namespace
@@ -32,7 +32,7 @@ bool IsTextureAssetPath(const std::string& path)
 
 bool IsVirtualRootedPath(const std::string& path)
 {
-    const std::string normalizedPath = ToLowerAscii(NormalizeVirtualResourcePath(path, true));
+    const std::string normalizedPath = ToLowerAscii(LXCore::NormalizeVirtualResourcePath(path, true));
     if (normalizedPath.empty())
     {
         return false;
@@ -154,7 +154,7 @@ bool ShouldRenderSkyPuzzleLayerInPass(int32_t sceneLayerIndex, uint32_t renderPa
 
 std::string JoinPath(const std::string& basePath, const std::string& relativePath)
 {
-    const std::string normalizedRelative = NormalizeVirtualResourcePath(relativePath, true);
+    const std::string normalizedRelative = LXCore::NormalizeVirtualResourcePath(relativePath, true);
     if (normalizedRelative.empty())
     {
         return {};
@@ -171,7 +171,7 @@ std::string JoinPath(const std::string& basePath, const std::string& relativePat
         return normalizedRelative;
     }
 
-    return NormalizeVirtualResourcePath(basePath.substr(0, slashPos + 1) + normalizedRelative, true);
+    return LXCore::NormalizeVirtualResourcePath(basePath.substr(0, slashPos + 1) + normalizedRelative, true);
 }
 
 bool TryResolveTexturePath(const std::string&  framePath,
@@ -181,7 +181,7 @@ bool TryResolveTexturePath(const std::string&  framePath,
 {
     outResolvedPath.clear();
 
-    const std::string normalizedFramePath = NormalizeVirtualResourcePath(framePath, true);
+    const std::string normalizedFramePath = LXCore::NormalizeVirtualResourcePath(framePath, true);
     if (normalizedFramePath.empty())
     {
         return false;
@@ -190,7 +190,7 @@ bool TryResolveTexturePath(const std::string&  framePath,
     std::vector<std::string> pathAttempts;
     auto                     pushPathAttempt = [&pathAttempts](const std::string& rawCandidate)
     {
-        const std::string normalizedCandidate = NormalizeVirtualResourcePath(rawCandidate, true);
+        const std::string normalizedCandidate = LXCore::NormalizeVirtualResourcePath(rawCandidate, true);
         if (normalizedCandidate.empty())
         {
             return;
@@ -206,7 +206,7 @@ bool TryResolveTexturePath(const std::string&  framePath,
 
     auto pushMapScopedPath = [&pushPathAttempt](const std::string& rawCandidate)
     {
-        const std::string normalizedCandidate = NormalizeVirtualResourcePath(rawCandidate, true);
+        const std::string normalizedCandidate = LXCore::NormalizeVirtualResourcePath(rawCandidate, true);
         if (normalizedCandidate.empty())
         {
             return;
@@ -239,7 +239,7 @@ bool TryResolveTexturePath(const std::string&  framePath,
 
     auto tryTexturePath = [&outResolvedPath, &vfs](const std::string& rawCandidate) -> bool
     {
-        const std::string normalizedCandidate = NormalizeVirtualResourcePath(rawCandidate, true);
+        const std::string normalizedCandidate = LXCore::NormalizeVirtualResourcePath(rawCandidate, true);
         if (normalizedCandidate.empty())
         {
             return false;
@@ -706,7 +706,7 @@ bool SkyPuzzleSystem::LoadLayer(const MapObjectRecord&    sourceObject,
     outLayer.MoveRateX       = sourceObject.MoveRateX;
     outLayer.MoveRateY       = sourceObject.MoveRateY;
 
-    std::string resolvedPuzzlePath = NormalizeVirtualResourcePath(sourceObject.ResourcePath, true);
+    std::string resolvedPuzzlePath = LXCore::NormalizeVirtualResourcePath(sourceObject.ResourcePath, true);
     if (resolvedPuzzlePath.empty())
     {
         outWarnings.push_back("Scene-layer puzzle resource path is empty");
@@ -803,7 +803,7 @@ bool SkyPuzzleSystem::LoadLayer(const MapObjectRecord&    sourceObject,
     outLayer.RollSpeedX    = rollSpeedX;
     outLayer.RollSpeedY    = rollSpeedY;
 
-    std::string resolvedAniPath = NormalizeVirtualResourcePath(aniPathRaw, true);
+    std::string resolvedAniPath = LXCore::NormalizeVirtualResourcePath(aniPathRaw, true);
     if (!resolvedAniPath.empty() && !vfs.Exists(resolvedAniPath))
     {
         const std::string aniRelativeToPuzzle = JoinPath(resolvedPuzzlePath, resolvedAniPath);
@@ -907,4 +907,4 @@ bool SkyPuzzleSystem::LoadLayer(const MapObjectRecord&    sourceObject,
     return true;
 }
 
-} // namespace LongXi
+} // namespace LXMap

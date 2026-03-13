@@ -28,10 +28,10 @@
 
 #include "Input/InputSystem.h"
 
-namespace LongXi
+namespace LXShell
 {
 
-class TestApplication : public Application
+class TestApplication : public LXEngine::Application
 {
 public:
     bool Initialize() override
@@ -254,9 +254,9 @@ private:
 #endif
 };
 
-} // namespace LongXi
+} // namespace LXShell
 
-LongXi::Application* LongXi::CreateApplication()
+LXCore::Application* LXCore::CreateApplication()
 {
-    return new LongXi::TestApplication();
+    return new LXCore::TestApplication();
 }

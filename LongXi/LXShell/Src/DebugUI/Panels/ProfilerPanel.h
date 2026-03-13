@@ -2,7 +2,7 @@
 
 #include "../DebugUI.h"
 
-namespace LongXi
+namespace LXShell
 {
 
 class ProfilerPanel
@@ -11,4 +11,4 @@ public:
     static void Render(const ProfilerPanelViewModel& profiler);
 };
 
-} // namespace LongXi
+} // namespace LXShell

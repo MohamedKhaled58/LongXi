@@ -1,6 +1,6 @@
 #include "Renderer/Backend/DX11/DX11ResourceTables.h"
 
-namespace LongXi
+namespace LXEngine
 {
 
 RendererHandleId DX11ResourceTables::AllocateSlot(std::vector<uint32_t>& freeList,
@@ -515,4 +515,4 @@ void DX11ResourceTables::ReleaseAll()
     }
 }
 
-} // namespace LongXi
+} // namespace LXEngine

@@ -7,7 +7,7 @@
 
 #include "Core/Logging/LogMacros.h"
 
-namespace LongXi
+namespace LXCore
 {
 
 // ============================================================================
@@ -387,4 +387,4 @@ std::optional<std::vector<uint8_t>> WdfArchive::ReadEntry(const std::string& nor
     return buffer;
 }
 
-} // namespace LongXi
+} // namespace LXCore

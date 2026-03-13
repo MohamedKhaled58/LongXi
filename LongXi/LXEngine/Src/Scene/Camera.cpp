@@ -6,7 +6,7 @@
 
 #include "Core/Logging/LogMacros.h"
 
-namespace LongXi
+namespace LXEngine
 {
 
 namespace
@@ -267,4 +267,4 @@ void Camera::SyncDirtyMatricesForRender(int viewportWidth, int viewportHeight)
     }
 }
 
-} // namespace LongXi
+} // namespace LXEngine

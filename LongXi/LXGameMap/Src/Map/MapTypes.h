@@ -6,10 +6,10 @@
 #include <string>
 #include <vector>
 
-#include "Math/Math.h"
+#include "Core/Math/Math.h"
 #include "Renderer/RendererTypes.h"
 
-namespace LongXi
+namespace LXMap
 {
 
 class Texture;
@@ -212,4 +212,4 @@ struct MapRenderSnapshot
     bool                     IsValid = false;
 };
 
-} // namespace LongXi
+} // namespace LXMap

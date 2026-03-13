@@ -4,7 +4,7 @@
 #include <ios>
 #include <windows.h>
 
-namespace LongXi
+namespace LXEngine
 {
 
 class DebugConsoleGuard
@@ -30,4 +30,4 @@ public:
     }
 };
 
-} // namespace LongXi
+} // namespace LXEngine

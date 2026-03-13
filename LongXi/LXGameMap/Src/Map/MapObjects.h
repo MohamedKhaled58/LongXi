@@ -4,7 +4,7 @@
 
 #include "Map/MapTypes.h"
 
-namespace LongXi
+namespace LXMap
 {
 
 class MapObjects
@@ -22,4 +22,4 @@ private:
     uint64_t                     m_NextInsertionOrder = 1;
 };
 
-} // namespace LongXi
+} // namespace LXMap

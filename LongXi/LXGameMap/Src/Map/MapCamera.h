@@ -2,7 +2,7 @@
 
 #include "Map/MapTypes.h"
 
-namespace LongXi
+namespace LXMap
 {
 
 class MapCamera
@@ -49,4 +49,4 @@ private:
     uint32_t m_CullMarginTilesY = 2;
 };
 
-} // namespace LongXi
+} // namespace LXMap

@@ -3,7 +3,7 @@
 #include <cctype>
 #include <vector>
 
-namespace LongXi
+namespace LXCore
 {
 
 std::string NormalizeVirtualResourcePath(const std::string& path, bool lowercase)
@@ -87,4 +87,4 @@ std::string NormalizeVirtualResourcePath(const std::string& path, bool lowercase
     return result;
 }
 
-} // namespace LongXi
+} // namespace LXCore

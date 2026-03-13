@@ -5,7 +5,7 @@
 
 #include "Map/MapTypes.h"
 
-namespace LongXi
+namespace LXMap
 {
 
 class TileGrid
@@ -41,4 +41,4 @@ private:
     bool                    m_IntegrityValid = true;
 };
 
-} // namespace LongXi
+} // namespace LXMap

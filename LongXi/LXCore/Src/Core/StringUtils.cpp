@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cctype>
 
-namespace LongXi
+namespace LXCore
 {
 
 std::string ToLowerAscii(std::string value)
@@ -39,4 +39,4 @@ bool EndsWithInsensitive(const std::string& value, std::string_view suffix)
     return true;
 }
 
-} // namespace LongXi
+} // namespace LXCore

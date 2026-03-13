@@ -8,7 +8,7 @@
 
 #include "Renderer/RendererTypes.h"
 
-namespace LongXi
+namespace LXEngine
 {
 
 enum class DX11ResourceRecordState : uint8_t
@@ -153,4 +153,4 @@ private:
     DX11ResourcePoolStats m_ShaderStats;
 };
 
-} // namespace LongXi
+} // namespace LXEngine

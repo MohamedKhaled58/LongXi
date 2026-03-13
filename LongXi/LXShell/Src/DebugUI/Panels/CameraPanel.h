@@ -2,10 +2,15 @@
 
 #include "../DebugUI.h"
 
-namespace LongXi
+namespace LXEngine
+{
+class Camera;
+}
+
+namespace LXShell
 {
 
-class Camera;
+using LXEngine::Camera;
 
 class CameraPanel
 {
@@ -13,4 +18,4 @@ public:
     static void Render(const CameraStateViewModel& cameraState, Camera& camera);
 };
 
-} // namespace LongXi
+} // namespace LXShell

@@ -3,11 +3,12 @@
 #include <cstdint>
 #include <vector>
 
-#include "Math/Math.h"
-#include "Resource/Resources.h"
+#include "Assets/C3/Resources.h"
+#include "Core/Math/Math.h"
 
-namespace LongXi
+namespace LXEngine
 {
+
 
 class AnimationClip
 {
@@ -44,14 +45,14 @@ public:
         return m_KeyframePositions;
     }
 
-    const Matrix4* GetTransform(uint32_t keyIndex, uint32_t boneIndex) const;
+    const LXCore::Matrix4* GetTransform(uint32_t keyIndex, uint32_t boneIndex) const;
 
 private:
-    uint32_t              m_FrameCount      = 0;
-    uint32_t              m_BoneCount       = 0;
-    float                 m_DurationSeconds = 0.0f;
-    std::vector<uint32_t> m_KeyframePositions;
-    std::vector<Matrix4>  m_BoneTransforms;
+    uint32_t                     m_FrameCount      = 0;
+    uint32_t                     m_BoneCount       = 0;
+    float                        m_DurationSeconds = 0.0f;
+    std::vector<uint32_t>        m_KeyframePositions;
+    std::vector<LXCore::Matrix4> m_BoneTransforms;
 };
 
-} // namespace LongXi
+} // namespace LXEngine

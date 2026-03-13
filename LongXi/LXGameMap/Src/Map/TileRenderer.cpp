@@ -11,7 +11,7 @@
 #include "Renderer/SpriteRenderer.h"
 #include "Texture/Texture.h"
 
-namespace LongXi
+namespace LXMap
 {
 
 bool TileRenderer::Initialize(Renderer& renderer)
@@ -202,4 +202,4 @@ bool TileRenderer::RenderTiles(const MapDescriptor&                             
     return true;
 }
 
-} // namespace LongXi
+} // namespace LXMap

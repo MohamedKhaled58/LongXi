@@ -5,14 +5,19 @@
 #include <imgui.h>
 #include <string>
 
+#include "Assets/C3/C3RuntimeLoader.h"
+#include "Assets/C3/C3RuntimeTypes.h"
+#include "Assets/C3/C3Types.h"
 #include "Core/Logging/LogMacros.h"
 #include "Engine/Engine.h"
-#include "Resource/C3RuntimeLoader.h"
-#include "Resource/C3RuntimeTypes.h"
-#include "Resource/C3Types.h"
 
-namespace LongXi
+namespace LXShell
 {
+
+using LXEngine::C3LoadRequest;
+using LXEngine::C3LoadResult;
+using LXEngine::C3RuntimeLoader;
+using LXEngine::FourCCToString;
 
 namespace
 {
@@ -174,4 +179,4 @@ void C3AssetViewer::Render(Engine& engine)
     ImGui::End();
 }
 
-} // namespace LongXi
+} // namespace LXShell

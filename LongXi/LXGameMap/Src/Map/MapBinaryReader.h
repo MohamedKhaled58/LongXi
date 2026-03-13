@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-namespace LongXi
+namespace LXMap
 {
 
 inline uint8_t ReadU8(const std::vector<uint8_t>& bytes, size_t offset)
@@ -83,4 +83,4 @@ inline std::string ReadFixedCString(const std::vector<uint8_t>& bytes, size_t of
     return std::string(reinterpret_cast<const char*>(bytes.data() + offset), actualEnd - offset);
 }
 
-} // namespace LongXi
+} // namespace LXMap

@@ -7,7 +7,7 @@
 
 #include "Core/Logging/LogMacros.h"
 
-namespace LongXi
+namespace LXCore
 {
 
 // ============================================================================
@@ -142,4 +142,4 @@ size_t CFileWdfStream::Size() const
     return m_Data.size();
 }
 
-} // namespace LongXi
+} // namespace LXCore

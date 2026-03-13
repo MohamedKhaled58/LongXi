@@ -6,7 +6,7 @@
 
 #include "Map/MapTypes.h"
 
-namespace LongXi
+namespace LXMap
 {
 
 // Parse the interactive object block at the current cursor position in the DMAP byte buffer.
@@ -37,4 +37,4 @@ bool ParseSceneLayerBlock(const std::vector<uint8_t>&   bytes,
                           bool&                         outAborted,
                           std::vector<std::string>&     outWarnings);
 
-} // namespace LongXi
+} // namespace LXMap

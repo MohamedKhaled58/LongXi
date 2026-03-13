@@ -2,7 +2,7 @@
 
 #include "Core/Logging/LogMacros.h"
 
-namespace LongXi
+namespace LXEngine
 {
 
 namespace
@@ -260,4 +260,4 @@ ID3D11ShaderResourceView* DX11Textures::ResolveShaderResourceView(RendererTextur
     return record->ShaderResourceView.Get();
 }
 
-} // namespace LongXi
+} // namespace LXEngine

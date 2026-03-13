@@ -2,7 +2,7 @@
 
 #include "Renderer/Backend/DX11/DX11SpritePipeline.h"
 
-namespace LongXi
+namespace LXEngine
 {
 
 class DX11SpritePipelineBridge final : public SpritePipelineBridge
@@ -47,4 +47,4 @@ std::unique_ptr<SpritePipelineBridge> CreateSpritePipelineBridge()
     return std::make_unique<DX11SpritePipelineBridge>();
 }
 
-} // namespace LongXi
+} // namespace LXEngine

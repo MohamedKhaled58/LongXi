@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "Texture/TextureFormat.h"
+#include "Core/Graphics/TextureFormat.h"
 
 // =============================================================================
 // TextureData — CPU-side decoded texture data
@@ -11,8 +11,10 @@
 // then discarded
 // =============================================================================
 
-namespace LongXi
+namespace LXEngine
 {
+
+using LXCore::TextureFormat;
 
 struct TextureData
 {
@@ -22,4 +24,4 @@ struct TextureData
     std::vector<uint8_t> Pixels;
 };
 
-} // namespace LongXi
+} // namespace LXEngine

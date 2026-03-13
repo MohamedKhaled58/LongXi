@@ -21,7 +21,7 @@
 #include "Texture/Texture.h"
 #include "Texture/TextureManager.h"
 
-namespace LongXi
+namespace LXMap
 {
 
 namespace
@@ -35,7 +35,7 @@ void AddWarning(std::vector<std::string>& warnings, const std::string& message)
 
 std::string NormalizeResourcePath(const std::string& value)
 {
-    return NormalizeVirtualResourcePath(value, true);
+    return LXCore::NormalizeVirtualResourcePath(value, true);
 }
 
 std::string BaseFileNameWithoutExtension(const std::string& path)
@@ -96,7 +96,7 @@ bool IsSupportedTexturePath(const std::string& path)
 
 bool IsVirtualRootedPath(const std::string& path)
 {
-    const std::string normalizedPath = ToLowerAscii(NormalizeVirtualResourcePath(path, true));
+    const std::string normalizedPath = ToLowerAscii(LXCore::NormalizeVirtualResourcePath(path, true));
     if (normalizedPath.empty())
     {
         return false;
@@ -188,7 +188,7 @@ bool TryResolveTexturePath(const std::string&   framePath,
 
     auto tryTexturePath = [&outResolvedPath, &vfs, &logTextureResolveFailure](const std::string& rawCandidate) -> bool
     {
-        const std::string normalizedCandidate = NormalizeVirtualResourcePath(rawCandidate, true);
+        const std::string normalizedCandidate = LXCore::NormalizeVirtualResourcePath(rawCandidate, true);
         if (normalizedCandidate.empty())
         {
             return false;
@@ -230,7 +230,7 @@ bool TryResolveTexturePath(const std::string&   framePath,
 
     auto tryTextureWithExtension = [&tryTexturePath](const std::string& rawBasePath) -> bool
     {
-        const std::string normalizedBasePath = NormalizeVirtualResourcePath(rawBasePath, true);
+        const std::string normalizedBasePath = LXCore::NormalizeVirtualResourcePath(rawBasePath, true);
         if (normalizedBasePath.empty())
         {
             return false;
@@ -397,10 +397,10 @@ bool ParsePuzzle(const std::string&                                      mapPath
     const uint32_t mapHeight = inOutTileGrid.GetHeight();
     if (mapWidth > 0 && mapHeight > 0 && inOutDescriptor.CellWidth > 0 && inOutDescriptor.CellHeight > 0)
     {
-        const float cellW          = static_cast<float>(inOutDescriptor.CellWidth);
-        const float cellH          = static_cast<float>(inOutDescriptor.CellHeight);
-        const float originX        = static_cast<float>(inOutDescriptor.OriginX);
-        const float originY        = static_cast<float>(inOutDescriptor.OriginY);
+        const float cellW         = static_cast<float>(inOutDescriptor.CellWidth);
+        const float cellH         = static_cast<float>(inOutDescriptor.CellHeight);
+        const float originX       = static_cast<float>(inOutDescriptor.OriginX);
+        const float originY       = static_cast<float>(inOutDescriptor.OriginY);
         const float bgWorldWidth  = static_cast<float>(gridWidth) * kPuzzleGridSize;
         const float bgWorldHeight = static_cast<float>(gridHeight) * kPuzzleGridSize;
         const float bgWorldX      = originX - bgWorldWidth * 0.5f;
@@ -544,4 +544,4 @@ bool ParsePuzzle(const std::string&                                      mapPath
     return true;
 }
 
-} // namespace LongXi
+} // namespace LXMap

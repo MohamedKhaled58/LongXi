@@ -2,8 +2,8 @@
 
 #include <cstdint>
 
+#include "Core/Graphics/TextureFormat.h"
 #include "Renderer/RendererTypes.h"
-#include "Texture/TextureFormat.h"
 
 // =============================================================================
 // Texture — GPU texture metadata wrapper.
@@ -11,7 +11,7 @@
 // GPU lifetime is renderer-owned; this object lifetime is cache-owned.
 // =============================================================================
 
-namespace LongXi
+namespace LXEngine
 {
 
 class Texture
@@ -62,4 +62,4 @@ private:
     friend class TextureManager;
 };
 
-} // namespace LongXi
+} // namespace LXEngine

@@ -5,11 +5,13 @@
 #include <unordered_map>
 #include <vector>
 
-namespace LongXi
+namespace LXCore
 {
-
 class CVirtualFileSystem;
+}
 
+namespace LXMap
+{
 // Descriptor for a single terrain-part entry parsed from a .scene binary block.
 struct TerrainPartDescriptor
 {
@@ -30,7 +32,7 @@ struct TerrainPartDescriptor
 // Populates outFramesByPuzzle: puzzle-index → ordered list of frame texture paths.
 // Returns false when the file is missing or unreadable.
 bool ParseAni(const std::string&                                      aniPath,
-              CVirtualFileSystem&                                     vfs,
+              LXCore::CVirtualFileSystem&                             vfs,
               std::unordered_map<uint16_t, std::vector<std::string>>& outFramesByPuzzle,
               std::vector<std::string>&                               outWarnings);
 
@@ -38,4 +40,4 @@ bool ParseAni(const std::string&                                      aniPath,
 // Returns false when bytes is empty or no valid records can be decoded.
 bool ParseTerrainPartDescriptors(const std::vector<uint8_t>& bytes, std::vector<TerrainPartDescriptor>& outDescriptors);
 
-} // namespace LongXi
+} // namespace LXMap

@@ -2,15 +2,14 @@
 
 #include "../DebugUI.h"
 
-namespace LongXi
+class LXEngine::Engine;
+
+namespace LXShell
 {
-
-class Engine;
-
 class C3AssetViewer
 {
 public:
     static void Render(Engine& engine);
 };
 
-} // namespace LongXi
+} // namespace LXShell

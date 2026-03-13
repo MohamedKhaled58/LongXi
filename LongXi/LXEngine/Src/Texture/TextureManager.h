@@ -12,7 +12,7 @@
 // Loads textures from VFS, decodes DDS/TGA, uploads to GPU, and caches by path
 // =============================================================================
 
-namespace LongXi
+namespace LXEngine
 {
 
 class Renderer;
@@ -52,4 +52,4 @@ private:
     std::unordered_map<std::string, std::shared_ptr<Texture>> m_Cache;
 };
 
-} // namespace LongXi
+} // namespace LXEngine

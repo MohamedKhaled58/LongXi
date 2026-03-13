@@ -2,15 +2,16 @@
 
 #if defined(LX_DEBUG) || defined(LX_DEV)
 
-#include <Core/Logging/LogMacros.h>
-#include <Engine/Engine.h>
 #include <d3d11.h>
 #include <imgui.h>
 #include <imgui_impl_dx11.h>
 #include <imgui_impl_win32.h>
 #include <windows.h>
 
-namespace LongXi
+#include "Core/Logging/LogMacros.h"
+#include "Engine/Engine.h"
+
+namespace LXShell
 {
 
 bool ImGuiLayer::Initialize(Engine& engine, HWND windowHandle)
@@ -136,6 +137,6 @@ bool ImGuiLayer::HandleWin32Message(uint32_t msg, uint64_t wParam, int64_t lPara
                m_WindowHandle, static_cast<UINT>(msg), static_cast<WPARAM>(wParam), static_cast<LPARAM>(lParam)) != 0;
 }
 
-} // namespace LongXi
+} // namespace LXShell
 
 #endif // defined(LX_DEBUG) || defined(LX_DEV)

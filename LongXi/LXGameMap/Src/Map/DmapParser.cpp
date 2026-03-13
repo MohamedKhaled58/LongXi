@@ -10,7 +10,7 @@
 #include "Map/MapBinaryReader.h"
 #include "Map/TileGrid.h"
 
-namespace LongXi
+namespace LXMap
 {
 
 namespace
@@ -26,7 +26,7 @@ void AddWarning(std::vector<std::string>& warnings, const std::string& message)
 
 std::string NormalizeResourcePath(const std::string& value)
 {
-    return NormalizeVirtualResourcePath(value, true);
+    return LXCore::NormalizeVirtualResourcePath(value, true);
 }
 
 std::string BaseFileNameWithoutExtension(const std::string& path)
@@ -198,4 +198,4 @@ bool ParsePassageBlock(const std::vector<uint8_t>&    bytes,
     return true;
 }
 
-} // namespace LongXi
+} // namespace LXMap

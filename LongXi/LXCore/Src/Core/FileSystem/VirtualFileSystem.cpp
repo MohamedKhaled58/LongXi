@@ -7,7 +7,7 @@
 #include "Core/FileSystem/WdfArchive.h"
 #include "Core/Logging/LogMacros.h"
 
-namespace LongXi
+namespace LXCore
 {
 
 // ============================================================================
@@ -28,7 +28,7 @@ static std::wstring ToWide(const std::string& utf8)
 
 static std::string GetArchiveRootLabel(const std::string& archivePath)
 {
-    const std::string normalizedPath = NormalizeVirtualResourcePath(archivePath, true);
+    const std::string normalizedPath = LXCore::NormalizeVirtualResourcePath(archivePath, true);
     if (normalizedPath.empty())
     {
         return {};
@@ -55,7 +55,7 @@ CVirtualFileSystem::~CVirtualFileSystem() = default;
 
 std::string CVirtualFileSystem::Normalize(const std::string& path) const
 {
-    std::string normalized = NormalizeVirtualResourcePath(path, true);
+    std::string normalized = LXCore::NormalizeVirtualResourcePath(path, true);
     if (normalized.empty() && !path.empty())
         LX_CORE_WARN("CVirtualFileSystem: rejected invalid path: '{}'", path);
     return normalized;
@@ -188,4 +188,4 @@ std::vector<uint8_t> CVirtualFileSystem::ReadAll(const std::string& path) const
     return buffer;
 }
 
-} // namespace LongXi
+} // namespace LXCore

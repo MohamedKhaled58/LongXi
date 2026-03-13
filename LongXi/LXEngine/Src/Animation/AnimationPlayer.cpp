@@ -5,7 +5,7 @@
 
 #include "Core/Logging/LogMacros.h"
 
-namespace LongXi
+namespace LXEngine
 {
 
 namespace
@@ -244,4 +244,4 @@ void AnimationPlayer::ResolveModelSpace(uint32_t boneIndex)
     m_Resolved[boneIndex] = 1;
 }
 
-} // namespace LongXi
+} // namespace LXEngine

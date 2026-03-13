@@ -7,7 +7,7 @@
 #include "Scene/Scene.h"
 #include "Scene/SceneNode.h"
 
-namespace LongXi
+namespace LXShell
 {
 
 SceneNode* SceneInspector::s_SelectedNode = nullptr;
@@ -115,4 +115,4 @@ void SceneInspector::Render(const std::vector<SceneNodeViewModel>& nodes, Scene&
     ImGui::End();
 }
 
-} // namespace LongXi
+} // namespace LXShell

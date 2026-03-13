@@ -6,7 +6,7 @@
 #include "Core/Logging/LogMacros.h"
 #include "Input/InputSystem.h"
 
-namespace LongXi
+namespace LXEngine
 {
 
 static UINT NormalizeVirtualKey(UINT vk, LPARAM lParam)
@@ -279,4 +279,4 @@ LRESULT CALLBACK Win32Window::WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
     }
 }
 
-} // namespace LongXi
+} // namespace LXEngine

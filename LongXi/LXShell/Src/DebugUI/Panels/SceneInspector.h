@@ -4,7 +4,7 @@
 
 #include "../DebugUI.h"
 
-namespace LongXi
+namespace LXShell
 {
 
 class Scene;
@@ -16,4 +16,4 @@ public:
     static SceneNode* s_SelectedNode;
 };
 
-} // namespace LongXi
+} // namespace LXShell

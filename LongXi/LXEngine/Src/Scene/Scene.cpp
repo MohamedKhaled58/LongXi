@@ -1,9 +1,9 @@
 #include "Scene/Scene.h"
 
 #include "Core/Logging/LogMacros.h"
-#include "Profiling/ProfileScope.h"
+#include "Core/Profiling/ProfileScope.h"
 
-namespace LongXi
+namespace LXEngine
 {
 
 Scene::Scene()
@@ -168,4 +168,4 @@ void Scene::OnResize(int width, int height)
     m_Camera.UpdateProjectionMatrix(width, height);
 }
 
-} // namespace LongXi
+} // namespace LXEngine

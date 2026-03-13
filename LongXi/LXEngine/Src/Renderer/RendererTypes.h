@@ -3,9 +3,9 @@
 #include <cstdint>
 #include <functional>
 
-#include "Texture/TextureFormat.h"
+#include "Core/Graphics/TextureFormat.h"
 
-namespace LongXi
+namespace LXEngine
 {
 
 enum class RenderPassType
@@ -227,7 +227,7 @@ struct RendererTextureDesc
 {
     uint32_t               Width           = 0;
     uint32_t               Height          = 0;
-    TextureFormat          Format          = TextureFormat::RGBA8;
+    LXCore::TextureFormat  Format          = LXCore::TextureFormat::RGBA8;
     RendererResourceUsage  Usage           = RendererResourceUsage::Static;
     RendererCpuAccessFlags CpuAccess       = RendererCpuAccessFlags::None;
     RendererBindFlags      BindFlags       = RendererBindFlags::ShaderResource;
@@ -293,4 +293,4 @@ inline RendererBufferHandle ToBufferHandle(RendererConstantBufferHandle handle)
 
 using ExternalPassCallback = std::function<void()>;
 
-} // namespace LongXi
+} // namespace LXEngine

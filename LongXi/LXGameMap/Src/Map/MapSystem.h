@@ -13,7 +13,7 @@
 #include "Map/TileGrid.h"
 #include "Map/TileRenderer.h"
 
-namespace LongXi
+namespace LXMap
 {
 
 class CVirtualFileSystem;
@@ -76,4 +76,4 @@ private:
     bool           m_Initialized = false;
 };
 
-} // namespace LongXi
+} // namespace LXMap

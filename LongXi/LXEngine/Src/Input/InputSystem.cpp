@@ -4,7 +4,7 @@
 
 #include "Core/Logging/LogMacros.h"
 
-namespace LongXi
+namespace LXEngine
 {
 
 // ============================================================================
@@ -329,4 +329,4 @@ int InputSystem::GetWheelDelta() const
     return m_WheelDelta;
 }
 
-} // namespace LongXi
+} // namespace LXEngine
