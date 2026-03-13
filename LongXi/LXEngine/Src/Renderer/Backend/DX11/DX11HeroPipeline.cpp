@@ -17,7 +17,7 @@ static const char* s_HeroVS = R"(
 
 cbuffer cbBones : register(b0)
 {
-    float4x4 BoneMatrices[64];
+    float4x4 BoneMatrices[256];
 };
 
 cbuffer cbPerObject : register(b1)
@@ -40,6 +40,7 @@ struct VSOutput
 {
     float4 Pos : SV_POSITION;
     float2 UV  : TEXCOORD0;
+    float3 Normal : TEXCOORD1;
 };
 
 VSOutput VS(VSInput v)
@@ -52,8 +53,9 @@ VSOutput VS(VSInput v)
     }
 
     VSOutput o;
-    o.Pos = mul(mul(mul(skinnedPos, World), View), Projection);
-    o.UV  = v.UV;
+    o.Pos    = mul(mul(mul(skinnedPos, World), View), Projection);
+    o.UV     = v.UV;
+    o.Normal = mul(float4(v.Normal, 0.0f), World).xyz;
     return o;
 }
 )";
@@ -62,15 +64,31 @@ static const char* s_HeroPS = R"(
 Texture2D    g_Texture : register(t0);
 SamplerState g_Sampler : register(s0);
 
+cbuffer cbLighting : register(b2)
+{
+    float3 LightDirection;
+    float  _Padding0;
+    float4 Ambient;
+    float4 Diffuse;
+    float4 Tint;
+};
+
 struct PSInput
 {
     float4 Pos : SV_POSITION;
     float2 UV  : TEXCOORD0;
+    float3 Normal : TEXCOORD1;
 };
 
 float4 PS(PSInput p) : SV_Target
 {
-    return g_Texture.Sample(g_Sampler, p.UV);
+    float3 normal = normalize(p.Normal);
+    float3 lightDir = normalize(LightDirection);
+    float  ndotl = saturate(dot(normal, -lightDir));
+    float3 lighting = Ambient.rgb + Diffuse.rgb * ndotl;
+
+    float4 tex = g_Texture.Sample(g_Sampler, p.UV) * Tint;
+    return float4(tex.rgb * lighting, tex.a * Tint.a);
 }
 )";
 

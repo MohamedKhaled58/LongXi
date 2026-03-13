@@ -30,6 +30,8 @@ struct DX11TextureRecord
     uint64_t                                         LastBoundFrameIndex = 0;
     Microsoft::WRL::ComPtr<ID3D11Texture2D>          Texture;
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ShaderResourceView;
+    Microsoft::WRL::ComPtr<ID3D11RenderTargetView>   RenderTargetView;
+    Microsoft::WRL::ComPtr<ID3D11DepthStencilView>   DepthStencilView;
 
     bool IsLive() const
     {

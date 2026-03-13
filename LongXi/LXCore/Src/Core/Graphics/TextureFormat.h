@@ -12,10 +12,11 @@ namespace LXCore
 
 enum class TextureFormat : uint32_t
 {
-    RGBA8, // Uncompressed; 4 bytes/pixel
-    DXT1,  // BC1 compressed; 8 bytes/4×4 block
-    DXT3,  // BC2 compressed; 16 bytes/4×4 block
-    DXT5   // BC3 compressed; 16 bytes/4×4 block
+    RGBA8,          // Uncompressed; 4 bytes/pixel
+    DXT1,           // BC1 compressed; 8 bytes/4×4 block
+    DXT3,           // BC2 compressed; 16 bytes/4×4 block
+    DXT5,           // BC3 compressed; 16 bytes/4×4 block
+    Depth24Stencil8 // 24-bit depth + 8-bit stencil
 };
 
 } // namespace LXCore

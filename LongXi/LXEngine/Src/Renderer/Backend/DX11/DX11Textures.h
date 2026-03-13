@@ -15,6 +15,8 @@ public:
     bool                  DestroyTexture(RendererTextureHandle handle, RendererResult& outResult);
 
     ID3D11ShaderResourceView* ResolveShaderResourceView(RendererTextureHandle handle, RendererResultCode& outError) const;
+    ID3D11RenderTargetView*   ResolveRenderTargetView(RendererTextureHandle handle, RendererResultCode& outError) const;
+    ID3D11DepthStencilView*   ResolveDepthStencilView(RendererTextureHandle handle, RendererResultCode& outError) const;
 
 private:
     ID3D11Device*       m_Device         = nullptr;

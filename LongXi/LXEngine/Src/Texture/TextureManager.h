@@ -55,6 +55,7 @@ private:
 private:
     Renderer&                                                 m_Renderer;
     CVirtualFileSystem&                                       m_VFS;
+    std::shared_ptr<void>                                     m_LifetimeToken;
     std::unordered_map<std::string, std::shared_ptr<Texture>> m_Cache;
 };
 

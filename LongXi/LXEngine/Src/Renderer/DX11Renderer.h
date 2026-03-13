@@ -34,8 +34,11 @@ public:
     void Shutdown() override;
 
     void                         Clear(const RendererColor& color) override;
+    void                         ClearRenderTarget(RendererTextureHandle handle, const RendererColor& color) override;
+    void                         ClearDepthStencil(RendererTextureHandle handle, float depth, uint8_t stencil) override;
     void                         SetViewport(const RendererViewport& viewport) override;
     void                         SetRenderTarget() override;
+    bool                         SetRenderTarget(RendererTextureHandle color, RendererTextureHandle depth) override;
     void                         DrawIndexed(uint32_t indexCount, uint32_t startIndex = 0, int32_t baseVertex = 0) override;
     void                         SetViewProjection(const LXCore::Matrix4& view, const LXCore::Matrix4& projection) override;
     RendererTextureHandle        CreateTexture(const RendererTextureDesc& desc) override;
@@ -86,6 +89,8 @@ public:
     {
         return m_Device.Get();
     }
+
+    void* GetNativeTextureHandle(RendererTextureHandle handle) const override;
 
     void* GetNativeContextHandle() const override
     {

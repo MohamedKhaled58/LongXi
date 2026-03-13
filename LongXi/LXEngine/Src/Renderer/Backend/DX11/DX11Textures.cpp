@@ -39,6 +39,8 @@ DXGI_FORMAT ToDxgiTextureFormat(TextureFormat format)
             return DXGI_FORMAT_BC2_UNORM;
         case TextureFormat::DXT5:
             return DXGI_FORMAT_BC3_UNORM;
+        case TextureFormat::Depth24Stencil8:
+            return DXGI_FORMAT_D24_UNORM_S8_UINT;
         default:
             return DXGI_FORMAT_UNKNOWN;
     }
@@ -46,7 +48,7 @@ DXGI_FORMAT ToDxgiTextureFormat(TextureFormat format)
 
 UINT ComputeDefaultRowPitch(const RendererTextureDesc& desc)
 {
-    if (desc.Format == TextureFormat::RGBA8)
+    if (desc.Format == TextureFormat::RGBA8 || desc.Format == TextureFormat::Depth24Stencil8)
     {
         return desc.Width * 4;
     }
@@ -173,6 +175,13 @@ RendererTextureHandle DX11Textures::CreateTexture(const RendererTextureDesc& des
         return {};
     }
 
+    if (desc.Format == TextureFormat::Depth24Stencil8 && HasAnyBindFlag(desc.BindFlags, RendererBindFlags::ShaderResource))
+    {
+        LX_ENGINE_ERROR("[Renderer] Invalid texture descriptor: TextureFormat::Depth24Stencil8 cannot be used with D3D11_BIND_SHADER_RESOURCE");
+        outResult.Code = RendererResultCode::InvalidDescriptor;
+        return {};
+    }
+
     const DXGI_FORMAT dxgiFormat = ToDxgiTextureFormat(desc.Format);
     if (dxgiFormat == DXGI_FORMAT_UNKNOWN)
     {
@@ -221,12 +230,37 @@ RendererTextureHandle DX11Textures::CreateTexture(const RendererTextureDesc& des
             return {};
         }
     }
+    Microsoft::WRL::ComPtr<ID3D11RenderTargetView> renderTargetView;
+    if (HasAnyBindFlag(desc.BindFlags, RendererBindFlags::RenderTarget))
+    {
+        const HRESULT rtvHr = m_Device->CreateRenderTargetView(texture.Get(), nullptr, &renderTargetView);
+        if (FAILED(rtvHr))
+        {
+            LX_ENGINE_ERROR("[Renderer] CreateRenderTargetView failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(rtvHr));
+            outResult.Code = RendererResultCode::BackendFailure;
+            return {};
+        }
+    }
+
+    Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthStencilView;
+    if (HasAnyBindFlag(desc.BindFlags, RendererBindFlags::DepthStencil))
+    {
+        const HRESULT dsvHr = m_Device->CreateDepthStencilView(texture.Get(), nullptr, &depthStencilView);
+        if (FAILED(dsvHr))
+        {
+            LX_ENGINE_ERROR("[Renderer] CreateDepthStencilView failed (HRESULT: 0x{:08X})", static_cast<uint32_t>(dsvHr));
+            outResult.Code = RendererResultCode::BackendFailure;
+            return {};
+        }
+    }
 
     DX11TextureRecord record  = {};
     record.Usage              = desc.Usage;
     record.BindFlags          = desc.BindFlags;
     record.Texture            = texture;
     record.ShaderResourceView = shaderResourceView;
+    record.RenderTargetView   = renderTargetView;
+    record.DepthStencilView   = depthStencilView;
 
     RendererTextureHandle handle = m_ResourceTables->RegisterTexture(record);
     if (!handle.IsValid())
@@ -280,6 +314,42 @@ ID3D11ShaderResourceView* DX11Textures::ResolveShaderResourceView(RendererTextur
 
     outError = RendererResultCode::Success;
     return record->ShaderResourceView.Get();
+}
+
+ID3D11RenderTargetView* DX11Textures::ResolveRenderTargetView(RendererTextureHandle handle, RendererResultCode& outError) const
+{
+    if (!m_ResourceTables)
+    {
+        outError = RendererResultCode::NotInitialized;
+        return nullptr;
+    }
+
+    const DX11TextureRecord* record = nullptr;
+    if (!m_ResourceTables->ResolveTexture(handle, record, outError))
+    {
+        return nullptr;
+    }
+
+    outError = RendererResultCode::Success;
+    return record->RenderTargetView.Get();
+}
+
+ID3D11DepthStencilView* DX11Textures::ResolveDepthStencilView(RendererTextureHandle handle, RendererResultCode& outError) const
+{
+    if (!m_ResourceTables)
+    {
+        outError = RendererResultCode::NotInitialized;
+        return nullptr;
+    }
+
+    const DX11TextureRecord* record = nullptr;
+    if (!m_ResourceTables->ResolveTexture(handle, record, outError))
+    {
+        return nullptr;
+    }
+
+    outError = RendererResultCode::Success;
+    return record->DepthStencilView.Get();
 }
 
 } // namespace LXEngine

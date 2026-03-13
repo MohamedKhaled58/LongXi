@@ -418,6 +418,45 @@ void DX11Renderer::Clear(const RendererColor& color)
     m_Context->ClearRenderTargetView(m_RenderTargetView.Get(), clearColor);
 }
 
+void DX11Renderer::ClearRenderTarget(RendererTextureHandle handle, const RendererColor& color)
+{
+    if (!m_IsInitialized)
+    {
+        return;
+    }
+
+    RendererResultCode      error = RendererResultCode::Success;
+    ID3D11RenderTargetView* rtv   = m_Textures.ResolveRenderTargetView(handle, error);
+    if (!rtv)
+    {
+        SetResourceResult(error);
+        return;
+    }
+
+    const float clearColor[4] = {color.R, color.G, color.B, color.A};
+    m_Context->ClearRenderTargetView(rtv, clearColor);
+    SetResourceResult(RendererResultCode::Success);
+}
+
+void DX11Renderer::ClearDepthStencil(RendererTextureHandle handle, float depth, uint8_t stencil)
+{
+    if (!m_IsInitialized)
+    {
+        return;
+    }
+
+    RendererResultCode      error = RendererResultCode::Success;
+    ID3D11DepthStencilView* dsv   = m_Textures.ResolveDepthStencilView(handle, error);
+    if (!dsv)
+    {
+        SetResourceResult(error);
+        return;
+    }
+
+    m_Context->ClearDepthStencilView(dsv, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, depth, stencil);
+    SetResourceResult(RendererResultCode::Success);
+}
+
 void DX11Renderer::SetViewport(const RendererViewport& viewport)
 {
     if (!m_IsInitialized)
@@ -449,6 +488,37 @@ void DX11Renderer::SetRenderTarget()
     }
 
     m_Context->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), m_DepthStencilView.Get());
+}
+
+bool DX11Renderer::SetRenderTarget(RendererTextureHandle color, RendererTextureHandle depth)
+{
+    if (!m_IsInitialized)
+    {
+        return false;
+    }
+
+    RendererResultCode      error = RendererResultCode::Success;
+    ID3D11RenderTargetView* rtv   = m_Textures.ResolveRenderTargetView(color, error);
+    if (!rtv)
+    {
+        SetResourceResult(error);
+        return false;
+    }
+
+    ID3D11DepthStencilView* dsv = nullptr;
+    if (depth.IsValid())
+    {
+        dsv = m_Textures.ResolveDepthStencilView(depth, error);
+        if (!dsv)
+        {
+            SetResourceResult(error);
+            return false;
+        }
+    }
+
+    m_Context->OMSetRenderTargets(1, &rtv, dsv);
+    SetResourceResult(RendererResultCode::Success);
+    return true;
 }
 
 void DX11Renderer::DrawIndexed(uint32_t indexCount, uint32_t startIndex, int32_t baseVertex)
@@ -695,6 +765,17 @@ RendererTextureHandle DX11Renderer::CreateTexture(const RendererTextureDesc& des
     return handle;
 }
 
+void* DX11Renderer::GetNativeTextureHandle(RendererTextureHandle handle) const
+{
+    RendererResultCode        error = RendererResultCode::Success;
+    ID3D11ShaderResourceView* view  = ResolveShaderResourceView(handle, error);
+    if (!view && error != RendererResultCode::Success)
+    {
+        LX_ENGINE_ERROR("[Renderer] GetNativeTextureHandle failed (code={})", static_cast<uint32_t>(error));
+    }
+    return view;
+}
+
 bool DX11Renderer::DestroyTexture(RendererTextureHandle handle)
 {
     RendererResultCode        resolveCode = RendererResultCode::Success;
@@ -708,9 +789,9 @@ bool DX11Renderer::DestroyTexture(RendererTextureHandle handle)
 
     if (m_Context)
     {
-        ID3D11ShaderResourceView* nullViews[1] = {nullptr};
-        m_Context->VSSetShaderResources(0, 1, nullViews);
-        m_Context->PSSetShaderResources(0, 1, nullViews);
+        ID3D11ShaderResourceView* nullViews[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = {};
+        m_Context->VSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, nullViews);
+        m_Context->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, nullViews);
     }
 
     RendererResult result = {};
@@ -787,9 +868,9 @@ bool DX11Renderer::DestroyBuffer(RendererBufferHandle handle)
         }
         else if (handle.Type == RendererBufferType::Constant)
         {
-            ID3D11Buffer* nullBuffer = nullptr;
-            m_Context->VSSetConstantBuffers(0, 1, &nullBuffer);
-            m_Context->PSSetConstantBuffers(0, 1, &nullBuffer);
+            ID3D11Buffer* nullBuffers[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT] = {};
+            m_Context->VSSetConstantBuffers(0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, nullBuffers);
+            m_Context->PSSetConstantBuffers(0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, nullBuffers);
         }
     }
 

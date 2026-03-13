@@ -326,6 +326,12 @@ void DebugUI::RenderPanels(Engine& engine)
             loggedC3AssetViewerOpen = true;
         }
         C3AssetViewer::Render(engine);
+        m_WasC3AssetViewerVisible = true;
+    }
+    else if (m_WasC3AssetViewerVisible)
+    {
+        C3AssetViewer::ReleaseResources(engine);
+        m_WasC3AssetViewerVisible = false;
     }
 }
 

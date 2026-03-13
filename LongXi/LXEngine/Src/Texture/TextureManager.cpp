@@ -41,6 +41,7 @@ bool ShouldLogTextureEvent()
 TextureManager::TextureManager(Renderer& renderer, CVirtualFileSystem& vfs)
     : m_Renderer(renderer)
     , m_VFS(vfs)
+    , m_LifetimeToken(std::make_shared<int>(0))
 {
     LX_ENGINE_INFO("[Texture] TextureManager created");
 }
@@ -214,20 +215,25 @@ std::shared_ptr<Texture> TextureManager::LoadTexture(const std::string& path)
 
     // Create Texture object with custom deleter that returns the GPU resource
     // to the renderer when the last CPU-side reference is released.
-    Renderer* renderer = &m_Renderer;
-    auto      texture  = std::shared_ptr<Texture>(new Texture(handle, texData.Width, texData.Height, texData.Format),
-                                            [renderer](Texture* tex)
-                                            {
-                                                if (renderer && tex)
-                                                {
-                                                    const RendererTextureHandle& textureHandle = tex->GetHandle();
-                                                    if (textureHandle.IsValid())
-                                                    {
-                                                        renderer->DestroyTexture(textureHandle);
-                                                    }
-                                                }
-                                                delete tex;
-                                            });
+    Renderer*               renderer = &m_Renderer;
+    std::weak_ptr<void>     lifetime = m_LifetimeToken;
+    auto texture = std::shared_ptr<Texture>(
+        new Texture(handle, texData.Width, texData.Height, texData.Format),
+        [renderer, lifetime](Texture* tex)
+        {
+            if (tex)
+            {
+                if (lifetime.lock())
+                {
+                    const RendererTextureHandle& textureHandle = tex->GetHandle();
+                    if (renderer && textureHandle.IsValid())
+                    {
+                        renderer->DestroyTexture(textureHandle);
+                    }
+                }
+                delete tex;
+            }
+        });
 
     // Insert into cache
     m_Cache[normalized] = texture;
@@ -247,6 +253,9 @@ std::shared_ptr<Texture> TextureManager::LoadTexture(const std::string& path)
             break;
         case TextureFormat::DXT5:
             formatStr = "DXT5";
+            break;
+        case TextureFormat::Depth24Stencil8:
+            formatStr = "D24S8";
             break;
     }
 

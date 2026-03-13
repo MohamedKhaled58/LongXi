@@ -27,8 +27,11 @@ public:
     virtual void Shutdown()                                                = 0;
 
     virtual void Clear(const RendererColor& color)                                                 = 0;
+    virtual void ClearRenderTarget(RendererTextureHandle handle, const RendererColor& color)       = 0;
+    virtual void ClearDepthStencil(RendererTextureHandle handle, float depth, uint8_t stencil)     = 0;
     virtual void SetViewport(const RendererViewport& viewport)                                     = 0;
     virtual void SetRenderTarget()                                                                 = 0;
+    virtual bool SetRenderTarget(RendererTextureHandle color, RendererTextureHandle depth)         = 0;
     virtual void DrawIndexed(uint32_t indexCount, uint32_t startIndex = 0, int32_t baseVertex = 0) = 0;
     virtual void SetViewProjection(const LXCore::Matrix4& view, const LXCore::Matrix4& projection) = 0;
 
@@ -63,8 +66,9 @@ public:
     virtual int                  GetViewportWidth() const  = 0;
     virtual int                  GetViewportHeight() const = 0;
 
-    virtual void* GetNativeDeviceHandle() const  = 0;
-    virtual void* GetNativeContextHandle() const = 0;
+    virtual void* GetNativeDeviceHandle() const                              = 0;
+    virtual void* GetNativeTextureHandle(RendererTextureHandle handle) const = 0;
+    virtual void* GetNativeContextHandle() const                             = 0;
 };
 
 std::unique_ptr<Renderer> CreateRenderer();

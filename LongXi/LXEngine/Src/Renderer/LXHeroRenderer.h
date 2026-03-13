@@ -14,11 +14,26 @@ class RuntimeMesh;
 class LXHeroRenderer
 {
 public:
+    static constexpr uint32_t kMaxBones = 256;
+
     bool Initialize(Renderer& renderer);
     void Shutdown();
     bool IsInitialized() const;
 
+    struct HeroRenderLighting
+    {
+        LXCore::Vector3 LightDirection{0.0f, -0.6f, -0.8f};
+        float           Padding0 = 0.0f;
+        LXCore::Color   Ambient{1.0f, 1.0f, 1.0f, 1.0f};
+        LXCore::Color   Diffuse{0.0f, 0.0f, 0.0f, 1.0f};
+        LXCore::Color   Tint{1.0f, 1.0f, 1.0f, 1.0f};
+
+        static HeroRenderLighting Flat();
+        static HeroRenderLighting Portrait();
+    };
+
     void Render(const LXHero& hero, const LXCore::Matrix4& view, const LXCore::Matrix4& projection);
+    void Render(const LXHero& hero, const LXCore::Matrix4& view, const LXCore::Matrix4& projection, const HeroRenderLighting& lighting);
 
 private:
     struct CbPerObject
@@ -30,11 +45,21 @@ private:
 
     struct CbBones
     {
-        LXCore::Matrix4 BoneMatrices[64];
+        LXCore::Matrix4 BoneMatrices[kMaxBones];
+    };
+
+    struct CbLighting
+    {
+        LXCore::Vector3 LightDirection{0.0f, -0.6f, -0.8f};
+        float           Padding0 = 0.0f;
+        LXCore::Color   Ambient{1.0f, 1.0f, 1.0f, 1.0f};
+        LXCore::Color   Diffuse{0.0f, 0.0f, 0.0f, 1.0f};
+        LXCore::Color   Tint{1.0f, 1.0f, 1.0f, 1.0f};
     };
 
     static LXCore::Matrix4 ComputeWorldMatrix(const LXHero& hero);
     void                   UploadBoneMatrices(const LXHero& hero);
+    void                   UploadLighting(const HeroRenderLighting& lighting);
     void                   RenderParts(const LXHero& hero, bool transparentPass);
     void                   RenderMesh(RuntimeMesh& mesh, bool transparentPass);
 
@@ -42,9 +67,10 @@ private:
     DX11HeroPipeline             m_Pipeline;
     RendererConstantBufferHandle m_CbPerObject{};
     RendererConstantBufferHandle m_CbBones{};
+    RendererConstantBufferHandle m_CbLighting{};
     RendererTextureHandle        m_FallbackTexture{};
-    Renderer*                    m_Renderer    = nullptr;
-    bool                         m_Initialized = false;
+    Renderer*                    m_Renderer             = nullptr;
+    bool                         m_Initialized          = false;
     bool                         m_LoggedMissingTexture = false;
 };
 

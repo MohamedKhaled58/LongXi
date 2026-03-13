@@ -5,8 +5,8 @@
 #include <numbers>
 
 #include "Animation/AnimationPlayer.h"
-#include "Core/Graphics/TextureFormat.h"
 #include "Assets/C3/RuntimeMesh.h"
+#include "Core/Graphics/TextureFormat.h"
 #include "Core/Logging/LogMacros.h"
 #include "Renderer/Renderer.h"
 
@@ -94,6 +94,35 @@ float DegreesToRadians(float degrees)
 
 } // namespace
 
+LXHeroRenderer::HeroRenderLighting LXHeroRenderer::HeroRenderLighting::Flat()
+{
+    HeroRenderLighting lighting;
+    lighting.LightDirection = {0.0f, -0.6f, -0.8f};
+    lighting.Ambient        = {1.0f, 1.0f, 1.0f, 1.0f};
+    lighting.Diffuse        = {0.0f, 0.0f, 0.0f, 1.0f};
+    lighting.Tint           = {1.0f, 1.0f, 1.0f, 1.0f};
+    return lighting;
+}
+
+LXHeroRenderer::HeroRenderLighting LXHeroRenderer::HeroRenderLighting::Portrait()
+{
+    HeroRenderLighting lighting;
+    LXCore::Vector3 direction = {-0.3f, -0.5f, -0.8f};
+    const float     lengthSq  = direction.x * direction.x + direction.y * direction.y + direction.z * direction.z;
+    if (lengthSq > 0.000001f)
+    {
+        const float invLength = 1.0f / std::sqrt(lengthSq);
+        direction.x *= invLength;
+        direction.y *= invLength;
+        direction.z *= invLength;
+    }
+    lighting.LightDirection = direction;
+    lighting.Ambient        = {0.65f, 0.64f, 0.68f, 1.0f};
+    lighting.Diffuse        = {0.45f, 0.42f, 0.38f, 1.0f};
+    lighting.Tint           = {1.0f, 0.98f, 0.96f, 1.0f};
+    return lighting;
+}
+
 bool LXHeroRenderer::Initialize(Renderer& renderer)
 {
     Shutdown();
@@ -141,7 +170,23 @@ bool LXHeroRenderer::Initialize(Renderer& renderer)
         return false;
     }
 
-    const uint32_t whitePixel = 0xFFFFFFFFu;
+    RendererBufferDesc lightingDesc = {};
+    lightingDesc.Type               = RendererBufferType::Constant;
+    lightingDesc.ByteSize           = sizeof(CbLighting);
+    lightingDesc.Stride             = 16;
+    lightingDesc.Usage              = RendererResourceUsage::Dynamic;
+    lightingDesc.CpuAccess          = RendererCpuAccessFlags::Write;
+    lightingDesc.BindFlags          = RendererBindFlags::ConstantBuffer;
+
+    m_CbLighting = renderer.CreateConstantBuffer(lightingDesc);
+    if (!m_CbLighting.IsValid())
+    {
+        LX_ENGINE_ERROR("[HeroRenderer] Failed to create lighting constant buffer");
+        Shutdown();
+        return false;
+    }
+
+    const uint32_t      whitePixel   = 0xFFFFFFFFu;
     RendererTextureDesc fallbackDesc = {};
     fallbackDesc.Width               = 1;
     fallbackDesc.Height              = 1;
@@ -175,18 +220,23 @@ void LXHeroRenderer::Shutdown()
         {
             m_Renderer->DestroyBuffer(ToBufferHandle(m_CbBones));
         }
+        if (m_CbLighting.IsValid())
+        {
+            m_Renderer->DestroyBuffer(ToBufferHandle(m_CbLighting));
+        }
         if (m_FallbackTexture.IsValid())
         {
             m_Renderer->DestroyTexture(m_FallbackTexture);
         }
     }
 
-    m_CbPerObject = {};
-    m_CbBones     = {};
+    m_CbPerObject     = {};
+    m_CbBones         = {};
+    m_CbLighting      = {};
     m_FallbackTexture = {};
-    m_Renderer    = nullptr;
+    m_Renderer        = nullptr;
     m_Pipeline.Shutdown();
-    m_Initialized = false;
+    m_Initialized          = false;
     m_LoggedMissingTexture = false;
 }
 
@@ -234,7 +284,7 @@ void LXHeroRenderer::UploadBoneMatrices(const LXHero& hero)
     }
 
     CbBones* bones = static_cast<CbBones*>(mapped.Data);
-    for (int i = 0; i < 64; ++i)
+    for (uint32_t i = 0; i < kMaxBones; ++i)
     {
         bones->BoneMatrices[i] = MakeIdentity();
     }
@@ -242,19 +292,47 @@ void LXHeroRenderer::UploadBoneMatrices(const LXHero& hero)
     if (hero.animationPlayer)
     {
         const auto&  matrices  = hero.animationPlayer->GetFinalBoneMatrices();
-        const size_t copyCount = std::min<size_t>(matrices.size(), 64);
+        const size_t copyCount = std::min<size_t>(matrices.size(), kMaxBones);
         for (size_t i = 0; i < copyCount; ++i)
         {
             bones->BoneMatrices[i] = matrices[i];
         }
 
-        if (matrices.size() > 64)
+        if (matrices.size() > kMaxBones)
         {
-            LX_ENGINE_WARN("[HeroRenderer] Bone count {} exceeds 64; truncating", matrices.size());
+            LX_ENGINE_WARN("[HeroRenderer] Bone count {} exceeds {}; truncating", matrices.size(), kMaxBones);
         }
     }
 
     m_Renderer->UnmapBuffer(ToBufferHandle(m_CbBones));
+}
+
+void LXHeroRenderer::UploadLighting(const HeroRenderLighting& lighting)
+{
+    if (!m_Renderer || !m_CbLighting.IsValid())
+    {
+        return;
+    }
+
+    RendererMapRequest     mapRequest = {};
+    RendererMappedResource mapped     = {};
+    mapRequest.Handle                 = ToBufferHandle(m_CbLighting);
+    mapRequest.Mode                   = RendererMapMode::WriteDiscard;
+
+    if (!m_Renderer->MapBuffer(mapRequest, mapped) || !mapped.Data)
+    {
+        LX_ENGINE_ERROR("[HeroRenderer] Failed to map lighting constant buffer");
+        return;
+    }
+
+    CbLighting* cb     = static_cast<CbLighting*>(mapped.Data);
+    cb->LightDirection = lighting.LightDirection;
+    cb->Padding0       = 0.0f;
+    cb->Ambient        = lighting.Ambient;
+    cb->Diffuse        = lighting.Diffuse;
+    cb->Tint           = lighting.Tint;
+
+    m_Renderer->UnmapBuffer(ToBufferHandle(m_CbLighting));
 }
 
 void LXHeroRenderer::RenderMesh(RuntimeMesh& mesh, bool transparentPass)
@@ -278,11 +356,11 @@ void LXHeroRenderer::RenderMesh(RuntimeMesh& mesh, bool transparentPass)
     }
 
     RendererTextureHandle textureHandle = mesh.GetActiveTexture();
-    bool usingFallback                  = false;
+    bool                  usingFallback = false;
 
     if (!textureHandle.IsValid())
     {
-        textureHandle  = m_FallbackTexture;
+        textureHandle = m_FallbackTexture;
         usingFallback = true;
     }
 
@@ -363,6 +441,14 @@ void LXHeroRenderer::RenderParts(const LXHero& hero, bool transparentPass)
 
 void LXHeroRenderer::Render(const LXHero& hero, const LXCore::Matrix4& view, const LXCore::Matrix4& projection)
 {
+    Render(hero, view, projection, HeroRenderLighting::Flat());
+}
+
+void LXHeroRenderer::Render(const LXHero&             hero,
+                            const LXCore::Matrix4&    view,
+                            const LXCore::Matrix4&    projection,
+                            const HeroRenderLighting& lighting)
+{
     if (!IsInitialized() || !m_Renderer)
     {
         return;
@@ -389,6 +475,7 @@ void LXHeroRenderer::Render(const LXHero& hero, const LXCore::Matrix4& view, con
     m_Renderer->UnmapBuffer(ToBufferHandle(m_CbPerObject));
 
     UploadBoneMatrices(hero);
+    UploadLighting(lighting);
 
     if (!m_Renderer->BindConstantBuffer(m_CbBones, RendererShaderStage::Vertex, 0))
     {
@@ -399,6 +486,12 @@ void LXHeroRenderer::Render(const LXHero& hero, const LXCore::Matrix4& view, con
     if (!m_Renderer->BindConstantBuffer(m_CbPerObject, RendererShaderStage::Vertex, 1))
     {
         LX_ENGINE_ERROR("[HeroRenderer] Failed to bind per-object constant buffer");
+        return;
+    }
+
+    if (!m_Renderer->BindConstantBuffer(m_CbLighting, RendererShaderStage::Pixel, 2))
+    {
+        LX_ENGINE_ERROR("[HeroRenderer] Failed to bind lighting constant buffer");
         return;
     }
 

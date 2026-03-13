@@ -298,6 +298,8 @@ bool DX11ResourceTables::DestroyTexture(RendererTextureHandle handle, RendererRe
     }
 
     record->ShaderResourceView.Reset();
+    record->RenderTargetView.Reset();
+    record->DepthStencilView.Reset();
     record->Texture.Reset();
     record->State = DX11ResourceRecordState::Destroyed;
 
@@ -454,6 +456,8 @@ void DX11ResourceTables::ReleaseAll()
         }
 
         record.ShaderResourceView.Reset();
+        record.RenderTargetView.Reset();
+        record.DepthStencilView.Reset();
         record.Texture.Reset();
         record.State = DX11ResourceRecordState::Destroyed;
         ++m_TextureStats.ForceReleased;

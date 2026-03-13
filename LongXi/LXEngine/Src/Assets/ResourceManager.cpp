@@ -1,6 +1,10 @@
 #include "Assets/ResourceManager.h"
 
+#include <algorithm>
+#include <vector>
+
 #include "Animation/AnimationClip.h"
+#include "Assets/C3/C3MeshProcessor.h"
 #include "Assets/C3/RuntimeMesh.h"
 #include "Assets/INIFileParser.h"
 #include "Core/Logging/LogMacros.h"
@@ -93,14 +97,14 @@ std::string ResourceManager::ResolveMotionPath(uint64_t id) const
     if (it != m_WeaponMotionMap.end())
         return it->second;
 
- /* it = m_MountMotionMap.find(id);
-    if (it != m_MountMotionMap.end())
-        return it->second;
+    /* it = m_MountMotionMap.find(id);
+       if (it != m_MountMotionMap.end())
+           return it->second;
 
-    it = m_MantleMotionMap.find(id);
-    if (it != m_MantleMotionMap.end())
-        return it->second;
-*/
+       it = m_MantleMotionMap.find(id);
+       if (it != m_MantleMotionMap.end())
+           return it->second;
+   */
     it = m_MotionMap.find(id);
     if (it != m_MotionMap.end())
         return it->second;
@@ -220,9 +224,32 @@ RuntimeMesh* ResourceManager::LoadMesh(uint64_t id, const std::string& path)
         return nullptr;
     }
 
-    // Create RuntimeMesh from first mesh in result
+    const int selectedIndex = C3MeshProcessor::SelectBestMeshIndex(result.meshes);
+    if (selectedIndex < 0)
+    {
+        LX_ENGINE_WARN("[ResourceManager] No usable meshes found in C3 file: {}", path);
+        return nullptr;
+    }
+
+    const size_t    selectedIndexSize = static_cast<size_t>(selectedIndex);
+    const MeshStats selectedStats     = C3MeshProcessor::ComputeMeshStats(result.meshes[selectedIndexSize]);
+
+    if (result.meshes.size() > 1)
+    {
+        const auto& selectedMesh = result.meshes[selectedIndexSize];
+        LX_ENGINE_INFO("[ResourceManager] Selected mesh {}/{} (name='{}', vertices={}, indices={}, bonesUsed={}, maxBoneIndex={})",
+                       selectedIndex + 1,
+                       result.meshes.size(),
+                       selectedMesh.name,
+                       selectedStats.vertexCount,
+                       selectedStats.indexCount,
+                       selectedStats.uniqueBones,
+                       selectedStats.maxBoneIndex);
+    }
+
+    // Create RuntimeMesh from selected mesh in result
     auto mesh = std::make_shared<RuntimeMesh>();
-    if (!mesh->Initialize(*m_Renderer, result.meshes[0]))
+    if (!mesh->Initialize(*m_Renderer, result.meshes[selectedIndexSize]))
     {
         LX_ENGINE_ERROR("[ResourceManager] Failed to initialize RuntimeMesh: {}", path);
         return nullptr;
