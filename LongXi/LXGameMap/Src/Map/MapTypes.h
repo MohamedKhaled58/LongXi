@@ -112,6 +112,10 @@ struct MapObjectRecord
     std::string ResourcePath;
     std::string ResourceTag;
 
+    // Original ANI file path and section name for animation frame loading.
+    std::string AniSourcePath;
+    std::string AniSectionName;
+
     // Legacy object footprint in tile-space for culling and ordering.
     int32_t BaseWidth  = 1;
     int32_t BaseHeight = 1;
@@ -133,6 +137,9 @@ struct MapObjectRecord
     int32_t MoveRateY       = 0;
     int32_t SceneLayerIndex = 0;
 
+    // Legacy ARGB tint color (stored as 0xAARRGGBB in old client).
+    uint32_t TintARGB = 0xFFFFFFFF;
+
     // 3D effect fields (MAP_3DEFFECTNEW rotation/scale)
     float EffectParams[6] = {};
 
@@ -149,6 +156,16 @@ struct MapAnimationState
     uint32_t                              FrameStepMilliseconds  = 160;
     bool                                  Loop                   = true;
     uint64_t                              LastStepFrameIndex     = 0;
+    double                                AccumulatedTimeSeconds = 0.0;
+    std::vector<std::shared_ptr<Texture>> Frames;
+};
+
+struct MapObjectAnimationState
+{
+    uint32_t                              ObjectId               = 0;
+    uint32_t                              CurrentFrame           = 0;
+    uint32_t                              FrameStepMilliseconds  = 160;
+    bool                                  Loop                   = true;
     double                                AccumulatedTimeSeconds = 0.0;
     std::vector<std::shared_ptr<Texture>> Frames;
 };

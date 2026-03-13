@@ -480,4 +480,95 @@ bool TextureLoader::LoadTGA(const std::vector<uint8_t>& data, TextureData& out)
     return true;
 }
 
+// =============================================================================
+// LoadMSK
+// Loads MSK alpha mask files (8-bit grayscale)
+// MSK format: Simple header followed by raw 8-bit grayscale data
+// =============================================================================
+
+bool TextureLoader::LoadMSK(const std::vector<uint8_t>& data, std::vector<uint8_t>& outAlphaData, uint32_t& outWidth, uint32_t& outHeight)
+{
+    // MSK files have a simple header format
+    // Based on the old client, the format is:
+    // - 4 bytes: magic/signature
+    // - 4 bytes: width
+    // - 4 bytes: height
+    // - Followed by width * height bytes of 8-bit grayscale alpha data
+
+    if (data.size() < 12)
+    {
+        LX_ENGINE_ERROR("[Texture] MSK file too small: {} bytes", data.size());
+        return false;
+    }
+
+    // Parse header (little-endian)
+    uint32_t headerValue = *reinterpret_cast<const uint32_t*>(&data[0]);
+    uint32_t width       = *reinterpret_cast<const uint32_t*>(&data[4]);
+    uint32_t height      = *reinterpret_cast<const uint32_t*>(&data[8]);
+
+    // MSK magic check (common values seen in old client: 1, or specific signatures)
+    // The old client doesn't always validate this strictly, so we'll be lenient
+    if (width == 0 || height == 0)
+    {
+        LX_ENGINE_ERROR("[Texture] MSK invalid dimensions: {}x{}", width, height);
+        return false;
+    }
+
+    // Calculate expected data size
+    size_t expectedSize = 0;
+    if (!CheckedMul(static_cast<size_t>(width), static_cast<size_t>(height), expectedSize))
+    {
+        LX_ENGINE_ERROR("[Texture] MSK dimensions overflow size calculation: {}x{}", width, height);
+        return false;
+    }
+
+    if (data.size() < 12 + expectedSize)
+    {
+        LX_ENGINE_ERROR("[Texture] MSK truncated: expected {} alpha bytes, have {}", expectedSize, data.size() - 12);
+        return false;
+    }
+
+    // Extract alpha data (starts after 12-byte header)
+    outAlphaData.assign(data.begin() + 12, data.begin() + 12 + expectedSize);
+    outWidth  = width;
+    outHeight = height;
+
+    LX_ENGINE_INFO("[Texture] Loaded MSK mask: {}x{}", width, height);
+    return true;
+}
+
+// =============================================================================
+// ApplyMSKMask
+// Applies an MSK alpha mask to RGBA texture data
+// =============================================================================
+
+void TextureLoader::ApplyMSKMask(TextureData& textureData, const std::vector<uint8_t>& alphaMaskData)
+{
+    if (textureData.Format != TextureFormat::RGBA8)
+    {
+        LX_ENGINE_WARN("[Texture] Cannot apply MSK mask to non-RGBA8 texture");
+        return;
+    }
+
+    const uint32_t pixelCount = textureData.Width * textureData.Height;
+    if (alphaMaskData.size() != pixelCount)
+    {
+        LX_ENGINE_ERROR("[Texture] MSK mask dimension mismatch: texture is {}x{}, mask has {} pixels",
+                        textureData.Width,
+                        textureData.Height,
+                        alphaMaskData.size());
+        return;
+    }
+
+    // Replace alpha channel with mask data
+    uint8_t* dst = textureData.Pixels.data();
+    for (uint32_t i = 0; i < pixelCount; ++i)
+    {
+        dst[3] = alphaMaskData[i]; // Replace alpha with mask value
+        dst += 4;
+    }
+
+    LX_ENGINE_INFO("[Texture] Applied MSK mask to texture ({}x{})", textureData.Width, textureData.Height);
+}
+
 } // namespace LongXi

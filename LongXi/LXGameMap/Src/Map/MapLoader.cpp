@@ -157,14 +157,22 @@ struct TerrainPartDescriptor
     std::string AniTag;
     int32_t     SpriteOffsetX = 0;
     int32_t     SpriteOffsetY = 0;
+    int32_t     FrameInterval = 0;
     int32_t     BaseWidth     = 1;
     int32_t     BaseHeight    = 1;
+    int32_t     ShowType      = 0;
     int32_t     SceneOffsetX  = 0;
     int32_t     SceneOffsetY  = 0;
     int32_t     HeightOffset  = 0;
 };
 
-bool TryParseTerrainPartRecord(const std::vector<uint8_t>& bytes, size_t& ioCursor, TerrainPartDescriptor& outDescriptor)
+// cellLayerStride: bytes per cell in the layer data.
+// Old client (2009): uint16 terrain + uint16 mask + int16 altitude = 6 bytes.
+// Some data versions use int32 terrain + int32 mask + int32 altitude = 12 bytes.
+bool TryParseTerrainPartRecord(const std::vector<uint8_t>& bytes,
+                               size_t&                     ioCursor,
+                               TerrainPartDescriptor&      outDescriptor,
+                               size_t                      cellLayerStride)
 {
     constexpr size_t kAniPathBytes  = 256;
     constexpr size_t kAniTitleBytes = 64;
@@ -213,10 +221,12 @@ bool TryParseTerrainPartRecord(const std::vector<uint8_t>& bytes, size_t& ioCurs
     outDescriptor.AniTag        = readCString(base + kAniPathBytes, kAniTitleBytes);
     outDescriptor.SpriteOffsetX = readI32(base + kAniPathBytes + kAniTitleBytes + 0);
     outDescriptor.SpriteOffsetY = readI32(base + kAniPathBytes + kAniTitleBytes + 4);
+    outDescriptor.FrameInterval = readI32(base + kAniPathBytes + kAniTitleBytes + 8);
     const uint32_t baseWidth    = readU32(base + kAniPathBytes + kAniTitleBytes + 12);
     const uint32_t baseHeight   = readU32(base + kAniPathBytes + kAniTitleBytes + 16);
     outDescriptor.BaseWidth     = static_cast<int32_t>(baseWidth);
     outDescriptor.BaseHeight    = static_cast<int32_t>(baseHeight);
+    outDescriptor.ShowType      = readI32(base + kAniPathBytes + kAniTitleBytes + 20);
     outDescriptor.SceneOffsetX  = readI32(base + kAniPathBytes + kAniTitleBytes + 24);
     outDescriptor.SceneOffsetY  = readI32(base + kAniPathBytes + kAniTitleBytes + 28);
     outDescriptor.HeightOffset  = readI32(base + kAniPathBytes + kAniTitleBytes + 32);
@@ -227,12 +237,12 @@ bool TryParseTerrainPartRecord(const std::vector<uint8_t>& bytes, size_t& ioCurs
     }
 
     const uint64_t cellCount = static_cast<uint64_t>(baseWidth) * static_cast<uint64_t>(baseHeight);
-    if (cellCount > (std::numeric_limits<size_t>::max)() / (sizeof(uint32_t) + sizeof(int32_t) * 2))
+    if (cellLayerStride == 0 || cellCount > (std::numeric_limits<size_t>::max)() / cellLayerStride)
     {
         return false;
     }
 
-    const size_t layerBytes = static_cast<size_t>(cellCount) * (sizeof(uint32_t) + sizeof(int32_t) * 2);
+    const size_t layerBytes = static_cast<size_t>(cellCount) * cellLayerStride;
     if (base + kHeaderBytes + layerBytes > bytes.size())
     {
         return false;
@@ -250,7 +260,12 @@ bool ParseTerrainPartDescriptors(const std::vector<uint8_t>& bytes, std::vector<
         return false;
     }
 
-    auto tryParseWithCountHeader = [&bytes, &outDescriptors]() -> bool
+    // Try multiple cell-layer strides: 6 bytes (uint16+uint16+int16) is the old 2009 format,
+    // 12 bytes (uint32+int32+int32) is an alternate format found in some data files.
+    constexpr size_t kCellStrides[] = {6, 12};
+    constexpr size_t kStrideCount   = sizeof(kCellStrides) / sizeof(kCellStrides[0]);
+
+    auto tryParseWithCountHeader = [&bytes](size_t cellStride, std::vector<TerrainPartDescriptor>& outParsed) -> bool
     {
         if (bytes.size() < sizeof(uint32_t))
         {
@@ -270,7 +285,7 @@ bool ParseTerrainPartDescriptors(const std::vector<uint8_t>& bytes, std::vector<
         for (uint32_t partIndex = 0; partIndex < partCount; ++partIndex)
         {
             TerrainPartDescriptor descriptor;
-            if (!TryParseTerrainPartRecord(bytes, cursor, descriptor))
+            if (!TryParseTerrainPartRecord(bytes, cursor, descriptor, cellStride))
             {
                 return false;
             }
@@ -278,34 +293,51 @@ bool ParseTerrainPartDescriptors(const std::vector<uint8_t>& bytes, std::vector<
             parsedDescriptors.push_back(std::move(descriptor));
         }
 
-        outDescriptors = std::move(parsedDescriptors);
+        outParsed = std::move(parsedDescriptors);
         return true;
     };
 
-    if (tryParseWithCountHeader())
+    // Strategy 1: Try count-header format with each stride.
+    for (size_t strideIndex = 0; strideIndex < kStrideCount; ++strideIndex)
     {
-        return true;
+        std::vector<TerrainPartDescriptor> parsed;
+        if (tryParseWithCountHeader(kCellStrides[strideIndex], parsed))
+        {
+            outDescriptors = std::move(parsed);
+            return true;
+        }
     }
 
-    size_t cursor = 0;
-    while (cursor < bytes.size())
+    // Strategy 2: Try sequential records without a count header, with each stride.
+    for (size_t strideIndex = 0; strideIndex < kStrideCount; ++strideIndex)
     {
-        TerrainPartDescriptor descriptor;
-        const size_t          recordStart = cursor;
-        if (!TryParseTerrainPartRecord(bytes, cursor, descriptor))
+        std::vector<TerrainPartDescriptor> parsed;
+        size_t                             cursor = 0;
+        bool                               failed = false;
+        while (cursor < bytes.size())
         {
-            if (recordStart == 0)
+            TerrainPartDescriptor descriptor;
+            const size_t          recordStart = cursor;
+            if (!TryParseTerrainPartRecord(bytes, cursor, descriptor, kCellStrides[strideIndex]))
             {
-                outDescriptors.clear();
-                return false;
+                if (recordStart == 0)
+                {
+                    failed = true;
+                }
+                break;
             }
-            break;
+
+            parsed.push_back(std::move(descriptor));
         }
 
-        outDescriptors.push_back(std::move(descriptor));
+        if (!failed && !parsed.empty())
+        {
+            outDescriptors = std::move(parsed);
+            return true;
+        }
     }
 
-    return !outDescriptors.empty();
+    return false;
 }
 
 std::string NormalizeCatalogDmapPath(const std::string& rawPath)
@@ -950,7 +982,8 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
         return false;
     };
 
-    auto registerScenePart = [&vfs, &loadedScenePartFiles, &outDescriptor, &outWarnings](const std::string& partPath, const std::vector<uint8_t>* partBytes = nullptr) -> bool
+    auto registerScenePart = [&vfs, &loadedScenePartFiles, &outDescriptor, &outWarnings](
+                                 const std::string& partPath, const std::vector<uint8_t>* partBytes = nullptr) -> bool
     {
         if (!loadedScenePartFiles.insert(partPath).second)
         {
@@ -1007,6 +1040,10 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
             return;
         }
 
+        // Preserve ANI source path and section name before resolving to a single frame texture.
+        objectRecord.AniSourcePath  = objectRecord.ResourcePath;
+        objectRecord.AniSectionName = objectRecord.ResourceTag;
+
         std::string resolvedTexturePath;
         if (resolveAniTexturePath(objectRecord.ResourcePath, objectRecord.ResourceTag, resolvedTexturePath))
         {
@@ -1029,8 +1066,8 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
                                         &outDescriptor,
                                         &outWarnings,
                                         &terrainPartOutOfBoundsWarningCount](const MapObjectRecord&      sourceObject,
-                                                                              const std::string&          compositePath,
-                                                                              const std::vector<uint8_t>& compositeBytes) -> bool
+                                                                             const std::string&          compositePath,
+                                                                             const std::vector<uint8_t>& compositeBytes) -> bool
     {
         const auto cacheIt = terrainPartDescriptorsByPath.find(compositePath);
         if (cacheIt == terrainPartDescriptorsByPath.end())
@@ -1065,29 +1102,51 @@ bool MapLoader::ParseDmap(const std::string&            mapPath,
             partObject.ObjectType      = 2;
             partObject.RenderLayer     = MapLayer::Interactive;
             partObject.VisibilityFlags = 1u;
-            // Terrain part scene offsets are tile-space deltas relative to the terrain root cell.
-            // Keep the original values (no clamping) to avoid shifting multi-part scenes.
+            // SceneOffset values are already in tile coordinates, not pixels.
+            // The old client adds them directly to the source object's tile position.
             partObject.TileX = sourceObject.TileX + partDescriptor.SceneOffsetX;
             partObject.TileY = sourceObject.TileY + partDescriptor.SceneOffsetY;
-            if ((partObject.TileX < 0 || partObject.TileY < 0 ||
-                 partObject.TileX >= static_cast<int32_t>(outDescriptor.WidthInTiles) ||
+            if ((partObject.TileX < 0 || partObject.TileY < 0 || partObject.TileX >= static_cast<int32_t>(outDescriptor.WidthInTiles) ||
                  partObject.TileY >= static_cast<int32_t>(outDescriptor.HeightInTiles)) &&
                 terrainPartOutOfBoundsWarningCount < 8)
             {
                 AddWarning(outWarnings,
-                           "Terrain part anchor is outside map bounds: " + compositePath + " tile=(" + std::to_string(partObject.TileX) + "," +
-                               std::to_string(partObject.TileY) + ")");
+                           "Terrain part anchor is outside map bounds: " + compositePath + " tile=(" + std::to_string(partObject.TileX) +
+                               "," + std::to_string(partObject.TileY) + ")");
                 ++terrainPartOutOfBoundsWarningCount;
             }
-            partObject.BaseWidth  = std::max(1, partDescriptor.BaseWidth);
-            partObject.BaseHeight = std::max(1, partDescriptor.BaseHeight);
-            partObject.OffsetX    = partDescriptor.SpriteOffsetX;
-            partObject.OffsetY    = partDescriptor.SpriteOffsetY;
+            partObject.BaseWidth     = std::max(1, partDescriptor.BaseWidth);
+            partObject.BaseHeight    = std::max(1, partDescriptor.BaseHeight);
+            partObject.OffsetX       = partDescriptor.SpriteOffsetX;
+            partObject.OffsetY       = partDescriptor.SpriteOffsetY;
+            partObject.FrameInterval = std::max(1, partDescriptor.FrameInterval);
+            partObject.ShowMode      = partDescriptor.ShowType;
             // Legacy terrain-part "height" is not a reliable screen-space Z offset in practice.
             // Keep it out of sprite projection to prevent parts from being displaced off-screen.
             partObject.HeightOffset = 0;
             partObject.ResourcePath = partDescriptor.AniPath;
             partObject.ResourceTag  = partDescriptor.AniTag.empty() ? std::string("TerrainPart") : partDescriptor.AniTag;
+
+            // Debug logging for first few parts to help diagnose positioning issues
+            static int terrainPartDebugCount = 0;
+            if (terrainPartDebugCount < 20)
+            {
+                LX_MAP_INFO(
+                    "[Map] TerrainPart: {} Tile=({},{}), SceneOffset=({}{}) -> Final=({}{}), SpriteOffset=({}{}), BaseSize={}x{}, from={}",
+                    partDescriptor.AniTag,
+                    sourceObject.TileX,
+                    sourceObject.TileY,
+                    partDescriptor.SceneOffsetX,
+                    partDescriptor.SceneOffsetY,
+                    partObject.TileX,
+                    partObject.TileY,
+                    partDescriptor.SpriteOffsetX,
+                    partDescriptor.SpriteOffsetY,
+                    partObject.BaseWidth,
+                    partObject.BaseHeight,
+                    compositePath);
+                ++terrainPartDebugCount;
+            }
 
             std::string resolvedAniPath;
             if (resolveMapObjectPath(partObject.ResourcePath, resolvedAniPath))
@@ -1372,16 +1431,17 @@ bool MapLoader::ParseInteractiveObjectBlock(const std::vector<uint8_t>&   bytes,
                 objectRecord.ResourceTag  = ReadFixedCString(payload, kLegacyMapPathBytes, kLegacyMapTitleBytes);
                 const size_t kFieldBase   = kLegacyMapPathBytes + kLegacyMapTitleBytes;
 
-                objectRecord.TileX         = std::clamp(ReadI32(payload, kFieldBase + 0), 0, static_cast<int32_t>(descriptor.WidthInTiles) - 1);
-                objectRecord.TileY         = std::clamp(ReadI32(payload, kFieldBase + 4), 0, static_cast<int32_t>(descriptor.HeightInTiles) - 1);
-                objectRecord.BaseWidth     = std::max(1, ReadI32(payload, kFieldBase + 8));
-                objectRecord.BaseHeight    = std::max(1, ReadI32(payload, kFieldBase + 12));
-                objectRecord.OffsetX       = ReadI32(payload, kFieldBase + 16);
-                objectRecord.OffsetY       = ReadI32(payload, kFieldBase + 20);
-                objectRecord.FrameInterval = std::max(1, ReadI32(payload, kFieldBase + 24));
-                objectRecord.FrameCount    = 0;
-                objectRecord.ShowMode      = 0;
+                objectRecord.TileX = std::clamp(ReadI32(payload, kFieldBase + 0), 0, static_cast<int32_t>(descriptor.WidthInTiles) - 1);
+                objectRecord.TileY = std::clamp(ReadI32(payload, kFieldBase + 4), 0, static_cast<int32_t>(descriptor.HeightInTiles) - 1);
+                objectRecord.BaseWidth       = std::max(1, ReadI32(payload, kFieldBase + 8));
+                objectRecord.BaseHeight      = std::max(1, ReadI32(payload, kFieldBase + 12));
+                objectRecord.OffsetX         = ReadI32(payload, kFieldBase + 16);
+                objectRecord.OffsetY         = ReadI32(payload, kFieldBase + 20);
+                objectRecord.FrameInterval   = std::max(1, ReadI32(payload, kFieldBase + 24));
+                objectRecord.FrameCount      = 0;
+                objectRecord.ShowMode        = 0;
                 objectRecord.VisibilityFlags = 1u;
+
                 ++outParsedCount;
                 outMapObjects.push_back(std::move(objectRecord));
                 break;
@@ -1398,8 +1458,10 @@ bool MapLoader::ParseInteractiveObjectBlock(const std::vector<uint8_t>&   bytes,
 
                 objectRecord.ResourcePath = NormalizeResourcePath(ReadFixedCString(payload, 0, kLegacyMapPathBytes));
                 objectRecord.ResourceTag  = "TerrainObject";
-                objectRecord.TileX        = std::clamp(ReadI32(payload, kLegacyMapPathBytes + 0), 0, static_cast<int32_t>(descriptor.WidthInTiles) - 1);
-                objectRecord.TileY        = std::clamp(ReadI32(payload, kLegacyMapPathBytes + 4), 0, static_cast<int32_t>(descriptor.HeightInTiles) - 1);
+                objectRecord.TileX =
+                    std::clamp(ReadI32(payload, kLegacyMapPathBytes + 0), 0, static_cast<int32_t>(descriptor.WidthInTiles) - 1);
+                objectRecord.TileY =
+                    std::clamp(ReadI32(payload, kLegacyMapPathBytes + 4), 0, static_cast<int32_t>(descriptor.HeightInTiles) - 1);
                 objectRecord.VisibilityFlags = 1u;
                 ++outParsedCount;
                 outMapObjects.push_back(std::move(objectRecord));
@@ -1420,13 +1482,30 @@ bool MapLoader::ParseInteractiveObjectBlock(const std::vector<uint8_t>&   bytes,
                 objectRecord.ResourcePath = NormalizeResourcePath(ReadFixedCString(payload, 0, kLegacyMapPathBytes));
                 objectRecord.ResourceTag  = ReadFixedCString(payload, kLegacyMapPathBytes, kLegacyMapTitleBytes);
                 const size_t kFieldBase   = kLegacyMapPathBytes + kLegacyMapTitleBytes;
-                objectRecord.TileX        = std::clamp(ReadI32(payload, kFieldBase + 0), 0, static_cast<int32_t>(descriptor.WidthInTiles) - 1);
-                objectRecord.TileY        = std::clamp(ReadI32(payload, kFieldBase + 4), 0, static_cast<int32_t>(descriptor.HeightInTiles) - 1);
-                objectRecord.OffsetX      = ReadI32(payload, kFieldBase + 8);
-                objectRecord.OffsetY      = ReadI32(payload, kFieldBase + 12);
+                objectRecord.TileX = std::clamp(ReadI32(payload, kFieldBase + 0), 0, static_cast<int32_t>(descriptor.WidthInTiles) - 1);
+                objectRecord.TileY = std::clamp(ReadI32(payload, kFieldBase + 4), 0, static_cast<int32_t>(descriptor.HeightInTiles) - 1);
+                // MAP_SCENE layout: cellX(+0), cellY(+4), offsetX(+8), offsetY(+12), frameInterval(+16), showType(+20)
+                objectRecord.OffsetX       = ReadI32(payload, kFieldBase + 8);
+                objectRecord.OffsetY       = ReadI32(payload, kFieldBase + 12);
                 objectRecord.FrameInterval = std::max(1, ReadI32(payload, kFieldBase + 16));
-                objectRecord.ShowMode     = ReadI32(payload, kFieldBase + 20);
-                objectRecord.FrameCount   = 0;
+                objectRecord.ShowMode      = ReadI32(payload, kFieldBase + 20);
+                objectRecord.FrameCount    = 0;
+
+                // Debug logging for first few MAP_SCENE objects
+                static int sceneDebugCount = 0;
+                if (sceneDebugCount < 20)
+                {
+                    LX_MAP_INFO("[Map] MAP_SCENE: {} Tile=({},{}), Offset=({},{}), FrameInterval={}, ShowMode={}",
+                                objectRecord.ResourceTag,
+                                objectRecord.TileX,
+                                objectRecord.TileY,
+                                objectRecord.OffsetX,
+                                objectRecord.OffsetY,
+                                objectRecord.FrameInterval,
+                                objectRecord.ShowMode);
+                    ++sceneDebugCount;
+                }
+
                 ++outParsedCount;
                 outMapObjects.push_back(std::move(objectRecord));
                 break;
@@ -1717,8 +1796,9 @@ bool MapLoader::ParseSceneLayerBlock(const std::vector<uint8_t>&   bytes,
                     }
 
                     const size_t kFieldBase = kLegacyMapPathBytes + kLegacyMapTitleBytes;
-                    objectRecord.TileX         = std::clamp(ReadI32(payload, kFieldBase + 0), 0, static_cast<int32_t>(descriptor.WidthInTiles) - 1);
-                    objectRecord.TileY         = std::clamp(ReadI32(payload, kFieldBase + 4), 0, static_cast<int32_t>(descriptor.HeightInTiles) - 1);
+                    objectRecord.TileX = std::clamp(ReadI32(payload, kFieldBase + 0), 0, static_cast<int32_t>(descriptor.WidthInTiles) - 1);
+                    objectRecord.TileY =
+                        std::clamp(ReadI32(payload, kFieldBase + 4), 0, static_cast<int32_t>(descriptor.HeightInTiles) - 1);
                     objectRecord.OffsetX       = ReadI32(payload, kFieldBase + 8);
                     objectRecord.OffsetY       = ReadI32(payload, kFieldBase + 12);
                     objectRecord.FrameInterval = std::max(1, ReadI32(payload, kFieldBase + 16));
@@ -1747,8 +1827,9 @@ bool MapLoader::ParseSceneLayerBlock(const std::vector<uint8_t>&   bytes,
                     }
 
                     const size_t kFieldBase = kLegacyMapPathBytes + kLegacyMapTitleBytes;
-                    objectRecord.TileX         = std::clamp(ReadI32(payload, kFieldBase + 0), 0, static_cast<int32_t>(descriptor.WidthInTiles) - 1);
-                    objectRecord.TileY         = std::clamp(ReadI32(payload, kFieldBase + 4), 0, static_cast<int32_t>(descriptor.HeightInTiles) - 1);
+                    objectRecord.TileX = std::clamp(ReadI32(payload, kFieldBase + 0), 0, static_cast<int32_t>(descriptor.WidthInTiles) - 1);
+                    objectRecord.TileY =
+                        std::clamp(ReadI32(payload, kFieldBase + 4), 0, static_cast<int32_t>(descriptor.HeightInTiles) - 1);
                     objectRecord.BaseWidth     = std::max(1, ReadI32(payload, kFieldBase + 8));
                     objectRecord.BaseHeight    = std::max(1, ReadI32(payload, kFieldBase + 12));
                     objectRecord.OffsetX       = ReadI32(payload, kFieldBase + 16);
@@ -1906,15 +1987,15 @@ bool MapLoader::ParsePuzzle(const std::string&                                  
     const uint32_t mapHeight = inOutTileGrid.GetHeight();
     if (mapWidth > 0 && mapHeight > 0 && inOutDescriptor.CellWidth > 0 && inOutDescriptor.CellHeight > 0)
     {
-        const float cellW              = static_cast<float>(inOutDescriptor.CellWidth);
-        const float cellH              = static_cast<float>(inOutDescriptor.CellHeight);
-        const float originX            = static_cast<float>(inOutDescriptor.OriginX);
-        const float originY            = static_cast<float>(inOutDescriptor.OriginY);
-        const float bgWorldWidth       = static_cast<float>(gridWidth) * kPuzzleGridSize;
-        const float bgWorldHeight      = static_cast<float>(gridHeight) * kPuzzleGridSize;
-        const float bgCenterWorldY     = cellH * static_cast<float>(mapHeight) * 0.5f;
-        const float bgWorldX           = originX - bgWorldWidth * 0.5f;
-        const float bgWorldY           = bgCenterWorldY - bgWorldHeight * 0.5f;
+        const float cellW          = static_cast<float>(inOutDescriptor.CellWidth);
+        const float cellH          = static_cast<float>(inOutDescriptor.CellHeight);
+        const float originX        = static_cast<float>(inOutDescriptor.OriginX);
+        const float originY        = static_cast<float>(inOutDescriptor.OriginY);
+        const float bgWorldWidth   = static_cast<float>(gridWidth) * kPuzzleGridSize;
+        const float bgWorldHeight  = static_cast<float>(gridHeight) * kPuzzleGridSize;
+        const float bgCenterWorldY = cellH * static_cast<float>(mapHeight) * 0.5f;
+        const float bgWorldX       = originX - bgWorldWidth * 0.5f;
+        const float bgWorldY       = bgCenterWorldY - bgWorldHeight * 0.5f;
 
         for (uint32_t y = 0; y < mapHeight; ++y)
         {

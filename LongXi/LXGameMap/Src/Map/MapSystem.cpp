@@ -288,6 +288,13 @@ bool TryResolveTexturePath(const std::string&  framePath,
         }
 
         const std::string loweredCandidate = ToLowerAscii(normalizedCandidate);
+        // Check for "data/" prefix BEFORE "data/map/" to avoid incorrect path transformations
+        if (loweredCandidate.rfind("data/", 0) == 0)
+        {
+            pushPathAttempt(normalizedCandidate);
+            return;
+        }
+
         if (loweredCandidate.rfind("map/", 0) == 0)
         {
             pushPathAttempt(normalizedCandidate);
@@ -299,11 +306,6 @@ bool TryResolveTexturePath(const std::string&  framePath,
         {
             pushPathAttempt(normalizedCandidate);
             pushPathAttempt(normalizedCandidate.substr(5));
-            return;
-        }
-
-        if (loweredCandidate.rfind("data/", 0) == 0)
-        {
             return;
         }
 
@@ -493,6 +495,12 @@ bool ParseAniFrames(const std::string&                                      aniP
 
         if (key.rfind("frame", 0) == 0)
         {
+            // Skip .msk files - they're alpha masks that will be loaded automatically
+            // when the corresponding .dds texture is loaded
+            if (value.size() >= 4 && ToLowerAscii(value.substr(value.size() - 4)) == ".msk")
+            {
+                continue;
+            }
             outFramesByPuzzle[currentPuzzleIndex].push_back(value);
         }
     }
@@ -581,8 +589,91 @@ bool MapSystem::LoadMap(const std::string& mapPath)
 
     m_MapObjects.Clear();
     m_ObjectTextureRefs.clear();
+    m_ObjectAnimations.clear();
     m_SkyPuzzleLayers.clear();
-    uint32_t loadedObjectTextures = 0;
+    uint32_t loadedObjectTextures   = 0;
+    uint32_t loadedObjectAnimations = 0;
+
+    // Cache parsed ANI sections so we don't re-parse the same .ani file for each object.
+    using AniSectionFrames = std::unordered_map<std::string, std::vector<std::string>>;
+    std::unordered_map<std::string, AniSectionFrames> aniCache;
+
+    auto loadAniSectionsForObject = [this, &aniCache](const std::string& aniPath) -> const AniSectionFrames*
+    {
+        const auto cacheIt = aniCache.find(aniPath);
+        if (cacheIt != aniCache.end())
+        {
+            return &cacheIt->second;
+        }
+
+        AniSectionFrames           sections;
+        const std::vector<uint8_t> aniBytes = m_VFS->ReadAll(aniPath);
+        if (!aniBytes.empty())
+        {
+            std::string text(aniBytes.begin(), aniBytes.end());
+            std::replace(text.begin(), text.end(), '\r', '\n');
+
+            std::istringstream stream(text);
+            std::string        line;
+            std::string        currentSection;
+            while (std::getline(stream, line))
+            {
+                size_t start = 0;
+                size_t end   = line.size();
+                while (start < end && (line[start] == ' ' || line[start] == '\t'))
+                {
+                    ++start;
+                }
+                while (end > start && (line[end - 1] == ' ' || line[end - 1] == '\t' || line[end - 1] == '\n' || line[end - 1] == '\r'))
+                {
+                    --end;
+                }
+                const std::string trimmed = line.substr(start, end - start);
+                if (trimmed.empty() || trimmed[0] == ';' || trimmed[0] == '#')
+                {
+                    continue;
+                }
+
+                if (trimmed.front() == '[' && trimmed.back() == ']')
+                {
+                    currentSection = ToLowerAscii(trimmed.substr(1, trimmed.size() - 2));
+                    continue;
+                }
+
+                if (currentSection.empty())
+                {
+                    continue;
+                }
+
+                const size_t equalsPos = trimmed.find('=');
+                if (equalsPos == std::string::npos)
+                {
+                    continue;
+                }
+
+                const std::string key   = ToLowerAscii(trimmed.substr(0, equalsPos));
+                const std::string value = trimmed.substr(equalsPos + 1);
+                if (value.empty() || key == "frameamount")
+                {
+                    continue;
+                }
+
+                if (key.rfind("frame", 0) == 0)
+                {
+                    // Skip .msk files - they're alpha masks that will be loaded automatically
+                    // when the corresponding .dds texture is loaded
+                    if (value.size() >= 4 && ToLowerAscii(value.substr(value.size() - 4)) == ".msk")
+                    {
+                        continue;
+                    }
+                    sections[currentSection].push_back(value);
+                }
+            }
+        }
+
+        const auto [insertedIt, _] = aniCache.emplace(aniPath, std::move(sections));
+        return &insertedIt->second;
+    };
 
     for (MapObjectRecord& mapObject : loadedMapObjects)
     {
@@ -595,6 +686,80 @@ bool MapSystem::LoadMap(const std::string& mapPath)
             if (LoadSkyPuzzleLayer(mapObject, skyLayer, warnings))
             {
                 m_SkyPuzzleLayers.push_back(std::move(skyLayer));
+            }
+        }
+
+        // Try to load all animation frames for objects that reference an ANI file.
+        if (!mapObject.AniSourcePath.empty() && m_TextureManager != nullptr)
+        {
+            const AniSectionFrames* sections = loadAniSectionsForObject(mapObject.AniSourcePath);
+            if (sections != nullptr && !sections->empty())
+            {
+                // Build section name candidates (same logic as MapLoader).
+                std::vector<std::string> sectionCandidates;
+                auto                     pushCandidate = [&sectionCandidates](const std::string& raw)
+                {
+                    std::string normalized = ToLowerAscii(raw);
+                    if (!normalized.empty() &&
+                        std::find(sectionCandidates.begin(), sectionCandidates.end(), normalized) == sectionCandidates.end())
+                    {
+                        sectionCandidates.push_back(normalized);
+                    }
+                };
+                pushCandidate(mapObject.AniSectionName);
+                const size_t colonPos = mapObject.AniSectionName.find_last_of(':');
+                if (colonPos != std::string::npos && colonPos + 1 < mapObject.AniSectionName.size())
+                {
+                    pushCandidate(mapObject.AniSectionName.substr(colonPos + 1));
+                }
+
+                for (const std::string& sectionName : sectionCandidates)
+                {
+                    const auto sectionIt = sections->find(sectionName);
+                    if (sectionIt == sections->end())
+                    {
+                        continue;
+                    }
+
+                    std::vector<std::shared_ptr<Texture>> frames;
+                    for (const std::string& framePath : sectionIt->second)
+                    {
+                        // Skip .msk files - they're alpha masks that will be loaded automatically
+                        // (This is a safety check in case the ANI parsing filter is bypassed)
+                        if (framePath.size() >= 4 && ToLowerAscii(framePath.substr(framePath.size() - 4)) == ".msk")
+                        {
+                            continue;
+                        }
+
+                        std::shared_ptr<Texture> frame = m_TextureManager->LoadTexture(framePath);
+                        if (!frame)
+                        {
+                            // Try with map/ prefix variations.
+                            const std::string normalizedFrame = NormalizeVirtualResourcePath(framePath, true);
+                            if (!normalizedFrame.empty())
+                            {
+                                frame = m_TextureManager->LoadTexture("map/" + normalizedFrame);
+                            }
+                        }
+                        if (frame)
+                        {
+                            frames.push_back(std::move(frame));
+                        }
+                    }
+
+                    if (frames.size() > 1)
+                    {
+                        MapObjectAnimationState animState;
+                        animState.ObjectId              = objectId;
+                        animState.CurrentFrame          = 0;
+                        animState.FrameStepMilliseconds = static_cast<uint32_t>(std::max(1, mapObject.FrameInterval));
+                        animState.Loop                  = true;
+                        animState.Frames                = std::move(frames);
+                        m_ObjectAnimations[objectId]    = std::move(animState);
+                        ++loadedObjectAnimations;
+                    }
+                    break;
+                }
             }
         }
 
@@ -635,7 +800,10 @@ bool MapSystem::LoadMap(const std::string& mapPath)
     LX_MAP_INFO("[Map] Scene assets loaded: sceneFiles={}, sceneParts={}",
                 m_MapDescriptor.LoadedSceneFileCount,
                 m_MapDescriptor.LoadedScenePartCount);
-    LX_MAP_INFO("[Map] Object textures loaded: {}/{}", loadedObjectTextures, m_MapObjects.GetObjects().size());
+    LX_MAP_INFO("[Map] Object textures loaded: {}/{}, animated: {}",
+                loadedObjectTextures,
+                m_MapObjects.GetObjects().size(),
+                loadedObjectAnimations);
     LX_MAP_INFO("[Map] Sky puzzle layers loaded: {}", m_SkyPuzzleLayers.size());
     LX_MAP_INFO("[Map] Map load completed: {} (resolved={}, mapId={}, puzzle={})",
                 mapPath,
@@ -652,6 +820,7 @@ void MapSystem::UnloadMap()
     m_MapObjects.Clear();
     m_TextureRefs.clear();
     m_ObjectTextureRefs.clear();
+    m_ObjectAnimations.clear();
     m_AnimationStates.clear();
     m_SkyPuzzleLayers.clear();
     m_VisibleTilesCache.clear();
@@ -680,6 +849,7 @@ void MapSystem::BeginFrame(const TimingSnapshot& timingSnapshot)
     }
 
     UpdateAnimations(timingSnapshot);
+    UpdateObjectAnimations(timingSnapshot);
     UpdatePuzzleScroll(timingSnapshot);
     UpdateSkyPuzzleScroll(timingSnapshot);
 
@@ -732,6 +902,10 @@ void MapSystem::Render(SpriteRenderer& spriteRenderer, const TimingSnapshot& tim
     {
         m_RenderSnapshot.Warnings.push_back("TileRenderer failed to submit map tiles");
     }
+
+    // Render water reflection (sky mirror effect on water tiles)
+    // DISABLED: Current implementation causes visual artifacts. Needs proper implementation.
+    // RenderWaterReflection(spriteRenderer);
 
     RenderSkyPuzzleLayers(spriteRenderer, 1);
     RenderMapObjects(spriteRenderer);
@@ -847,6 +1021,48 @@ void MapSystem::UpdateAnimations(const TimingSnapshot& timingSnapshot)
     }
 }
 
+void MapSystem::UpdateObjectAnimations(const TimingSnapshot& timingSnapshot)
+{
+    if (m_ObjectAnimations.empty())
+    {
+        return;
+    }
+
+    const double deltaSeconds = std::max(0.0, timingSnapshot.DeltaTimeSeconds);
+    for (auto& [objectId, animState] : m_ObjectAnimations)
+    {
+        if (animState.Frames.empty())
+        {
+            continue;
+        }
+
+        const double frameStepSeconds = static_cast<double>(animState.FrameStepMilliseconds) / 1000.0;
+        if (frameStepSeconds <= 0.0)
+        {
+            continue;
+        }
+
+        animState.AccumulatedTimeSeconds += deltaSeconds;
+        while (animState.AccumulatedTimeSeconds >= frameStepSeconds)
+        {
+            animState.AccumulatedTimeSeconds -= frameStepSeconds;
+            if (animState.Loop)
+            {
+                animState.CurrentFrame = (animState.CurrentFrame + 1u) % static_cast<uint32_t>(animState.Frames.size());
+            }
+            else if (animState.CurrentFrame + 1u < animState.Frames.size())
+            {
+                ++animState.CurrentFrame;
+            }
+            else
+            {
+                animState.CurrentFrame = static_cast<uint32_t>(animState.Frames.size() - 1u);
+                break;
+            }
+        }
+    }
+}
+
 void MapSystem::UpdatePuzzleScroll(const TimingSnapshot& timingSnapshot)
 {
     if (m_MapDescriptor.PuzzleRollSpeedX == 0 && m_MapDescriptor.PuzzleRollSpeedY == 0)
@@ -906,11 +1122,11 @@ void MapSystem::UpdateSkyPuzzleScroll(const TimingSnapshot& timingSnapshot)
 
 bool MapSystem::LoadSkyPuzzleLayer(const MapObjectRecord& skyPuzzleObject, SkyPuzzleLayer& outLayer, std::vector<std::string>& outWarnings)
 {
-    outLayer                  = {};
-    outLayer.SourceObjectId   = skyPuzzleObject.ObjectId;
-    outLayer.SceneLayerIndex  = skyPuzzleObject.SceneLayerIndex;
-    outLayer.MoveRateX        = skyPuzzleObject.MoveRateX;
-    outLayer.MoveRateY        = skyPuzzleObject.MoveRateY;
+    outLayer                 = {};
+    outLayer.SourceObjectId  = skyPuzzleObject.ObjectId;
+    outLayer.SceneLayerIndex = skyPuzzleObject.SceneLayerIndex;
+    outLayer.MoveRateX       = skyPuzzleObject.MoveRateX;
+    outLayer.MoveRateY       = skyPuzzleObject.MoveRateY;
 
     if (m_VFS == nullptr || m_TextureManager == nullptr)
     {
@@ -1199,8 +1415,8 @@ void MapSystem::RenderSkyPuzzleLayers(SpriteRenderer& spriteRenderer, uint32_t r
         {
             for (int32_t gridX = startGridX; gridX <= endGridX; ++gridX)
             {
-                if (!wrapGrid &&
-                    (gridX < 0 || gridY < 0 || gridX >= static_cast<int32_t>(skyLayer.GridWidth) || gridY >= static_cast<int32_t>(skyLayer.GridHeight)))
+                if (!wrapGrid && (gridX < 0 || gridY < 0 || gridX >= static_cast<int32_t>(skyLayer.GridWidth) ||
+                                  gridY >= static_cast<int32_t>(skyLayer.GridHeight)))
                 {
                     continue;
                 }
@@ -1273,10 +1489,24 @@ void MapSystem::RenderMapObjects(SpriteRenderer& spriteRenderer)
             continue;
         }
 
-        const auto textureIt = m_ObjectTextureRefs.find(objectRecord->ObjectId);
-        if (textureIt == m_ObjectTextureRefs.end() || !textureIt->second)
+        // Determine the texture to render: animated frame or static texture.
+        const Texture* texture = nullptr;
+        const auto     animIt  = m_ObjectAnimations.find(objectRecord->ObjectId);
+        if (animIt != m_ObjectAnimations.end() && !animIt->second.Frames.empty())
         {
-            continue;
+            const MapObjectAnimationState& animState = animIt->second;
+            const uint32_t                 frameIdx  = animState.CurrentFrame % static_cast<uint32_t>(animState.Frames.size());
+            texture                                  = animState.Frames[frameIdx].get();
+        }
+
+        if (texture == nullptr)
+        {
+            const auto textureIt = m_ObjectTextureRefs.find(objectRecord->ObjectId);
+            if (textureIt == m_ObjectTextureRefs.end() || !textureIt->second)
+            {
+                continue;
+            }
+            texture = textureIt->second.get();
         }
 
         float worldX = 0.0f;
@@ -1296,26 +1526,208 @@ void MapSystem::RenderMapObjects(SpriteRenderer& spriteRenderer)
             worldY                 = cellHeight * static_cast<float>(objectRecord->TileX + objectRecord->TileY) * 0.5f + originY;
         }
 
-        // Legacy cover/scene/terrain-part objects project from cell position + sprite offsets.
-        // Their serialized "height" field is not a direct screen-space Z displacement.
+        // Project cell world position to screen, then apply sprite anchor offset.
+        // TerrainPart (.scene): SpriteOffset is negative (top-left relative to cell center) → add.
+        // Cover/Scene (DMAP): Offset is positive anchor point → subtract.
         float screenX = 0.0f;
         float screenY = 0.0f;
         m_MapCamera.WorldToScreen(worldX, worldY, 0.0f, screenX, screenY);
 
-        const Texture* texture    = textureIt->second.get();
-        const float    drawWidth  = static_cast<float>(texture->GetWidth()) * zoom;
-        const float    drawHeight = static_cast<float>(texture->GetHeight()) * zoom;
+        const float drawWidth  = static_cast<float>(texture->GetWidth()) * zoom;
+        const float drawHeight = static_cast<float>(texture->GetHeight()) * zoom;
 
-        const bool  isTerrainPartObject = objectRecord->ObjectType == 2u;
-        const float offsetX             = static_cast<float>(objectRecord->OffsetX) * zoom;
-        const float offsetY             = static_cast<float>(objectRecord->OffsetY) * zoom;
-        // MAP_COVER / MAP_SCENE use screen - offset while MAP_TERRAIN_PART uses screen + offset.
-        const Vector2 drawPosition =
-            isTerrainPartObject ? Vector2{screenX + offsetX, screenY + offsetY} : Vector2{screenX - offsetX, screenY - offsetY};
-        const Vector2 drawSize = {drawWidth, drawHeight};
-        spriteRenderer.DrawSprite(texture, drawPosition, drawSize);
+        const float offsetX = static_cast<float>(objectRecord->OffsetX) * zoom;
+        const float offsetY = static_cast<float>(objectRecord->OffsetY) * zoom;
+
+        float drawX = 0.0f;
+        float drawY = 0.0f;
+        if (objectRecord->ObjectType == 2u)
+        {
+            // TerrainPart: .scene SpriteOffset is signed offset from cell center to sprite top-left.
+            drawX = screenX + offsetX;
+            drawY = screenY + offsetY;
+        }
+        else
+        {
+            // MAP_COVER, MAP_SCENE and others: DMAP offset is positive anchor → subtract.
+            drawX = screenX - offsetX;
+            drawY = screenY - offsetY;
+        }
+
+        const Vector2 drawPosition = Vector2{drawX, drawY};
+        const Vector2 drawSize     = {drawWidth, drawHeight};
+
+        // Apply legacy ARGB tint color.
+        const uint32_t argb      = objectRecord->TintARGB;
+        const float    tintA     = static_cast<float>((argb >> 24) & 0xFF) / 255.0f;
+        const float    tintR     = static_cast<float>((argb >> 16) & 0xFF) / 255.0f;
+        const float    tintG     = static_cast<float>((argb >> 8) & 0xFF) / 255.0f;
+        const float    tintB     = static_cast<float>(argb & 0xFF) / 255.0f;
+        const Color    tintColor = {tintR, tintG, tintB, tintA};
+        spriteRenderer.DrawSprite(texture, drawPosition, drawSize, {0.0f, 0.0f}, {1.0f, 1.0f}, tintColor);
         ++m_RenderSnapshot.DrawCalls;
     }
+}
+
+void MapSystem::RenderWaterReflection(SpriteRenderer& spriteRenderer)
+{
+    // DISABLED: Water reflection implementation needs revision.
+    // Current approach of rendering puzzle tiles per water tile causes visual artifacts.
+    return;
+
+    // TODO: Implement proper water reflection:
+    // 1. Render a single mirrored copy of the sky background over all water tiles
+    // 2. Use stencil mask or similar to only render on water tile areas
+    // 3. Apply mirror flip and appropriate alpha blending
+
+    /*
+    constexpr uint16_t kWaterTerrainId = 1;
+
+    if (m_VisibleTilesCache.empty() || m_MapDescriptor.PuzzleGridWidth == 0 || m_MapDescriptor.PuzzleGridHeight == 0)
+    {
+        return;
+    }
+
+    const float zoom = std::max(0.1f, m_MapCamera.GetZoom());
+    const float viewportWidth = static_cast<float>(std::max(1, m_Renderer != nullptr ? m_Renderer->GetViewportWidth() : 1));
+    const float viewportHeight = static_cast<float>(std::max(1, m_Renderer != nullptr ? m_Renderer->GetViewportHeight() : 1));
+
+    // Calculate puzzle background bounds (same as in TileRenderer)
+    const float bgWorldWidth = static_cast<float>(m_MapDescriptor.PuzzleGridWidth) * kPuzzleGridSize;
+    const float bgWorldHeight = static_cast<float>(m_MapDescriptor.PuzzleGridHeight) * kPuzzleGridSize;
+    const float bgCenterWorldY = static_cast<float>(m_MapDescriptor.CellHeight) * static_cast<float>(m_MapDescriptor.HeightInTiles) * 0.5f;
+    const float bgWorldX = static_cast<float>(m_MapDescriptor.OriginX) - bgWorldWidth * 0.5f + m_PuzzleScrollOffsetX;
+    const float bgWorldY = bgCenterWorldY - bgWorldHeight * 0.5f + m_PuzzleScrollOffsetY;
+
+    // For water reflection, use NEGATIVE scroll offset to create mirror effect
+    const float reflectionScrollOffsetX = -m_PuzzleScrollOffsetX;
+    const float reflectionScrollOffsetY = -m_PuzzleScrollOffsetY;
+    const float bgWorldXReflect = static_cast<float>(m_MapDescriptor.OriginX) - bgWorldWidth * 0.5f + reflectionScrollOffsetX;
+    const float bgWorldYReflect = bgCenterWorldY - bgWorldHeight * 0.5f + reflectionScrollOffsetY;
+
+    const size_t expectedPuzzleCount = static_cast<size_t>(m_MapDescriptor.PuzzleGridWidth) *
+    static_cast<size_t>(m_MapDescriptor.PuzzleGridHeight); if (m_MapDescriptor.PuzzleIndices.size() < expectedPuzzleCount)
+    {
+        return;
+    }
+
+    uint32_t waterTileCount = 0;
+    for (const TileRecord* tileRecord : m_VisibleTilesCache)
+    {
+        if (tileRecord == nullptr || tileRecord->TerrainId != kWaterTerrainId)
+        {
+            continue;
+        }
+
+        // Calculate screen position for this tile
+        float worldX = 0.0f;
+        float worldY = 0.0f;
+        float worldZ = 0.0f;
+        if (!m_MapCamera.TileToWorld(tileRecord->TileX, tileRecord->TileY, tileRecord->Height, worldX, worldY, worldZ))
+        {
+            continue;
+        }
+
+        float screenX = 0.0f;
+        float screenY = 0.0f;
+        m_MapCamera.WorldToScreen(worldX, worldY, worldZ, screenX, screenY);
+
+        // Calculate puzzle grid position relative to this water tile
+        const float tileCenterWorldX = worldX;
+        const float tileCenterWorldY = worldY;
+        const float bgViewportXReflect = tileCenterWorldX - bgWorldXReflect - bgWorldWidth * 0.5f;
+        const float bgViewportYReflect = tileCenterWorldY - bgWorldYReflect - bgWorldHeight * 0.5f;
+
+        // Calculate which puzzle tiles to render for this water tile (mirror effect)
+        const int32_t startGridX = std::max<int32_t>(0, static_cast<int32_t>(std::floor(bgViewportXReflect / kPuzzleGridSize)) - 1);
+        const int32_t startGridY = std::max<int32_t>(0, static_cast<int32_t>(std::floor(bgViewportYReflect / kPuzzleGridSize)) - 1);
+        const int32_t endGridX = std::min<int32_t>(static_cast<int32_t>(m_MapDescriptor.PuzzleGridWidth) - 1,
+                                           static_cast<int32_t>(std::floor((bgViewportXReflect + kPuzzleGridSize * 2) / kPuzzleGridSize)) +
+    1); const int32_t endGridY = std::min<int32_t>(static_cast<int32_t>(m_MapDescriptor.PuzzleGridHeight) - 1,
+                                           static_cast<int32_t>(std::floor((bgViewportYReflect + kPuzzleGridSize * 2) / kPuzzleGridSize)) +
+    1);
+
+        if (startGridX > endGridX || startGridY > endGridY)
+        {
+            continue;
+        }
+
+        // Render puzzle tiles for water reflection with alpha blending
+        const float puzzleCellScreenSize = kPuzzleGridSize * zoom;
+        const float tileScreenSize = static_cast<float>(m_MapDescriptor.CellWidth) * zoom; // Approximate tile screen size
+
+        for (int32_t gridY = startGridY; gridY <= endGridY; ++gridY)
+        {
+            for (int32_t gridX = startGridX; gridX <= endGridX; ++gridX)
+            {
+                const size_t puzzleOffset =
+                    static_cast<size_t>(gridY) * static_cast<size_t>(m_MapDescriptor.PuzzleGridWidth) + static_cast<size_t>(gridX);
+                const uint16_t puzzleIndex = m_MapDescriptor.PuzzleIndices[puzzleOffset];
+                if (puzzleIndex == kInvalidPuzzleIndex)
+                {
+                    continue;
+                }
+
+                // Get puzzle texture
+                const Texture* puzzleTexture = nullptr;
+                const auto animIt = m_AnimationStates.end();
+                for (const MapAnimationState& animState : m_AnimationStates)
+                {
+                    if (animState.AnimationId == puzzleIndex && !animState.Frames.empty())
+                    {
+                        const uint32_t frameIdx = animState.CurrentFrame % static_cast<uint32_t>(animState.Frames.size());
+                        puzzleTexture = animState.Frames[frameIdx].get();
+                        break;
+                    }
+                }
+
+                if (puzzleTexture == nullptr)
+                {
+                    const auto textureIt = m_TextureRefs.find(puzzleIndex);
+                    if (textureIt != m_TextureRefs.end() && textureIt->second)
+                    {
+                        puzzleTexture = textureIt->second.get();
+                    }
+                }
+
+                if (!puzzleTexture)
+                {
+                    continue;
+                }
+
+                // Calculate reflected screen position
+                // Mirror effect: flip Y coordinate relative to tile center
+                const float puzzleScreenX = (static_cast<float>(gridX) * kPuzzleGridSize - bgViewportXReflect) * zoom + screenX -
+    tileScreenSize * 0.5f; const float puzzleScreenY = (static_cast<float>(gridY) * kPuzzleGridSize - bgViewportYReflect) * zoom + screenY -
+    tileScreenSize * 0.5f;
+
+                // Apply mirror flip (invert Y relative to tile center)
+                const float tileCenterScreenY = screenY;
+                const float mirroredY = tileCenterScreenY - (puzzleScreenY - tileCenterScreenY);
+
+                const Vector2 drawPosition = {puzzleScreenX, mirroredY};
+                const Vector2 drawSize = {puzzleCellScreenSize, puzzleCellScreenSize};
+
+                // Use flipped UV coordinates for mirror effect
+                const Vector2 uvMin = {0.0f, 1.0f}; // Flip Y
+                const Vector2 uvMax = {1.0f, 0.0f};
+
+                // Water reflection color with alpha (cyan/blue tint with transparency)
+                const Color reflectionColor = {0.7f, 0.85f, 1.0f, 0.35f}; // Light cyan with 35% opacity
+
+                spriteRenderer.DrawSprite(puzzleTexture, drawPosition, drawSize, uvMin, uvMax, reflectionColor);
+                ++m_RenderSnapshot.DrawCalls;
+            }
+        }
+
+        ++waterTileCount;
+    }
+
+    if (waterTileCount > 0 && (m_RenderSnapshot.FrameIndex % 300) == 0)
+    {
+        LX_MAP_INFO("[Map] Rendered water reflection on {} tiles", waterTileCount);
+    }
+    */
 }
 
 void MapSystem::ResetSnapshot(uint64_t frameIndex)

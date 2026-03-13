@@ -25,6 +25,16 @@ public:
     // Returns true on success, false on failure (out is unchanged on failure)
     static bool LoadTGA(const std::vector<uint8_t>& data, TextureData& out);
 
+    // Load MSK file data (8-bit grayscale alpha mask)
+    // Returns raw 8-bit grayscale values, width, and height in the provided vectors
+    // Returns true on success, false on failure
+    static bool LoadMSK(const std::vector<uint8_t>& data, std::vector<uint8_t>& outAlphaData, uint32_t& outWidth, uint32_t& outHeight);
+
+    // Apply MSK alpha mask to RGBA texture data
+    // Replaces the alpha channel of textureData with values from alphaMaskData
+    // Both must have the same dimensions
+    static void ApplyMSKMask(TextureData& textureData, const std::vector<uint8_t>& alphaMaskData);
+
     // Non-instantiable
     TextureLoader()  = delete;
     ~TextureLoader() = delete;

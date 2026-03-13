@@ -47,7 +47,7 @@ public:
 private:
     struct SkyPuzzleLayer
     {
-        uint32_t                                               SourceObjectId   = 0;
+        uint32_t                                               SourceObjectId  = 0;
         int32_t                                                SceneLayerIndex = 0;
         std::string                                            PuzzlePath;
         uint32_t                                               GridWidth  = 0;
@@ -64,10 +64,12 @@ private:
     };
 
     void UpdateAnimations(const TimingSnapshot& timingSnapshot);
+    void UpdateObjectAnimations(const TimingSnapshot& timingSnapshot);
     void UpdatePuzzleScroll(const TimingSnapshot& timingSnapshot);
     void UpdateSkyPuzzleScroll(const TimingSnapshot& timingSnapshot);
     bool LoadSkyPuzzleLayer(const MapObjectRecord& skyPuzzleObject, SkyPuzzleLayer& outLayer, std::vector<std::string>& outWarnings);
     void RenderSkyPuzzleLayers(SpriteRenderer& spriteRenderer, uint32_t renderPass);
+    void RenderWaterReflection(SpriteRenderer& spriteRenderer);
     void RenderMapObjects(SpriteRenderer& spriteRenderer);
     void ResetSnapshot(uint64_t frameIndex);
 
@@ -85,6 +87,7 @@ private:
     MapDescriptor                                          m_MapDescriptor;
     std::unordered_map<uint16_t, std::shared_ptr<Texture>> m_TextureRefs;
     std::unordered_map<uint32_t, std::shared_ptr<Texture>> m_ObjectTextureRefs;
+    std::unordered_map<uint32_t, MapObjectAnimationState>  m_ObjectAnimations;
     std::vector<MapAnimationState>                         m_AnimationStates;
     std::vector<SkyPuzzleLayer>                            m_SkyPuzzleLayers;
     std::vector<const TileRecord*>                         m_VisibleTilesCache;

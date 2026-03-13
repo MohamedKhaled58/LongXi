@@ -124,6 +124,50 @@ std::shared_ptr<Texture> TextureManager::LoadTexture(const std::string& path)
         return nullptr;
     }
 
+    // Check for corresponding .msk alpha mask file
+    // MSK files are alpha masks that replace the texture's alpha channel
+    if (texData.Format == TextureFormat::RGBA8)
+    {
+        // Build MSK path by replacing extension with .msk
+        std::string mskPath = normalized;
+        size_t      dotPos  = mskPath.find_last_of('.');
+        if (dotPos != std::string::npos)
+        {
+            mskPath = mskPath.substr(0, dotPos) + ".msk";
+
+            // Try to load the MSK file directly from VFS (not through LoadTexture)
+            std::vector<uint8_t> mskFileData = m_VFS.ReadAll(mskPath);
+            if (!mskFileData.empty())
+            {
+                std::vector<uint8_t> alphaData;
+                uint32_t             mskWidth, mskHeight;
+
+                if (TextureLoader::LoadMSK(mskFileData, alphaData, mskWidth, mskHeight))
+                {
+                    // Verify dimensions match
+                    if (mskWidth == texData.Width && mskHeight == texData.Height)
+                    {
+                        TextureLoader::ApplyMSKMask(texData, alphaData);
+                        LX_ENGINE_INFO("[Texture] Applied MSK mask from: {}", mskPath);
+                    }
+                    else
+                    {
+                        LX_ENGINE_WARN("[Texture] MSK mask dimensions {}x{} don't match texture {}x{}, skipping",
+                                       mskWidth,
+                                       mskHeight,
+                                       texData.Width,
+                                       texData.Height);
+                    }
+                }
+                else
+                {
+                    LX_ENGINE_WARN("[Texture] Failed to decode MSK file: {}", mskPath);
+                }
+            }
+            // If MSK file doesn't exist, that's fine - silently continue
+        }
+    }
+
     // Upload to GPU via descriptor-based renderer API.
     RendererTextureDesc textureDesc = {};
     textureDesc.Width               = texData.Width;

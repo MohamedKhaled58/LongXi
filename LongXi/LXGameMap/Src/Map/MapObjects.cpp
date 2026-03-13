@@ -4,6 +4,8 @@
 #include <cstddef>
 #include <unordered_map>
 
+#include "Core/Logging/LogMacros.h"
+
 namespace LongXi
 {
 
@@ -51,10 +53,10 @@ int32_t GetLegacyVisibilityPaddingTiles(const MapObjectRecord& objectRecord)
 
 bool IsVisibleInWindow(const MapObjectRecord& objectRecord, const VisibleTileWindow& window)
 {
-    const OrderingFootprint footprint = GetOrderingFootprint(objectRecord);
-    const int32_t           minTileX  = objectRecord.TileX - footprint.Width + 1;
-    const int32_t           minTileY  = objectRecord.TileY - footprint.Height + 1;
-    const int32_t           padding   = GetLegacyVisibilityPaddingTiles(objectRecord);
+    const OrderingFootprint footprint  = GetOrderingFootprint(objectRecord);
+    const int32_t           minTileX   = objectRecord.TileX - footprint.Width + 1;
+    const int32_t           minTileY   = objectRecord.TileY - footprint.Height + 1;
+    const int32_t           padding    = GetLegacyVisibilityPaddingTiles(objectRecord);
     const int32_t           startTileX = window.StartTileX - padding;
     const int32_t           startTileY = window.StartTileY - padding;
     const int32_t           endTileX   = window.EndTileX + padding;
@@ -84,7 +86,8 @@ bool IsInTerrainPartBase(const MapObjectRecord& terrainPart, const MapObjectReco
     const int32_t           minTileX  = terrainPart.TileX - footprint.Width + 1;
     const int32_t           minTileY  = terrainPart.TileY - footprint.Height + 1;
 
-    return objectRecord.TileX <= terrainPart.TileX && objectRecord.TileY <= terrainPart.TileY && objectRecord.TileX >= minTileX && objectRecord.TileY >= minTileY;
+    return objectRecord.TileX <= terrainPart.TileX && objectRecord.TileY <= terrainPart.TileY && objectRecord.TileX >= minTileX &&
+           objectRecord.TileY >= minTileY;
 }
 
 void InsertLegacyDepthOrdered(const MapObjectRecord* objectRecord, std::vector<const MapObjectRecord*>& orderedObjects)
@@ -114,10 +117,12 @@ void InsertLegacyDepthOrdered(const MapObjectRecord* objectRecord, std::vector<c
         const int32_t           oldObjectY   = oldObject->TileY;
         const int32_t           oldObjectSum = oldObjectX + oldObjectY;
 
-        const bool noXOverlay = (newObjectX - newFootprint.Width + 1) - oldObjectX > 0 || (oldObjectX - oldFootprint.Width + 1) - newObjectX > 0;
+        const bool noXOverlay =
+            (newObjectX - newFootprint.Width + 1) - oldObjectX > 0 || (oldObjectX - oldFootprint.Width + 1) - newObjectX > 0;
         if (noXOverlay)
         {
-            const bool noYOverlay = (newObjectY - newFootprint.Height + 1) - oldObjectY > 0 || (oldObjectY - oldFootprint.Height + 1) - newObjectY > 0;
+            const bool noYOverlay =
+                (newObjectY - newFootprint.Height + 1) - oldObjectY > 0 || (oldObjectY - oldFootprint.Height + 1) - newObjectY > 0;
             if (!noYOverlay)
             {
                 if (newObjectX < oldObjectX)
@@ -147,7 +152,8 @@ void InsertLegacyDepthOrdered(const MapObjectRecord* objectRecord, std::vector<c
                 }
 
                 overlayAfterIndex = static_cast<int>(compareIndex);
-                for (int probeIndex = static_cast<int>(compareIndex) + 1; probeIndex < static_cast<int>(orderedObjects.size()); ++probeIndex)
+                for (int probeIndex = static_cast<int>(compareIndex) + 1; probeIndex < static_cast<int>(orderedObjects.size());
+                     ++probeIndex)
                 {
                     const MapObjectRecord* probeObject = orderedObjects[static_cast<size_t>(probeIndex)];
                     if (probeObject == nullptr)
@@ -277,7 +283,8 @@ void InsertTerrainPartChild(const MapObjectRecord* objectRecord, std::vector<con
         const int32_t           oldObjectY   = oldObject->TileY;
         const int32_t           oldObjectSum = oldObjectX + oldObjectY;
 
-        const bool noXOverlay = (newObjectX - newFootprint.Width + 1) - oldObjectX > 0 || (oldObjectX - oldFootprint.Width + 1) - newObjectX > 0;
+        const bool noXOverlay =
+            (newObjectX - newFootprint.Width + 1) - oldObjectX > 0 || (oldObjectX - oldFootprint.Width + 1) - newObjectX > 0;
         if (noXOverlay)
         {
             const int32_t newBottom = newObjectY - newFootprint.Height + 1;
@@ -306,9 +313,9 @@ void InsertTerrainPartChild(const MapObjectRecord* objectRecord, std::vector<con
     orderedChildren.push_back(objectRecord);
 }
 
-void AppendFlattenedObjects(const MapObjectRecord*                                                                          objectRecord,
+void AppendFlattenedObjects(const MapObjectRecord*                                                                 objectRecord,
                             const std::unordered_map<const MapObjectRecord*, std::vector<const MapObjectRecord*>>& attachedObjects,
-                            std::vector<const MapObjectRecord*>&                                                       outVisibleObjects)
+                            std::vector<const MapObjectRecord*>&                                                   outVisibleObjects)
 {
     if (objectRecord == nullptr)
     {
@@ -426,7 +433,7 @@ void MapObjects::CollectVisible(const VisibleTileWindow& window, std::vector<con
 
     std::ranges::sort(nonInteractiveCandidates, NonInteractiveSortPredicate);
 
-    std::vector<const MapObjectRecord*>                                                        orderedInteractiveObjects;
+    std::vector<const MapObjectRecord*>                                             orderedInteractiveObjects;
     std::unordered_map<const MapObjectRecord*, std::vector<const MapObjectRecord*>> attachedInteractiveObjects;
     orderedInteractiveObjects.reserve(terrainPartCandidates.size() + otherInteractiveCandidates.size());
 
@@ -437,7 +444,7 @@ void MapObjects::CollectVisible(const VisibleTileWindow& window, std::vector<con
 
     for (auto candidateIt = otherInteractiveCandidates.rbegin(); candidateIt != otherInteractiveCandidates.rend(); ++candidateIt)
     {
-        const MapObjectRecord* objectRecord = *candidateIt;
+        const MapObjectRecord* objectRecord          = *candidateIt;
         bool                   attachedToTerrainPart = false;
         for (const MapObjectRecord* orderedObject : orderedInteractiveObjects)
         {
