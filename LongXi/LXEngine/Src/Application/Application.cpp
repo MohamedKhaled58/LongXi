@@ -105,6 +105,13 @@ void Application::ConfigureVirtualFileSystem()
         m_Engine->MountWdf(exeDir + "/data.wdf");
 
         LX_ENGINE_INFO("[Application] VFS configuration complete");
+
+        // Initialize ResourceManager AFTER VFS is mounted
+        LX_ENGINE_INFO("[Application] Initializing resource manager");
+        if (!m_Engine->InitializeResourceManager())
+        {
+            LX_ENGINE_WARN("[Application] ResourceManager initialization failed — asset loading may not work");
+        }
     }
     else
     {

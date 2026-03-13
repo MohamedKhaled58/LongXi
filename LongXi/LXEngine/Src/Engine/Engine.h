@@ -28,6 +28,7 @@ class InputSystem;
 class TextureManager;
 class SpriteRenderer;
 class Scene;
+class ResourceManager;
 
 using LXCore::CVirtualFileSystem;
 using LXMap::MapSystem;
@@ -57,6 +58,7 @@ public:
 
     void MountDirectory(const std::string& path);
     void MountWdf(const std::string& path);
+    bool InitializeResourceManager();
 
     Renderer&                       GetRenderer();
     InputSystem&                    GetInput();
@@ -64,6 +66,7 @@ public:
     TextureManager&                 GetTextureManager();
     SpriteRenderer&                 GetSpriteRenderer();
     Scene&                          GetScene();
+    ResourceManager&                GetResourceManager();
     MapSystem&                      GetMapSystem();
     bool                            LoadMap(const std::string& mapPath);
     bool                            IsMapReady() const;
@@ -93,6 +96,7 @@ private:
     std::unique_ptr<SpriteRenderer>     m_SpriteRenderer;
     std::unique_ptr<Scene>              m_Scene;
     std::unique_ptr<MapSystem>          m_MapSystem;
+    std::unique_ptr<ResourceManager>    m_ResourceManager;
     LXCore::TimingService               m_TimingService;
     ProfilerCollector                   m_ProfilerCollector;
     bool                                m_HasLastSceneCameraState = false;
