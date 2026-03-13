@@ -56,12 +56,12 @@ private:
     CVirtualFileSystem* m_VFS            = nullptr;
     TextureManager*     m_TextureManager = nullptr;
 
-    MapLoader        m_Loader;
-    TileGrid         m_TileGrid;
-    TileRenderer     m_TileRenderer;
-    MapObjects       m_MapObjects;
-    MapCamera        m_MapCamera;
-    SkyPuzzleSystem  m_SkyPuzzleSystem;
+    MapLoader       m_Loader;
+    TileGrid        m_TileGrid;
+    TileRenderer    m_TileRenderer;
+    MapObjects      m_MapObjects;
+    MapCamera       m_MapCamera;
+    SkyPuzzleSystem m_SkyPuzzleSystem;
 
     MapDescriptor                                          m_MapDescriptor;
     std::unordered_map<uint16_t, std::shared_ptr<Texture>> m_TextureRefs;

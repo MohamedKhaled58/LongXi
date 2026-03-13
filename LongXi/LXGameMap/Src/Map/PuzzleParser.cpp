@@ -17,9 +17,9 @@
 #include "Map/AniParser.h"
 #include "Map/MapBinaryReader.h"
 #include "Map/MapTypes.h"
+#include "Map/TileGrid.h"
 #include "Texture/Texture.h"
 #include "Texture/TextureManager.h"
-#include "Map/TileGrid.h"
 
 namespace LongXi
 {

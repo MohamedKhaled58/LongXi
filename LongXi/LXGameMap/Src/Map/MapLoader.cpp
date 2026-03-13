@@ -926,7 +926,6 @@ bool MapLoader::WorldToTile(const MapDescriptor& descriptor, int32_t worldX, int
     return true;
 }
 
-
 bool MapLoader::ResolveMapPath(const std::string&        dMapPath,
                                CVirtualFileSystem&       vfs,
                                std::string&              outResolvedPath,

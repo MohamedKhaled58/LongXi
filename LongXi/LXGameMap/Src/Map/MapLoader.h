@@ -56,7 +56,7 @@ private:
                                              const MapDescriptor& descriptor,
                                              CVirtualFileSystem&  vfs,
                                              std::string&         outResolvedPath);
-    static bool WorldToTile(const MapDescriptor& descriptor, int32_t worldX, int32_t worldY, int32_t& outTileX, int32_t& outTileY);
+    static bool        WorldToTile(const MapDescriptor& descriptor, int32_t worldX, int32_t worldY, int32_t& outTileX, int32_t& outTileY);
 
     static std::string ReplaceExtension(const std::string& path, const std::string& extension);
     static void        AddWarning(std::vector<std::string>& warnings, const std::string& message);

@@ -44,9 +44,20 @@ public:
                     uint32_t             viewportWidth,
                     uint32_t             viewportHeight);
 
-    float    GetGroundScrollOffsetX() const { return m_GroundScrollOffsetX; }
-    float    GetGroundScrollOffsetY() const { return m_GroundScrollOffsetY; }
-    uint32_t GetLayerCount() const { return static_cast<uint32_t>(m_Layers.size()); }
+    float GetGroundScrollOffsetX() const
+    {
+        return m_GroundScrollOffsetX;
+    }
+
+    float GetGroundScrollOffsetY() const
+    {
+        return m_GroundScrollOffsetY;
+    }
+
+    uint32_t GetLayerCount() const
+    {
+        return static_cast<uint32_t>(m_Layers.size());
+    }
 
 private:
     struct Layer

@@ -559,10 +559,10 @@ uint32_t SkyPuzzleSystem::Render(SpriteRenderer&      spriteRenderer,
         return 0;
     }
 
-    uint32_t    drawCalls     = 0;
-    const float zoom          = std::max(0.1f, camera.GetZoom());
-    const float vpWidth       = static_cast<float>(std::max(1u, viewportWidth));
-    const float vpHeight      = static_cast<float>(std::max(1u, viewportHeight));
+    uint32_t    drawCalls       = 0;
+    const float zoom            = std::max(0.1f, camera.GetZoom());
+    const float vpWidth         = static_cast<float>(std::max(1u, viewportWidth));
+    const float vpHeight        = static_cast<float>(std::max(1u, viewportHeight));
     const float viewWorldWidth  = vpWidth / zoom;
     const float viewWorldHeight = vpHeight / zoom;
 
