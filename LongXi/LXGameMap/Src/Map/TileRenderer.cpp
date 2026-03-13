@@ -77,11 +77,16 @@ bool TileRenderer::RenderTiles(const MapDescriptor&                             
     const float viewWorldMinX   = camera.GetViewCenterWorldX() - viewWorldWidth * 0.5f;
     const float viewWorldMinY   = camera.GetViewCenterWorldY() - viewWorldHeight * 0.5f;
 
-    const float bgWorldWidth   = static_cast<float>(descriptor.PuzzleGridWidth) * kPuzzleGridSize;
-    const float bgWorldHeight  = static_cast<float>(descriptor.PuzzleGridHeight) * kPuzzleGridSize;
-    const float bgCenterWorldY = static_cast<float>(descriptor.CellHeight) * static_cast<float>(descriptor.HeightInTiles) * 0.5f;
-    const float bgWorldX       = static_cast<float>(descriptor.OriginX) - bgWorldWidth * 0.5f + puzzleScrollOffsetX;
-    const float bgWorldY       = bgCenterWorldY - bgWorldHeight * 0.5f + puzzleScrollOffsetY;
+    const float bgWorldWidth  = static_cast<float>(descriptor.PuzzleGridWidth) * kPuzzleGridSize;
+    const float bgWorldHeight = static_cast<float>(descriptor.PuzzleGridHeight) * kPuzzleGridSize;
+    const float bgWorldX      = static_cast<float>(descriptor.OriginX) - bgWorldWidth * 0.5f + puzzleScrollOffsetX;
+
+    // CGameMap::GetBgWorldPos: include OriginY and apply isometric parity correction.
+    float bgWorldY = static_cast<float>(descriptor.OriginY) +
+                     (static_cast<float>(descriptor.CellHeight) * static_cast<float>(descriptor.HeightInTiles) * 0.5f) -
+                     (bgWorldHeight * 0.5f);
+    bgWorldY -= static_cast<float>((descriptor.HeightInTiles + 1) % 2) * static_cast<float>(descriptor.CellHeight) * 0.5f;
+    bgWorldY += puzzleScrollOffsetY;
 
     const float   bgViewportX = viewWorldMinX - bgWorldX;
     const float   bgViewportY = viewWorldMinY - bgWorldY;

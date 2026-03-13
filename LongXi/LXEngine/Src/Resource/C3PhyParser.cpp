@@ -161,7 +161,7 @@ bool C3PhyParser::Parse(const std::vector<uint8_t>& data, MeshResource& outMesh,
 
     const uint32_t        totalIndices = (normalTriCount + alphaTriCount) * 3;
     std::vector<uint16_t> indices16;
-    if (!reader.ReadArray(indices16, totalIndices))
+    if (!reader.ReadArray(totalIndices, indices16))
     {
         LX_C3_WARN("PHY: Failed to read indices (count={}, name='{}')", totalIndices, name);
         return false;

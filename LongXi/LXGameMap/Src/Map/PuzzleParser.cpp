@@ -401,11 +401,13 @@ bool ParsePuzzle(const std::string&                                      mapPath
         const float cellH          = static_cast<float>(inOutDescriptor.CellHeight);
         const float originX        = static_cast<float>(inOutDescriptor.OriginX);
         const float originY        = static_cast<float>(inOutDescriptor.OriginY);
-        const float bgWorldWidth   = static_cast<float>(gridWidth) * kPuzzleGridSize;
-        const float bgWorldHeight  = static_cast<float>(gridHeight) * kPuzzleGridSize;
-        const float bgCenterWorldY = cellH * static_cast<float>(mapHeight) * 0.5f;
-        const float bgWorldX       = originX - bgWorldWidth * 0.5f;
-        const float bgWorldY       = bgCenterWorldY - bgWorldHeight * 0.5f;
+        const float bgWorldWidth  = static_cast<float>(gridWidth) * kPuzzleGridSize;
+        const float bgWorldHeight = static_cast<float>(gridHeight) * kPuzzleGridSize;
+        const float bgWorldX      = originX - bgWorldWidth * 0.5f;
+
+        // CGameMap::GetBgWorldPos: include OriginY and apply isometric parity correction.
+        float bgWorldY = originY + (cellH * static_cast<float>(mapHeight) * 0.5f) - (bgWorldHeight * 0.5f);
+        bgWorldY -= static_cast<float>((mapHeight + 1) % 2) * cellH * 0.5f;
 
         for (uint32_t y = 0; y < mapHeight; ++y)
         {
