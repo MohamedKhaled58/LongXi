@@ -169,7 +169,7 @@ std::shared_ptr<Texture> TextureManager::LoadTexture(const std::string& path)
                 std::vector<uint8_t> alphaData;
                 uint32_t             mskWidth, mskHeight;
 
-                if (TextureLoader::LoadMSK(mskFileData, alphaData, mskWidth, mskHeight))
+                if (TextureLoader::LoadMSK(mskFileData, texData.Width, texData.Height, alphaData, mskWidth, mskHeight))
                 {
                     // Verify dimensions match
                     if (mskWidth == texData.Width && mskHeight == texData.Height)

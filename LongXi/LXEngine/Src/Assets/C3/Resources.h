@@ -45,6 +45,7 @@ struct MeshResource
     std::string                 name;
     std::string                 textureName;
     std::vector<MeshSubset>     subsets;
+    LXCore::Matrix4             initMatrix{};
 };
 
 struct SkeletonResource

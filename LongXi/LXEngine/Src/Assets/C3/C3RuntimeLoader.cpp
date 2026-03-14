@@ -4,6 +4,7 @@
 
 #include "Assets/C3/C3ChunkDispatcher.h"
 #include "Assets/C3/C3Container.h"
+#include "Assets/C3/C3CoordinateConverter.h"
 #include "Assets/C3/C3Log.h"
 
 namespace LXEngine
@@ -132,6 +133,8 @@ bool C3RuntimeLoader::LoadFromBuffer(const std::vector<uint8_t>& data, C3LoadRes
     outResult.cameras       = std::move(parsed.cameras);
     outResult.unknownChunks = std::move(parsed.unknownChunks);
     outResult.success       = true;
+
+    C3CoordinateConverter::ConvertToEngineSpace(outResult);
 
     LX_C3_INFO("Runtime load complete (meshes={}, skeletons={}, animations={}, particles={}, cameras={}, unknown={})",
                outResult.meshes.size(),

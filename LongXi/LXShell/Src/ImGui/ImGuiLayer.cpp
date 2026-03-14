@@ -14,7 +14,7 @@
 namespace LXShell
 {
 
-bool ImGuiLayer::Initialize(Engine& engine, HWND windowHandle)
+bool ImGuiLayer::Initialize(const Engine& engine, HWND windowHandle)
 {
     if (m_Initialized)
     {

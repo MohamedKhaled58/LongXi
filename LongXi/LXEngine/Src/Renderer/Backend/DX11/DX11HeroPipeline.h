@@ -15,8 +15,8 @@ public:
     void Shutdown();
     bool IsInitialized() const;
 
-    void BindOpaque(ID3D11DeviceContext* ctx) const;
-    void BindTransparent(ID3D11DeviceContext* ctx) const;
+    void BindOpaque(ID3D11DeviceContext* ctx, bool flipped) const;
+    void BindTransparent(ID3D11DeviceContext* ctx, bool flipped) const;
 
     ID3D11VertexShader* GetVertexShader() const;
     ID3D11PixelShader*  GetPixelShader() const;
@@ -33,6 +33,7 @@ private:
     Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_TransparentDepthState;
     Microsoft::WRL::ComPtr<ID3D11SamplerState>      m_SamplerState;
     Microsoft::WRL::ComPtr<ID3D11RasterizerState>   m_RasterizerState;
+    Microsoft::WRL::ComPtr<ID3D11RasterizerState>   m_RasterizerStateFlipped;
     bool                                            m_Initialized = false;
 };
 

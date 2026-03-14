@@ -475,6 +475,16 @@ const MapRenderSnapshot& MapSystem::GetRenderSnapshot() const
     return m_RenderSnapshot;
 }
 
+MapCamera& MapSystem::GetCamera()
+{
+    return m_MapCamera;
+}
+
+const MapCamera& MapSystem::GetCamera() const
+{
+    return m_MapCamera;
+}
+
 void MapSystem::UpdateAnimations(const TimingSnapshot& timingSnapshot)
 {
     const double deltaSeconds      = std::max(0.0, timingSnapshot.DeltaTimeSeconds);

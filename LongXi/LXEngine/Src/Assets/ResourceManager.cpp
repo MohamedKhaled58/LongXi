@@ -156,6 +156,25 @@ AnimationClip* ResourceManager::GetMotion(uint64_t id)
     return LoadMotion(id, path);
 }
 
+bool ResourceManager::ResolveMeshPath(uint64_t id, std::string& outPath) const
+{
+    auto it = m_MeshMap.find(id);
+    if (it == m_MeshMap.end())
+    {
+        outPath.clear();
+        return false;
+    }
+
+    outPath = it->second;
+    return true;
+}
+
+bool ResourceManager::TryResolveMotionPath(uint64_t id, std::string& outPath) const
+{
+    outPath = ResolveMotionPath(id);
+    return !outPath.empty();
+}
+
 RendererTextureHandle ResourceManager::GetTexture(uint64_t id)
 {
     // Check cache

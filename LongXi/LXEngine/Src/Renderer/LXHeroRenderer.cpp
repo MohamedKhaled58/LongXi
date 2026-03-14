@@ -75,6 +75,18 @@ LXCore::Matrix4 MakeRotateX(float radians)
     return matrix;
 }
 
+LXCore::Matrix4 MakeRotateY(float radians)
+{
+    LXCore::Matrix4 matrix = MakeIdentity();
+    const float     c      = std::cos(radians);
+    const float     s      = std::sin(radians);
+    matrix.m[0]            = c;
+    matrix.m[2]            = -s;
+    matrix.m[8]            = s;
+    matrix.m[10]           = c;
+    return matrix;
+}
+
 LXCore::Matrix4 MakeRotateZ(float radians)
 {
     LXCore::Matrix4 matrix = MakeIdentity();
@@ -245,7 +257,17 @@ bool LXHeroRenderer::IsInitialized() const
     return m_Initialized;
 }
 
-LXCore::Matrix4 LXHeroRenderer::ComputeWorldMatrix(const LXHero& hero)
+void LXHeroRenderer::SetExtraRotationDegrees(const LXCore::Vector3& degrees)
+{
+    m_ExtraRotationDegrees = degrees;
+}
+
+void LXHeroRenderer::SetExtraAxisScale(const LXCore::Vector3& scale)
+{
+    m_ExtraAxisScale = scale;
+}
+
+LXCore::Matrix4 LXHeroRenderer::ComputeWorldMatrix(const LXHero& hero) const
 {
     const uint8_t dir = static_cast<uint8_t>(hero.direction % 8u);
     if (hero.scale <= 0.0f)
@@ -253,15 +275,27 @@ LXCore::Matrix4 LXHeroRenderer::ComputeWorldMatrix(const LXHero& hero)
         LX_ENGINE_WARN("[HeroRenderer] Invalid scale {} (expected > 0)", hero.scale);
     }
 
-    const float rotZ = DegreesToRadians((-45.0f * dir) - 45.0f);
-    const float rotX = DegreesToRadians(-37.0f);
+    constexpr float kIsometricTiltDegrees   = -90.0f;
+    constexpr float kIsometricYawOffsetDegs = 180.0f;
+    constexpr float kIsometricRollDegrees   = 180.0f;
+    const float     rotY                    = DegreesToRadians((-45.0f * dir) - 45.0f + kIsometricYawOffsetDegs);
+    const float     rotX                    = DegreesToRadians(kIsometricTiltDegrees);
+    const float     rotZ                    = DegreesToRadians(kIsometricRollDegrees);
+
+    const float scaleX = hero.scale * m_ExtraAxisScale.x;
+    const float scaleY = hero.scale * m_ExtraAxisScale.y;
+    const float scaleZ = hero.scale * m_ExtraAxisScale.z;
 
     LXCore::Matrix4 world = MakeIdentity();
-    world                 = Multiply(world, MakeScale(hero.scale, hero.scale, hero.scale));
-    world                 = Multiply(world, MakeTranslate(0.0f, 0.0f, hero.height));
-    world                 = Multiply(world, MakeRotateZ(rotZ));
+    world                 = Multiply(world, MakeScale(scaleX, scaleY, scaleZ));
+    world                 = Multiply(world, MakeTranslate(0.0f, hero.height, 0.0f));
+    world                 = Multiply(world, MakeRotateY(rotY));
     world                 = Multiply(world, MakeRotateX(rotX));
-    world                 = Multiply(world, MakeTranslate(hero.worldX, hero.worldY, 0.0f));
+    world                 = Multiply(world, MakeRotateZ(rotZ));
+    world                 = Multiply(world, MakeRotateX(DegreesToRadians(m_ExtraRotationDegrees.x)));
+    world                 = Multiply(world, MakeRotateY(DegreesToRadians(m_ExtraRotationDegrees.y)));
+    world                 = Multiply(world, MakeRotateZ(DegreesToRadians(m_ExtraRotationDegrees.z)));
+    world                 = Multiply(world, MakeTranslate(hero.worldX, 0.0f, hero.worldY));
     return world;
 }
 
@@ -293,9 +327,14 @@ void LXHeroRenderer::UploadBoneMatrices(const LXHero& hero)
     {
         const auto&  matrices  = hero.animationPlayer->GetFinalBoneMatrices();
         const size_t copyCount = std::min<size_t>(matrices.size(), kMaxBones);
+        LXCore::Matrix4 initMatrix = MakeIdentity();
+        if (hero.bodyMesh)
+        {
+            initMatrix = hero.bodyMesh->GetInitMatrix();
+        }
         for (size_t i = 0; i < copyCount; ++i)
         {
-            bones->BoneMatrices[i] = matrices[i];
+            bones->BoneMatrices[i] = Multiply(initMatrix, matrices[i]);
         }
 
         if (matrices.size() > kMaxBones)
@@ -331,6 +370,10 @@ void LXHeroRenderer::UploadLighting(const HeroRenderLighting& lighting)
     cb->Ambient        = lighting.Ambient;
     cb->Diffuse        = lighting.Diffuse;
     cb->Tint           = lighting.Tint;
+    cb->AlphaCutoff    = lighting.AlphaCutoff;
+    cb->UseAlphaTest   = lighting.UseAlphaTest;
+    cb->Padding1[0]    = 0.0f;
+    cb->Padding1[1]    = 0.0f;
 
     m_Renderer->UnmapBuffer(ToBufferHandle(m_CbLighting));
 }
@@ -475,7 +518,9 @@ void LXHeroRenderer::Render(const LXHero&             hero,
     m_Renderer->UnmapBuffer(ToBufferHandle(m_CbPerObject));
 
     UploadBoneMatrices(hero);
-    UploadLighting(lighting);
+
+    const float scaleSign = hero.scale * m_ExtraAxisScale.x * m_ExtraAxisScale.y * m_ExtraAxisScale.z;
+    const bool  flipped   = scaleSign < 0.0f;
 
     if (!m_Renderer->BindConstantBuffer(m_CbBones, RendererShaderStage::Vertex, 0))
     {
@@ -496,10 +541,18 @@ void LXHeroRenderer::Render(const LXHero&             hero,
     }
 
     ID3D11DeviceContext* context = static_cast<ID3D11DeviceContext*>(m_Renderer->GetNativeContextHandle());
-    m_Pipeline.BindOpaque(context);
+    HeroRenderLighting opaqueLighting = lighting;
+    opaqueLighting.UseAlphaTest       = 0.0f;
+    UploadLighting(opaqueLighting);
+
+    m_Pipeline.BindOpaque(context, flipped);
     RenderParts(hero, false);
 
-    m_Pipeline.BindTransparent(context);
+    HeroRenderLighting alphaLighting = lighting;
+    alphaLighting.UseAlphaTest       = 1.0f;
+    UploadLighting(alphaLighting);
+
+    m_Pipeline.BindTransparent(context, flipped);
     RenderParts(hero, true);
 }
 

@@ -196,6 +196,7 @@ bool DX11Renderer::CreateDefaultStates()
     D3D11_RASTERIZER_DESC rasterDesc = {};
     rasterDesc.FillMode              = D3D11_FILL_SOLID;
     rasterDesc.CullMode              = D3D11_CULL_BACK;
+    rasterDesc.FrontCounterClockwise = TRUE;
     rasterDesc.DepthClipEnable       = TRUE;
 
     HRESULT hr = m_Device->CreateRasterizerState(&rasterDesc, &m_DefaultRasterizerState);

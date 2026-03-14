@@ -60,6 +60,10 @@ public:
     void                  OverrideTexture(RendererTextureHandle handle);
     void                  ClearTextureOverride();
     RendererTextureHandle GetActiveTexture() const;
+    const LXCore::Matrix4& GetInitMatrix() const
+    {
+        return m_InitMatrix;
+    }
 
 private:
     RendererVertexBufferHandle  m_VertexBuffer{};
@@ -70,6 +74,7 @@ private:
     std::string                 m_SlotName;
     RendererTextureHandle       m_DefaultTexture{};
     RendererTextureHandle       m_OverrideTexture{};
+    LXCore::Matrix4             m_InitMatrix{};
 };
 
 } // namespace LXEngine

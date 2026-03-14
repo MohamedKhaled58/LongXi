@@ -16,6 +16,7 @@ public:
     void SetSkeleton(const SkeletonResource* skeleton);
     void SetLooping(bool looping);
     void Reset();
+    void SetUseDirectMatrices(bool directMatrices);
 
     void Advance(float deltaSeconds);
     bool Sample();
@@ -44,6 +45,7 @@ private:
     const AnimationClip*    m_Clip              = nullptr;
     const SkeletonResource* m_Skeleton          = nullptr;
     bool                    m_Looping           = true;
+    bool                    m_UseDirectMatrices = false;
     float                   m_TimeSeconds       = 0.0f;
     bool                    m_HasLoggedMismatch = false;
 

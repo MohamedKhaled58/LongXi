@@ -58,6 +58,8 @@ public:
     MapSystemState           GetState() const;
     const MapDescriptor*     GetMapDescriptor() const;
     const MapRenderSnapshot& GetRenderSnapshot() const;
+    MapCamera&               GetCamera();
+    const MapCamera&         GetCamera() const;
 
 private:
     void UpdateAnimations(const TimingSnapshot& timingSnapshot);

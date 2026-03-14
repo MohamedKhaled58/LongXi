@@ -181,6 +181,11 @@ void AnimationPlayer::SetLooping(bool looping)
     m_Looping = looping;
 }
 
+void AnimationPlayer::SetUseDirectMatrices(bool directMatrices)
+{
+    m_UseDirectMatrices = directMatrices;
+}
+
 void AnimationPlayer::Reset()
 {
     m_TimeSeconds = 0.0f;
@@ -291,6 +296,22 @@ bool AnimationPlayer::Sample()
         const LXCore::Matrix4  localA = a ? *a : MakeIdentity();
         const LXCore::Matrix4  localB = b ? *b : MakeIdentity();
         m_LocalTransforms[boneIndex]  = LerpMatrix(localA, localB, blend);
+    }
+
+    if (m_UseDirectMatrices)
+    {
+        const uint32_t boneCount = m_Skeleton->boneCount;
+        if (m_FinalBoneMatrices.size() != boneCount)
+        {
+            m_FinalBoneMatrices.assign(boneCount, MakeIdentity());
+        }
+
+        for (uint32_t boneIndex = 0; boneIndex < boneCount; ++boneIndex)
+        {
+            m_FinalBoneMatrices[boneIndex] = m_LocalTransforms[boneIndex];
+        }
+
+        return true;
     }
 
     std::fill(m_Resolved.begin(), m_Resolved.end(), 0);

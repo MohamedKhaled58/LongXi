@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -36,6 +37,8 @@ public:
     AnimationClip*        GetMotion(uint64_t id);
     RendererTextureHandle GetTexture(uint64_t id);
     ParticleResource*     GetEffect(uint64_t id);
+    bool                  ResolveMeshPath(uint64_t id, std::string& outPath) const;
+    bool                  TryResolveMotionPath(uint64_t id, std::string& outPath) const;
 
     // Fallback texture (white, used when texture loading fails)
     RendererTextureHandle GetFallbackTexture() const

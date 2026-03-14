@@ -90,6 +90,7 @@ bool RuntimeMesh::Initialize(Renderer& renderer, const MeshResource& resource)
     m_IndexFormat = RendererIndexFormat::UInt32;
 
     m_SlotName = resource.name;
+    m_InitMatrix = resource.initMatrix;
 
     m_SubMeshes.clear();
     if (!resource.subsets.empty())

@@ -20,7 +20,7 @@ using LXEngine::Engine;
 class ImGuiLayer
 {
 public:
-    bool Initialize(Engine& engine, HWND windowHandle);
+    bool Initialize(const Engine& engine, HWND windowHandle);
     void Shutdown();
 
     bool IsInitialized() const

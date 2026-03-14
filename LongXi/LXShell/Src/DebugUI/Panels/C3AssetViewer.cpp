@@ -71,7 +71,6 @@ struct PreviewState
     float zoom         = 1.0f;
     float scale        = 1.0f;
     float portraitZoom = 1.15f;
-    bool  useC3Camera  = true;
 
     PreviewTarget mainTarget;
     PreviewTarget portraitTarget;
@@ -604,22 +603,9 @@ bool RenderPreview(Engine&                                   engine,
     const float eyeOffset    = portraitMode ? (radius * 0.55f) : (radius * 0.25f);
     const float targetOffset = portraitMode ? (radius * 0.45f) : (radius * 0.15f);
 
-    Vector3 eye{};
-    Vector3 focus{};
-    Vector3 up{};
-
-    if (preview.useC3Camera)
-    {
-        eye   = {center.x, center.y - distance, center.z - eyeOffset};
-        focus = {center.x, center.y, center.z - targetOffset};
-        up    = {0.0f, 0.0f, -1.0f};
-    }
-    else
-    {
-        eye   = {center.x, center.y + eyeOffset, center.z - distance};
-        focus = {center.x, center.y + targetOffset, center.z};
-        up    = {0.0f, 1.0f, 0.0f};
-    }
+    Vector3 eye   = {center.x, center.y + eyeOffset, center.z - distance};
+    Vector3 focus = {center.x, center.y + targetOffset, center.z};
+    Vector3 up    = {0.0f, 1.0f, 0.0f};
 
     Matrix4 view       = MakeLookAt(eye, focus, up);
     float   nearPlane  = std::max(0.01f, distance * 0.1f);
@@ -887,7 +873,6 @@ void C3AssetViewer::Render(Engine& engine)
     ImGui::SliderFloat("Zoom", &state.preview.zoom, 0.5f, 2.5f, "%.2f");
     ImGui::SliderFloat("Portrait Zoom", &state.preview.portraitZoom, 0.5f, 2.5f, "%.2f");
     ImGui::SliderFloat("Scale", &state.preview.scale, 0.2f, 2.0f, "%.2f");
-    ImGui::Checkbox("C3 Camera (Z Up)", &state.preview.useC3Camera);
 
     if (rebuildPreview || (!state.preview.mesh && !state.result.meshes.empty()))
     {

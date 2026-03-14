@@ -19,6 +19,8 @@ public:
     bool Initialize(Renderer& renderer);
     void Shutdown();
     bool IsInitialized() const;
+    void SetExtraRotationDegrees(const LXCore::Vector3& degrees);
+    void SetExtraAxisScale(const LXCore::Vector3& scale);
 
     struct HeroRenderLighting
     {
@@ -27,6 +29,9 @@ public:
         LXCore::Color   Ambient{1.0f, 1.0f, 1.0f, 1.0f};
         LXCore::Color   Diffuse{0.0f, 0.0f, 0.0f, 1.0f};
         LXCore::Color   Tint{1.0f, 1.0f, 1.0f, 1.0f};
+        float           AlphaCutoff  = 0.08f;
+        float           UseAlphaTest = 1.0f;
+        float           Padding1[2]  = {0.0f, 0.0f};
 
         static HeroRenderLighting Flat();
         static HeroRenderLighting Portrait();
@@ -55,13 +60,16 @@ private:
         LXCore::Color   Ambient{1.0f, 1.0f, 1.0f, 1.0f};
         LXCore::Color   Diffuse{0.0f, 0.0f, 0.0f, 1.0f};
         LXCore::Color   Tint{1.0f, 1.0f, 1.0f, 1.0f};
+        float           AlphaCutoff  = 0.08f;
+        float           UseAlphaTest = 1.0f;
+        float           Padding1[2]  = {0.0f, 0.0f};
     };
 
-    static LXCore::Matrix4 ComputeWorldMatrix(const LXHero& hero);
-    void                   UploadBoneMatrices(const LXHero& hero);
-    void                   UploadLighting(const HeroRenderLighting& lighting);
-    void                   RenderParts(const LXHero& hero, bool transparentPass);
-    void                   RenderMesh(RuntimeMesh& mesh, bool transparentPass);
+    LXCore::Matrix4 ComputeWorldMatrix(const LXHero& hero) const;
+    void            UploadBoneMatrices(const LXHero& hero);
+    void            UploadLighting(const HeroRenderLighting& lighting);
+    void            RenderParts(const LXHero& hero, bool transparentPass);
+    void            RenderMesh(RuntimeMesh& mesh, bool transparentPass);
 
 private:
     DX11HeroPipeline             m_Pipeline;
@@ -72,6 +80,8 @@ private:
     Renderer*                    m_Renderer             = nullptr;
     bool                         m_Initialized          = false;
     bool                         m_LoggedMissingTexture = false;
+    LXCore::Vector3              m_ExtraRotationDegrees{0.0f, 0.0f, 0.0f};
+    LXCore::Vector3              m_ExtraAxisScale{1.0f, 1.0f, 1.0f};
 };
 
 } // namespace LXEngine

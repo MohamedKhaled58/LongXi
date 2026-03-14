@@ -41,6 +41,16 @@ struct Phy4VertexFile
 #pragma pack(pop)
 static_assert(sizeof(Phy4VertexFile) == 40, "Phy4VertexFile must be 40 bytes");
 
+LXCore::Matrix4 IdentityMatrix()
+{
+    LXCore::Matrix4 m{};
+    m.m[0]  = 1.0f;
+    m.m[5]  = 1.0f;
+    m.m[10] = 1.0f;
+    m.m[15] = 1.0f;
+    return m;
+}
+
 bool ReadLengthPrefixedString(C3BinaryReader& reader, std::string& out)
 {
     uint32_t length = 0;
@@ -70,6 +80,7 @@ bool ReadLengthPrefixedString(C3BinaryReader& reader, std::string& out)
 bool C3PhyParser::Parse(const std::vector<uint8_t>& data, MeshResource& outMesh, bool isPhy4)
 {
     outMesh = MeshResource{};
+    outMesh.initMatrix = IdentityMatrix();
 
     C3BinaryReader reader(data);
 
@@ -188,6 +199,21 @@ bool C3PhyParser::Parse(const std::vector<uint8_t>& data, MeshResource& outMesh,
         return false;
     }
     outMesh.textureName = textureName;
+
+    // Optional trailing data: bboxMin, bboxMax, init matrix (legacy C3 PHY layout).
+    LXCore::Vector3 bboxMin{};
+    LXCore::Vector3 bboxMax{};
+    if (reader.CanRead(sizeof(LXCore::Vector3) * 2 + sizeof(LXCore::Matrix4)))
+    {
+        if (reader.Read(bboxMin) && reader.Read(bboxMax) && reader.Read(outMesh.initMatrix))
+        {
+            // Parsed successfully; bbox not currently used.
+        }
+        else
+        {
+            outMesh.initMatrix = IdentityMatrix();
+        }
+    }
 
     return true;
 }

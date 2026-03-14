@@ -489,55 +489,87 @@ bool TextureLoader::LoadTGA(const std::vector<uint8_t>& data, TextureData& out)
 // MSK format: Simple header followed by raw 8-bit grayscale data
 // =============================================================================
 
-bool TextureLoader::LoadMSK(const std::vector<uint8_t>& data, std::vector<uint8_t>& outAlphaData, uint32_t& outWidth, uint32_t& outHeight)
+bool TextureLoader::LoadMSK(const std::vector<uint8_t>& data,
+                            uint32_t                   expectedWidth,
+                            uint32_t                   expectedHeight,
+                            std::vector<uint8_t>&      outAlphaData,
+                            uint32_t&                  outWidth,
+                            uint32_t&                  outHeight)
 {
+    outAlphaData.clear();
+    outWidth  = 0;
+    outHeight = 0;
+
     // MSK files have a simple header format
     // Based on the old client, the format is:
     // - 4 bytes: magic/signature
     // - 4 bytes: width
     // - 4 bytes: height
     // - Followed by width * height bytes of 8-bit grayscale alpha data
-
-    if (data.size() < 12)
+    if (data.size() >= 12)
     {
-        LX_ENGINE_ERROR("[Texture] MSK file too small: {} bytes", data.size());
+        uint32_t width  = *reinterpret_cast<const uint32_t*>(&data[4]);
+        uint32_t height = *reinterpret_cast<const uint32_t*>(&data[8]);
+        if (width > 0 && height > 0)
+        {
+            size_t expectedSize = 0;
+            if (CheckedMul(static_cast<size_t>(width), static_cast<size_t>(height), expectedSize))
+            {
+                const bool matchesExpected = (expectedWidth == 0 || expectedHeight == 0) ||
+                                             (width == expectedWidth && height == expectedHeight);
+                if (matchesExpected && data.size() >= 12 + expectedSize)
+                {
+                    outAlphaData.assign(data.begin() + 12, data.begin() + 12 + expectedSize);
+                    outWidth  = width;
+                    outHeight = height;
+                    LX_ENGINE_INFO("[Texture] Loaded MSK mask (headered): {}x{}", width, height);
+                    return true;
+                }
+            }
+        }
+    }
+
+    if (expectedWidth == 0 || expectedHeight == 0)
+    {
+        LX_ENGINE_WARN("[Texture] MSK decode failed: no header match and no expected size provided");
         return false;
     }
 
-    // Parse header (little-endian)
-    uint32_t headerValue = *reinterpret_cast<const uint32_t*>(&data[0]);
-    uint32_t width       = *reinterpret_cast<const uint32_t*>(&data[4]);
-    uint32_t height      = *reinterpret_cast<const uint32_t*>(&data[8]);
-
-    // MSK magic check (common values seen in old client: 1, or specific signatures)
-    // The old client doesn't always validate this strictly, so we'll be lenient
-    if (width == 0 || height == 0)
+    size_t pixelCount = 0;
+    if (!CheckedMul(static_cast<size_t>(expectedWidth), static_cast<size_t>(expectedHeight), pixelCount))
     {
-        LX_ENGINE_ERROR("[Texture] MSK invalid dimensions: {}x{}", width, height);
+        LX_ENGINE_ERROR("[Texture] MSK expected dimensions overflow size calculation: {}x{}", expectedWidth, expectedHeight);
         return false;
     }
 
-    // Calculate expected data size
-    size_t expectedSize = 0;
-    if (!CheckedMul(static_cast<size_t>(width), static_cast<size_t>(height), expectedSize))
+    const size_t bitmaskSize = (pixelCount + 7u) / 8u;
+    const size_t bitmaskSizeLegacy = (pixelCount / 8u) + 1u;
+    if (data.size() == pixelCount)
     {
-        LX_ENGINE_ERROR("[Texture] MSK dimensions overflow size calculation: {}x{}", width, height);
-        return false;
+        outAlphaData.assign(data.begin(), data.end());
+        outWidth  = expectedWidth;
+        outHeight = expectedHeight;
+        LX_ENGINE_INFO("[Texture] Loaded MSK mask (raw 8-bit): {}x{}", outWidth, outHeight);
+        return true;
     }
 
-    if (data.size() < 12 + expectedSize)
+    if (data.size() == bitmaskSize || data.size() == bitmaskSizeLegacy)
     {
-        LX_ENGINE_ERROR("[Texture] MSK truncated: expected {} alpha bytes, have {}", expectedSize, data.size() - 12);
-        return false;
+        outAlphaData.resize(pixelCount);
+        for (size_t i = 0; i < pixelCount; ++i)
+        {
+            const uint8_t byte = data[i / 8u];
+            const uint8_t bit  = static_cast<uint8_t>((byte >> (i % 8u)) & 0x1u);
+            outAlphaData[i]    = bit ? 0xFF : 0x00;
+        }
+        outWidth  = expectedWidth;
+        outHeight = expectedHeight;
+        LX_ENGINE_INFO("[Texture] Loaded MSK mask (bitmask): {}x{}", outWidth, outHeight);
+        return true;
     }
 
-    // Extract alpha data (starts after 12-byte header)
-    outAlphaData.assign(data.begin() + 12, data.begin() + 12 + expectedSize);
-    outWidth  = width;
-    outHeight = height;
-
-    LX_ENGINE_INFO("[Texture] Loaded MSK mask: {}x{}", width, height);
-    return true;
+    LX_ENGINE_WARN("[Texture] MSK decode failed: unsupported size {} for expected {}x{}", data.size(), expectedWidth, expectedHeight);
+    return false;
 }
 
 // =============================================================================

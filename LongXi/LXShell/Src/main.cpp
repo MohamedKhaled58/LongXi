@@ -2,14 +2,19 @@
 // LXShell — Client Application
 // =============================================================================
 
+#include <Animation/AnimationClip.h>
+#include <Animation/AnimationPlayer.h>
 #include <Application/Application.h>
 #include <Application/EntryPoint.h>
+#include <Assets/C3/C3RuntimeLoader.h>
 #include <Assets/C3/RuntimeMesh.h>
 #include <Assets/ResourceManager.h>
 #include <Core/FileSystem/VirtualFileSystem.h>
 #include <Core/Logging/LogMacros.h>
 #include <Engine/Engine.h>
 #include <Hero/LXHero.h>
+#include <Map/MapCamera.h>
+#include <Map/MapSystem.h>
 #include <Renderer/LXHeroRenderer.h>
 #include <Renderer/RendererTypes.h>
 #include <Renderer/SpriteRenderer.h>
@@ -21,6 +26,8 @@
 #include <Window/Win32Window.h>
 
 #if defined(LX_DEBUG) || defined(LX_DEV)
+#include <imgui.h>
+
 #include "DebugUI/DebugUI.h"
 #include "ImGui/ImGuiLayer.h"
 #endif
@@ -29,10 +36,12 @@
 #include <array>
 #include <cctype>
 #include <charconv>
+#include <cstdio>
 #include <cstring>
 #include <memory>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "Input/InputSystem.h"
 
@@ -40,6 +49,13 @@ namespace LXShell
 {
 
 using LXCore::CVirtualFileSystem;
+using LXEngine::AnimationClip;
+using LXEngine::AnimationClipResource;
+using LXEngine::AnimationPlayer;
+using LXEngine::C3LoadRequest;
+using LXEngine::C3LoadResult;
+using LXEngine::C3ResourceType;
+using LXEngine::C3RuntimeLoader;
 using LXEngine::Camera;
 using LXEngine::Engine;
 using LXEngine::Key;
@@ -49,9 +65,91 @@ using LXEngine::ResourceManager;
 using LXEngine::RuntimeMesh;
 using LXEngine::Scene;
 using LXEngine::SceneNode;
+using LXEngine::SkeletonResource;
 using LXEngine::SpriteRenderer;
 using LXEngine::Texture;
 using LXEngine::TextureManager;
+using LXMap::MapCamera;
+
+namespace
+{
+
+LXCore::Matrix4 MakeIdentity()
+{
+    LXCore::Matrix4 matrix = {};
+    matrix.m[0]            = 1.0f;
+    matrix.m[5]            = 1.0f;
+    matrix.m[10]           = 1.0f;
+    matrix.m[15]           = 1.0f;
+    return matrix;
+}
+
+LXCore::Matrix4 Multiply(const LXCore::Matrix4& lhs, const LXCore::Matrix4& rhs)
+{
+    LXCore::Matrix4 result = {};
+    for (int row = 0; row < 4; ++row)
+    {
+        for (int col = 0; col < 4; ++col)
+        {
+            float sum = 0.0f;
+            for (int k = 0; k < 4; ++k)
+            {
+                sum += lhs.m[row * 4 + k] * rhs.m[k * 4 + col];
+            }
+            result.m[row * 4 + col] = sum;
+        }
+    }
+    return result;
+}
+
+LXCore::Matrix4 MakeScreenToNdc(float width, float height)
+{
+    if (width <= 0.0f)
+    {
+        width = 1.0f;
+    }
+    if (height <= 0.0f)
+    {
+        height = 1.0f;
+    }
+
+    LXCore::Matrix4 proj = {};
+    proj.m[0]            = 2.0f / width;
+    proj.m[5]            = -2.0f / height;
+    proj.m[10]           = 1.0f;
+    proj.m[12]           = -1.0f;
+    proj.m[13]           = 1.0f;
+    proj.m[15]           = 1.0f;
+    return proj;
+}
+
+LXCore::Matrix4 MakeMapWorldToScreen(const MapCamera& camera, float viewportWidth, float viewportHeight)
+{
+    const float zoom    = camera.GetZoom();
+    const float centerX = camera.GetViewCenterWorldX();
+    const float centerY = camera.GetViewCenterWorldY();
+
+    const float tx = -centerX * zoom + viewportWidth * 0.5f;
+    const float ty = -centerY * zoom + viewportHeight * 0.5f;
+
+    LXCore::Matrix4 matrix = {};
+    matrix.m[0]            = zoom;
+    matrix.m[5]            = zoom;
+    matrix.m[9]            = -zoom;
+    matrix.m[12]           = tx;
+    matrix.m[13]           = ty;
+    matrix.m[15]           = 1.0f;
+    return matrix;
+}
+
+void BuildMapViewProjection(
+    const MapCamera& camera, float viewportWidth, float viewportHeight, LXCore::Matrix4& outView, LXCore::Matrix4& outProj)
+{
+    outView = MakeMapWorldToScreen(camera, viewportWidth, viewportHeight);
+    outProj = MakeScreenToNdc(viewportWidth, viewportHeight);
+}
+
+} // namespace
 
 class TestApplication : public LXEngine::Application
 {
@@ -128,6 +226,7 @@ public:
                 m_ImGuiLayer.BeginFrame();
                 m_DebugUI.UpdateViewModels(engine);
                 m_DebugUI.RenderPanels(engine);
+                RenderHeroDebugPanel(engine);
                 m_ImGuiLayer.EndFrame();
                 engine.ExecuteExternalRenderPass(
                     [this]()
@@ -355,7 +454,117 @@ private:
         m_Hero.height    = 10.0f;
         m_HeroReady      = true;
 
+        m_HeroLookType = static_cast<uint32_t>(kHeroMeshId / 1000000ull);
+        m_HeroAction   = 100;
+        m_HeroMotionId = static_cast<uint64_t>(m_HeroLookType) * 1000000ull + static_cast<uint64_t>(m_HeroAction);
+        LoadHeroMotionFromIni(engine, m_HeroMotionId, vfs);
+
         LX_INFO("[HeroTest] Hero setup complete (meshId={}, textureId={})", kHeroMeshId, kHeroTextureId);
+    }
+
+    bool LoadHeroMotionFromIni(Engine& engine, uint64_t motionId, CVirtualFileSystem& vfs)
+    {
+        m_HeroAnimationResources.clear();
+        m_HeroSkeletons.clear();
+        m_HeroHasSkeleton = false;
+        m_HeroHasClip     = false;
+
+        ResourceManager& resourceManager = engine.GetResourceManager();
+        std::string      motionPath;
+        if (!resourceManager.TryResolveMotionPath(motionId, motionPath) || motionPath.empty())
+        {
+            LX_WARN("[HeroTest] Motion ID {} not found in ini/3dmotion.ini", motionId);
+            m_Hero.animationPlayer = nullptr;
+            return false;
+        }
+
+        C3RuntimeLoader loader;
+        C3LoadRequest   request;
+        request.virtualPath    = motionPath;
+        request.requestedTypes = {C3ResourceType::Skeleton, C3ResourceType::Animation};
+
+        C3LoadResult result;
+        if (!loader.LoadFromVfs(vfs, request, result))
+        {
+            LX_WARN("[HeroTest] Failed to load motion data from {}", motionPath);
+            m_Hero.animationPlayer = nullptr;
+            return false;
+        }
+
+        if (result.skeletons.empty() || result.animations.empty())
+        {
+            LX_WARN("[HeroTest] Missing skeleton/animation in motion file {}", motionPath);
+            m_Hero.animationPlayer = nullptr;
+            return false;
+        }
+
+        m_HeroSkeletons          = std::move(result.skeletons);
+        m_HeroAnimationResources = std::move(result.animations);
+        m_HeroAnimationIndex     = std::min<int>(m_HeroAnimationIndex, static_cast<int>(m_HeroAnimationResources.size() - 1));
+
+        return ApplyHeroAnimationSelection();
+    }
+
+    bool ApplyHeroAnimationSelection()
+    {
+        if (m_HeroAnimationResources.empty() || m_HeroSkeletons.empty())
+        {
+            m_HeroHasClip          = false;
+            m_Hero.animationPlayer = nullptr;
+            return false;
+        }
+
+        if (m_HeroAnimationIndex < 0 || m_HeroAnimationIndex >= static_cast<int>(m_HeroAnimationResources.size()))
+        {
+            m_HeroAnimationIndex = 0;
+        }
+
+        const AnimationClipResource& clipResource = m_HeroAnimationResources[static_cast<size_t>(m_HeroAnimationIndex)];
+
+        size_t skeletonIndex = 0;
+        if (m_HeroAnimationIndex < static_cast<int>(m_HeroSkeletons.size()) &&
+            m_HeroSkeletons[static_cast<size_t>(m_HeroAnimationIndex)].boneCount == clipResource.boneCount)
+        {
+            skeletonIndex = static_cast<size_t>(m_HeroAnimationIndex);
+        }
+        else
+        {
+            for (size_t i = 0; i < m_HeroSkeletons.size(); ++i)
+            {
+                if (m_HeroSkeletons[i].boneCount == clipResource.boneCount)
+                {
+                    skeletonIndex = i;
+                    break;
+                }
+            }
+        }
+
+        m_HeroSkeleton    = m_HeroSkeletons[skeletonIndex];
+        m_HeroHasSkeleton = (m_HeroSkeleton.boneCount > 0);
+        if (!m_HeroHasSkeleton)
+        {
+            m_HeroHasClip          = false;
+            m_Hero.animationPlayer = nullptr;
+            return false;
+        }
+
+        m_HeroClip    = AnimationClip{};
+        m_HeroHasClip = m_HeroClip.Initialize(clipResource);
+        if (!m_HeroHasClip)
+        {
+            LX_WARN("[HeroTest] Failed to initialize animation clip index {}", m_HeroAnimationIndex);
+            m_Hero.animationPlayer = nullptr;
+            return false;
+        }
+
+        m_HeroPlayer.SetSkeleton(&m_HeroSkeleton);
+        m_HeroPlayer.SetClip(&m_HeroClip);
+        m_HeroPlayer.SetLooping(true);
+        m_HeroPlayer.SetUseDirectMatrices(m_HeroDirectMotion);
+        m_HeroPlayer.Reset();
+        m_HeroPlayer.Sample();
+        m_Hero.animationPlayer = &m_HeroPlayer;
+        return true;
     }
 
     void RenderHero(Engine& engine)
@@ -365,12 +574,31 @@ private:
             return;
         }
 
-        Scene&  scene  = engine.GetScene();
-        Camera& camera = scene.GetActiveCamera();
-        camera.SyncDirtyMatricesForRender(engine.GetRendererViewportWidth(), engine.GetRendererViewportHeight());
+        if (m_HeroAnimate && m_Hero.animationPlayer)
+        {
+            const float deltaSeconds = static_cast<float>(engine.GetTimingSnapshot().DeltaTimeSeconds);
+            m_HeroPlayer.Advance(deltaSeconds * m_HeroAnimSpeed);
+        }
 
-        const LXCore::Matrix4 view = camera.GetViewMatrix();
-        const LXCore::Matrix4 proj = camera.GetProjectionMatrix();
+        const int viewportWidth  = engine.GetRendererViewportWidth();
+        const int viewportHeight = engine.GetRendererViewportHeight();
+
+        LXCore::Matrix4 view = MakeIdentity();
+        LXCore::Matrix4 proj = MakeIdentity();
+
+        if (engine.IsMapReady())
+        {
+            const MapCamera& mapCamera = engine.GetMapSystem().GetCamera();
+            BuildMapViewProjection(mapCamera, static_cast<float>(viewportWidth), static_cast<float>(viewportHeight), view, proj);
+        }
+        else
+        {
+            Scene&  scene  = engine.GetScene();
+            Camera& camera = scene.GetActiveCamera();
+            camera.SyncDirtyMatricesForRender(viewportWidth, viewportHeight);
+            view = camera.GetViewMatrix();
+            proj = camera.GetProjectionMatrix();
+        }
 
         engine.ExecuteExternalRenderPass(
             [this, view, proj]()
@@ -379,10 +607,168 @@ private:
             });
     }
 
-    LXHeroRenderer m_HeroRenderer;
-    RuntimeMesh*   m_HeroMesh = nullptr;
-    LXHero         m_Hero;
-    bool           m_HeroReady = false;
+#if defined(LX_DEBUG) || defined(LX_DEV)
+    void RenderHeroDebugPanel(Engine& engine)
+    {
+        if (!ImGui::Begin("Hero Tools"))
+        {
+            ImGui::End();
+            return;
+        }
+
+        if (!m_HeroReady)
+        {
+            ImGui::TextUnformatted("Hero not loaded.");
+            ImGui::End();
+            return;
+        }
+
+        static bool  followHero         = false;
+        static float rotationDegrees[3] = {0.0f, 0.0f, 0.0f};
+        static bool  flipAxis[3]        = {false, false, false};
+
+        ImGui::Text("Hero World: (%.1f, %.1f)", m_Hero.worldX, m_Hero.worldY);
+        ImGui::Separator();
+        ImGui::DragFloat("World X", &m_Hero.worldX, 1.0f);
+        ImGui::DragFloat("World Y", &m_Hero.worldY, 1.0f);
+        ImGui::DragFloat("Height", &m_Hero.height, 0.5f);
+        ImGui::SliderFloat("Scale", &m_Hero.scale, 0.1f, 5.0f);
+        int direction = static_cast<int>(m_Hero.direction);
+        if (ImGui::SliderInt("Direction", &direction, 0, 7))
+        {
+            m_Hero.direction = static_cast<uint8_t>(direction);
+        }
+        ImGui::Separator();
+        ImGui::TextUnformatted("Extra Rotation (degrees)");
+        ImGui::DragFloat3("Rotate XYZ", rotationDegrees, 0.5f);
+        ImGui::TextUnformatted("Flip Axes");
+        ImGui::Checkbox("Flip X", &flipAxis[0]);
+        ImGui::SameLine();
+        ImGui::Checkbox("Flip Y", &flipAxis[1]);
+        ImGui::SameLine();
+        ImGui::Checkbox("Flip Z", &flipAxis[2]);
+        if (ImGui::Button("Reset Rotation"))
+        {
+            rotationDegrees[0] = 0.0f;
+            rotationDegrees[1] = 0.0f;
+            rotationDegrees[2] = 0.0f;
+            flipAxis[0]        = false;
+            flipAxis[1]        = false;
+            flipAxis[2]        = false;
+        }
+
+        m_HeroRenderer.SetExtraRotationDegrees({rotationDegrees[0], rotationDegrees[1], rotationDegrees[2]});
+        m_HeroRenderer.SetExtraAxisScale({flipAxis[0] ? -1.0f : 1.0f, flipAxis[1] ? -1.0f : 1.0f, flipAxis[2] ? -1.0f : 1.0f});
+
+        ImGui::Separator();
+        ImGui::TextUnformatted("Animation");
+        ImGui::Checkbox("Direct Matrices (Legacy)", &m_HeroDirectMotion);
+        if (m_Hero.animationPlayer)
+        {
+            m_HeroPlayer.SetUseDirectMatrices(m_HeroDirectMotion);
+        }
+        ImGui::InputScalar("Look Type", ImGuiDataType_U32, &m_HeroLookType);
+        ImGui::InputScalar("Action", ImGuiDataType_U32, &m_HeroAction);
+
+        const uint64_t derivedMotionId = static_cast<uint64_t>(m_HeroLookType) * 1000000ull + static_cast<uint64_t>(m_HeroAction);
+        char           motionKey[32]   = {};
+        std::snprintf(motionKey, sizeof(motionKey), "%010llu", static_cast<unsigned long long>(derivedMotionId));
+        ImGui::Text("Motion ID = %llu  (ini key: %s)", static_cast<unsigned long long>(derivedMotionId), motionKey);
+
+        if (ImGui::Button("Load Motion (Look + Action)"))
+        {
+            m_HeroMotionId = derivedMotionId;
+            LoadHeroMotionFromIni(engine, m_HeroMotionId, engine.GetVFS());
+        }
+
+        ImGui::Separator();
+        ImGui::InputScalar("Motion ID", ImGuiDataType_U64, &m_HeroMotionId);
+        if (ImGui::Button("Load Motion (ini/3dmotion.ini)"))
+        {
+            LoadHeroMotionFromIni(engine, m_HeroMotionId, engine.GetVFS());
+        }
+        if (m_HeroAnimationResources.empty())
+        {
+            ImGui::TextUnformatted("No animation data loaded.");
+        }
+        else
+        {
+            ImGui::Checkbox("Animate", &m_HeroAnimate);
+            ImGui::DragFloat("Speed", &m_HeroAnimSpeed, 0.05f, 0.0f, 4.0f);
+
+            int       clipIndex = m_HeroAnimationIndex;
+            const int clipCount = static_cast<int>(m_HeroAnimationResources.size());
+            if (clipCount > 0 && ImGui::SliderInt("Clip Index", &clipIndex, 0, clipCount - 1))
+            {
+                m_HeroAnimationIndex = clipIndex;
+                ApplyHeroAnimationSelection();
+            }
+            const AnimationClipResource& clip = m_HeroAnimationResources[static_cast<size_t>(m_HeroAnimationIndex)];
+            ImGui::Text("Clips: %d (clip bones: %u, frames: %u)", clipCount, clip.boneCount, clip.frameCount);
+            ImGui::Text("Skeleton bones: %u", m_HeroSkeleton.boneCount);
+        }
+
+        if (ImGui::Button("Copy Values"))
+        {
+            char buffer[256] = {};
+            std::snprintf(buffer,
+                          sizeof(buffer),
+                          "worldX=%.3f, worldY=%.3f, height=%.3f, scale=%.3f, direction=%u, rotX=%.3f, rotY=%.3f, rotZ=%.3f, flipX=%d, "
+                          "flipY=%d, flipZ=%d",
+                          m_Hero.worldX,
+                          m_Hero.worldY,
+                          m_Hero.height,
+                          m_Hero.scale,
+                          static_cast<unsigned int>(m_Hero.direction),
+                          rotationDegrees[0],
+                          rotationDegrees[1],
+                          rotationDegrees[2],
+                          flipAxis[0] ? 1 : 0,
+                          flipAxis[1] ? 1 : 0,
+                          flipAxis[2] ? 1 : 0);
+            ImGui::SetClipboardText(buffer);
+            LX_INFO("[HeroTools] {}", buffer);
+        }
+
+        if (engine.IsMapReady())
+        {
+            if (ImGui::Button("Focus Hero"))
+            {
+                engine.GetMapSystem().GetCamera().SetViewCenter(m_Hero.worldX, m_Hero.worldY);
+            }
+            ImGui::SameLine();
+            ImGui::Checkbox("Follow Hero", &followHero);
+            if (followHero)
+            {
+                engine.GetMapSystem().GetCamera().SetViewCenter(m_Hero.worldX, m_Hero.worldY);
+            }
+        }
+        else
+        {
+            ImGui::TextUnformatted("Map not ready.");
+        }
+
+        ImGui::End();
+    }
+#endif
+    LXHeroRenderer                     m_HeroRenderer;
+    RuntimeMesh*                       m_HeroMesh = nullptr;
+    LXHero                             m_Hero;
+    bool                               m_HeroReady = false;
+    AnimationPlayer                    m_HeroPlayer;
+    AnimationClip                      m_HeroClip;
+    SkeletonResource                   m_HeroSkeleton;
+    std::vector<SkeletonResource>      m_HeroSkeletons;
+    std::vector<AnimationClipResource> m_HeroAnimationResources;
+    int                                m_HeroAnimationIndex = 0;
+    uint64_t                           m_HeroMotionId       = 0;
+    uint32_t                           m_HeroLookType       = 2;
+    uint32_t                           m_HeroAction         = 100;
+    bool                               m_HeroDirectMotion   = true;
+    bool                               m_HeroHasSkeleton    = false;
+    bool                               m_HeroHasClip        = false;
+    bool                               m_HeroAnimate        = true;
+    float                              m_HeroAnimSpeed      = 1.0f;
 
 #if defined(LX_DEBUG) || defined(LX_DEV)
     void WireImGuiCallbacks()

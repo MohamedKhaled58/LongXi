@@ -71,6 +71,9 @@ cbuffer cbLighting : register(b2)
     float4 Ambient;
     float4 Diffuse;
     float4 Tint;
+    float  AlphaCutoff;
+    float  UseAlphaTest;
+    float2 _Padding1;
 };
 
 struct PSInput
@@ -88,6 +91,10 @@ float4 PS(PSInput p) : SV_Target
     float3 lighting = Ambient.rgb + Diffuse.rgb * ndotl;
 
     float4 tex = g_Texture.Sample(g_Sampler, p.UV) * Tint;
+    if (UseAlphaTest > 0.5f && tex.a < AlphaCutoff)
+    {
+        discard;
+    }
     return float4(tex.rgb * lighting, tex.a * Tint.a);
 }
 )";
@@ -216,7 +223,7 @@ bool DX11HeroPipeline::Initialize(Renderer& renderer)
             return false;
         }
 
-        dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+        dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
         hr                    = device->CreateDepthStencilState(&dsDesc, &m_TransparentDepthState);
         if (FAILED(hr))
         {
@@ -247,12 +254,22 @@ bool DX11HeroPipeline::Initialize(Renderer& renderer)
         D3D11_RASTERIZER_DESC rasterizerDesc = {};
         rasterizerDesc.FillMode              = D3D11_FILL_SOLID;
         rasterizerDesc.CullMode              = D3D11_CULL_BACK;
+        rasterizerDesc.FrontCounterClockwise = TRUE;
         rasterizerDesc.DepthClipEnable       = true;
 
         hr = device->CreateRasterizerState(&rasterizerDesc, &m_RasterizerState);
         if (FAILED(hr))
         {
             LX_ENGINE_ERROR("[HeroRenderer] CreateRasterizerState failed (hr={})", hr);
+            Shutdown();
+            return false;
+        }
+
+        rasterizerDesc.CullMode = D3D11_CULL_FRONT;
+        hr                      = device->CreateRasterizerState(&rasterizerDesc, &m_RasterizerStateFlipped);
+        if (FAILED(hr))
+        {
+            LX_ENGINE_ERROR("[HeroRenderer] CreateFlippedRasterizerState failed (hr={})", hr);
             Shutdown();
             return false;
         }
@@ -265,6 +282,7 @@ bool DX11HeroPipeline::Initialize(Renderer& renderer)
 void DX11HeroPipeline::Shutdown()
 {
     m_RasterizerState.Reset();
+    m_RasterizerStateFlipped.Reset();
     m_SamplerState.Reset();
     m_OpaqueDepthState.Reset();
     m_TransparentDepthState.Reset();
@@ -281,7 +299,7 @@ bool DX11HeroPipeline::IsInitialized() const
     return m_Initialized;
 }
 
-void DX11HeroPipeline::BindOpaque(ID3D11DeviceContext* ctx) const
+void DX11HeroPipeline::BindOpaque(ID3D11DeviceContext* ctx, bool flipped) const
 {
     if (!ctx || !m_Initialized)
     {
@@ -295,10 +313,10 @@ void DX11HeroPipeline::BindOpaque(ID3D11DeviceContext* ctx) const
     ctx->PSSetSamplers(0, 1, m_SamplerState.GetAddressOf());
     ctx->OMSetBlendState(m_OpaqueBlendState.Get(), nullptr, 0xFFFFFFFF);
     ctx->OMSetDepthStencilState(m_OpaqueDepthState.Get(), 0);
-    ctx->RSSetState(m_RasterizerState.Get());
+    ctx->RSSetState(flipped && m_RasterizerStateFlipped ? m_RasterizerStateFlipped.Get() : m_RasterizerState.Get());
 }
 
-void DX11HeroPipeline::BindTransparent(ID3D11DeviceContext* ctx) const
+void DX11HeroPipeline::BindTransparent(ID3D11DeviceContext* ctx, bool flipped) const
 {
     if (!ctx || !m_Initialized)
     {
@@ -312,7 +330,7 @@ void DX11HeroPipeline::BindTransparent(ID3D11DeviceContext* ctx) const
     ctx->PSSetSamplers(0, 1, m_SamplerState.GetAddressOf());
     ctx->OMSetBlendState(m_TransparentBlendState.Get(), nullptr, 0xFFFFFFFF);
     ctx->OMSetDepthStencilState(m_TransparentDepthState.Get(), 0);
-    ctx->RSSetState(m_RasterizerState.Get());
+    ctx->RSSetState(flipped && m_RasterizerStateFlipped ? m_RasterizerStateFlipped.Get() : m_RasterizerState.Get());
 }
 
 ID3D11VertexShader* DX11HeroPipeline::GetVertexShader() const
